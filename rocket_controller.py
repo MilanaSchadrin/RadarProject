@@ -7,18 +7,20 @@ if True:
 class RocketController:
     """Контроллер ракет"""
 
-    def __init__(self, pbu: PBU):
-        self._pbu = pbu  # Ссылка на ПБУ
-        self._rockets: Dict[str, Any] = {}  # Словарь ракет, ключ — ID ракеты
+    def __init__(self, control_center):
+        self._control_center = control_center
+        self._rockets = {}
+
+    def update(self):
+            pass
 
     def change_rockets(self):
-        """Изменяет траектории всех ракет"""
-        pass
+        """Изменяет траектории всех ракет."""
+        pass  # Логика изменения траектории всех ракет
 
-    def get_rockets(self) -> List[Any]:
-        """Возвращает список всех ракет"""
-        return list(self._rockets.values())
+    def get_rockets(self):
+        """Возвращает список всех ракет."""
+        return self._rockets
 
-    def destroy_rocket(self, rocket_id: str):
-        """Взрывает ракету"""
+    def destroy_rocket(self, rocket_id):
         pass

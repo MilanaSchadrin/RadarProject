@@ -6,39 +6,41 @@ if True:
 class RadarController:
     """Контроллер радаров"""
 
-    def __init__(self, pbu: PBU):
-        self._pbu = pbu  # Ссылка на ПБУ
+    def __init__(self, control_center, dispatcher):
+        self._control_center = control_center
+        self._dispatcher = dispatcher  # Диспетчер сообщений
+        self._radars = []
 
     def update(self):
-        """Обновляет состояние радаров: получает и обрабатывает сообщения, а также отправляет новые сообщения."""
-        pass
+        """Метод для обновления состояния радаров."""
+        for radar in self._radars:
+            # Логика обновления каждого радара
+            pass
 
-    def process_radar_data(self):
-        """Обрабатывает данные, полученные от радаров"""
-        pass
-
-    def get_radars(self) -> List[Any]:
-        """Возвращает список всех радаров"""
-        pass
+    def get_radars(self):
+        """Возвращает список всех радаров."""
+        return self._radars
 
 
-class PUController:
-    """Контроллер пусковых установок"""
+class LauncherController:
+    """Контроллер установок для запуска ракет"""
 
-    def __init__(self, pbu: PBU):
-        self._pbu = pbu  # Ссылка на ПБУ
+    def __init__(self, control_center, dispatcher):
+        self._control_center = control_center
+        self._dispatcher = dispatcher  # Диспетчер сообщений
+        self._launchers = []
 
     def update(self):
-        """Обновляет состояния ПУ: получает и обрабатывает сообщения, а также отправляет новые сообщения."""
+        """Метод для обновления состояния установок для запуска ракет."""
         pass
 
-    def launch_missile(self, target_id: str):
-        """Запускает ракету по указанной цели"""
-        pass
+    def get_launchers(self):
+        """Возвращает список всех установок для запуска (Launcher)."""
+        return self._launchers
 
-    def get_pus(self) -> List[Any]:
-        """Возвращает список всех ПУ"""
-        pass
+    def launch_missile(self, target_id):
+        """Запускает ракету по указанной цели."""
+        pass  # Логика запуска ракеты
 
 
 class Dispatcher:
