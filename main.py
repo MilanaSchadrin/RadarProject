@@ -1,6 +1,5 @@
-def main():
-    pass
-
+from simulation import Simulation
 
 if __name__=="__main__":
-    main()
+    sim = Simulation()
+    sim.modulate()
