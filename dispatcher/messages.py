@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Union, Dict, List, Tuple
 from enums import Priorities, Modules
+import numpy as np
+from numpy.typing import NDArray
 
 
 class Message:
@@ -11,17 +13,23 @@ class Message:
 
 @dataclass
 class SEStarting(Message):
-    planes: Dict[int, List[float]]
+    planes: Dict[int, NDArray[np.float64]]
 
 
 @dataclass
 class SeKilled(Message):
-    objects: Dict[int, List[float]]  # TODO что-то непонятное
+    collision_step: int
+    rocket_id: int
+    rocket_coords: NDArray[np.float64]
+    plane_id: int
+    plane_coords: NDArray[np.float64]
+    collateral_damage: List[Tuple[int, NDArray[np.float64]]]
 
 
 @dataclass
 class SEAddRocket(Message):
-    rockets: Dict[int, List[float]]
+    rocket_id: int
+    rocket_coords: NDArray[np.float64]
 
 
 @dataclass
