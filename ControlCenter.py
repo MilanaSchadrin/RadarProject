@@ -1,38 +1,100 @@
-from typing import Dict, Any, List
-from controllers import RadarController, PUController
-from rocket_controller import RocketController
-
+import MissileController
+import radarController
+import launcherController
+import dispatcher
 
 class ControlCenter:
     """Центр управления"""
 
-    def __init__(self, radar_controller, launcher_controller, rocket_controller, dispatcher):
-        self._radar_controller = radar_controller
-        self._launcher_controller = launcher_controller
-        self._rocket_controller = rocket_controller
+    def __init__(self, dispatcher):
+        self._radarController = radarController(dispatcher)
+        self._launcherController = launcherController(dispatcher)
+        self._missileController = missileController()
         self._dispatcher = dispatcher
-        self._targets = {}
+        self._targets = []
+
 
     def update(self):
         """Метод вызывается на каждой итерации, получает и обрабатывает сообщения."""
-        pass
+        messages = self._dispatcher.get_message(Modules.ControlCenter)
 
-    def get_targets(self):
-        """Возвращает список всех известных целей."""
-        return self._targets
+        for message in messages:
+
+            if isinstance(message, RadarControllerObjects):
+
+                self._targets = message.detected_objects
+                self._update_priority_targets()
+                self._process_targets()
+
+            elif isinstance(message, LauncherControllerMissileLaunched):
+                self._missile_controller.process_new_missiles(message.missiles)
+
+        self._dispatcher.send_messege( CCToSkyEnv(Modules.SE, Priorities.STANDARD, self._get_missiles()) )
+
 
     def get_launchers(self):
         """Возвращает список всех установок для запуска (Launcher)."""
-        return self._launcher_controller.get_launchers()
+        return self._launcherController.get_launchers()
+
 
     def get_radars(self):
         """Возвращает список всех радаров."""
-        return self._radar_controller.get_radars()
+        return self._radarController.get_radars()
+
 
     def get_radar_controller(self):
         """Возвращает объект RadarController."""
-        return self._radar_controller
+        return self._radarController
+
 
     def get_launcher_controller(self):
         """Возвращает объект LauncherController."""
-        return self._launcher_controller
+        return self._launcherController
+
+
+    """--------------------------------"""
+
+
+    def _get_missiles(self):
+        """Возвращает список всех ракет (одноразово)."""
+        return self._missileController.pop_missiles()
+
+
+    def _process_targets(self):
+        """Обрабатывает цель."""
+
+        for target in self._targets:
+
+            if target.status != 0: # неуничтоженная цель
+                if target.status == 3 and not target.get_missilesFollow():
+                    self._dispatcher.send_messege( CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target) )
+            self._missileController.process_missiles_of_target(target)
+        self._missileController.process_unuseful_missiles()
+
+
+    def _update_proirity_targets(self):
+        old_pr_targets = self._current_priority_targets()
+        new_pr_targets = self._find_priority_targets()
+
+        for target in old_pr_targets:
+            if (target not in new_pr_targets):
+                self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetID, 2)) )
+
+
+        for target in new_pr_targets:
+            if (target not in old_pr_targets):
+                self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetID, 3)) )        
+            
+
+    def _current_priority_targets(self):
+        curr_priority_targets = []
+        for target in self._targets:
+            if target.status == 3: # цель в захвате радара
+                curr_priority_targets.append(target)
+        return curr_priority_targets
+
+
+    def _find_priority_targets(self):
+        pass
+
+
