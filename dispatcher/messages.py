@@ -1,19 +1,12 @@
 from dataclasses import dataclass
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Tuple
 from enums import Priorities, Modules
 
 
-@dataclass
 class Message:
     recipient_id: Union[Modules.GUI, Modules.RadarMain, Modules.SE,
                         Modules.LauncherMain, Modules.ControlCenter]
     priority: Union[Priorities.LOW, Priorities.STANDARD, Priorities.HIGH]
-    timeSend: int
-
-
-@dataclass
-class SEUpdateRocket(Message):
-    rocket: Dict[int, List[float]]
 
 
 @dataclass
@@ -22,11 +15,42 @@ class SEStarting(Message):
 
 
 @dataclass
-class PlaneKilled(Message):
-    killed: Dict[str, Dict[int, List[float]]]
-    collateralDamage: List[int]
+class SeKilled(Message):
+    objects: Dict[int, List[float]]  # TODO что-то непонятное
 
 
 @dataclass
-class AddRocket(Message):
-    rocket: Dict[int, List[float]]
+class SEAddRocket(Message):
+    rockets: Dict[int, List[float]]
+
+
+@dataclass
+class CCLaunchMissile:
+    target: int  # TODO int -> Target
+
+
+@dataclass
+class CCToRadarNewStatus:
+    new_target_status: Tuple[int]
+
+
+@dataclass
+class CCToSkyEnv:
+    missiles: List[int]  # TODO int -> Missiles
+
+
+@dataclass
+class RadarToGUICurrentTarget:
+    radar_id: int  # TODO все поля - непонятно что
+    target_id: int
+    sector_size: int
+
+
+@dataclass
+class RadarControllerObjects:
+    detected_objects: List[int]  # TODO int -> Target
+
+
+@dataclass
+class LauncherControllerMissileLaunched:
+    missiles: Dict[int, List]  # TODO что-то непонятное

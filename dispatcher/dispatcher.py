@@ -6,13 +6,13 @@ class Dispatcher:
         self.currentTime = 0
         self.messageQueues = {}
 
-    def register(self, recipient_id, messages_type=0):
-        self.messageQueues[(recipient_id, messages_type)] = PriorityQueue()
+    def register(self, recipient_id):
+        self.messageQueues[recipient_id] = PriorityQueue()
 
-    def send_message(self, message, recipient_id, messages_type=0):
-        if not (recipient_id, messages_type) in self.messageQueues:
-            self.register(recipient_id, messages_type)
-        self.messageQueues[(recipient_id, messages_type)].put((message.priority.value, message))
+    def send_message(self, message):
+        if message.recipient_id not in self.messageQueues:
+            self.register(message.recipient_id)
+        self.messageQueues[message.recipient_id].put((message.priority.value, message))
 
-    def get_message(self, recipient_id, messages_type=0):
-        return self.messageQueues.get((recipient_id, messages_type), PriorityQueue())
+    def get_message(self, recipient_id):
+        return self.messageQueues.get(recipient_id, PriorityQueue())
