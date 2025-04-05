@@ -3,6 +3,7 @@ import radarController
 import launcherController
 import dispatcher
 
+
 class ControlCenter:
     """Центр управления"""
 
@@ -14,8 +15,7 @@ class ControlCenter:
         self._missileController = missileController()
         self._dispatcher = dispatcher
         self._position = Point(25, 25)
-        self._targets = []
-
+        self._targets = [] # все цели на данной итерации
 
 
     def update(self):
@@ -37,7 +37,9 @@ class ControlCenter:
 
 
     def get_position(self):
+        """Возвращает позицию ПБУ."""
         return self._position
+
 
     def get_launchers(self):
         """Возвращает список всех установок для запуска (Launcher)."""
@@ -81,6 +83,7 @@ class ControlCenter:
 
 
     def _update_proirity_targets(self):
+        """Изменяет приоритетность целям на данной итерации"""
         old_pr_targets = self._current_priority_targets()
         new_pr_targets = self._find_priority_targets()
 
@@ -96,14 +99,12 @@ class ControlCenter:
             
 
     def _current_priority_targets(self):
-        curr_priority_targets = []
-        for target in self._targets:
-            if target.status == 3: # цель в захвате радара
-                curr_priority_targets.append(target)
-        return curr_priority_targets
+        """Находит старые приоритетные цели прошлой итерации"""
+        return [target for target in self._targets if target.status == 3]
 
 
     def _find_priority_targets(self):
+        """Находит приоритетные цели на данной итерации"""
         pr_list = []
         countPr = self._radarController.get_priority_count()
 
@@ -136,9 +137,8 @@ class ControlCenter:
         return [item[3] for item in pr_list[:countPr]]
 
 
-
-
     def _direction(self, target):
+        """Вычисляет единичный вектор направления цели target"""
         e = np.array([target.velocity.x, target.velocity.y])
         norm = np.linalg.norm(e)
         if norm == 0:

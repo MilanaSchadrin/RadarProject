@@ -2,14 +2,15 @@ import Missile
 import Target
 import numpy as np
 
+
 class MissileController:
     """Контроллер ракет"""
 
     """-------------public---------------"""
 
     def __init__(self):
-        self._missiles = []
-        self._unusefulMissiles = []
+        self._missiles = [] # ракеты на данной итерации
+        self._unusefulMissiles = [] # ненужные ракеты на данной итерации
 
 
     def process_missiles_of_target(self, target):
@@ -34,6 +35,7 @@ class MissileController:
 
 
     def process_unuseful_missiles(self):
+        """Обрабатывает список всех ненужных ракет"""
         for currMissile in self._unusefulMissiles:
             destroy = True
             for otherMissile in self._missiles:
@@ -48,6 +50,7 @@ class MissileController:
 
 
     def process_new_missiles(self, new_missiles):
+        """Обрабатывает список новых ракет"""
         for new_missile in new_missiles:
             new_missile.currLifeTime -= 2;
             self._missiles.append(new_missile)
@@ -64,6 +67,7 @@ class MissileController:
 
 
     def _destroy_missile(self, missile):
+        """Уменьшает счетчик времени жизни ракеты до нуля."""
         if missile.currLifeTime > 0:
             missile.currLifeTime = 0
 
@@ -74,8 +78,8 @@ class MissileController:
                 (object1.currentPosition.y - main_object.currentPosition.y) ** 2) ** 0.5 < mainObject.damageRadius
 
 
-
     def _will_explode(self, target, missile):
+        """Проверяет, что target будет в радиусе взрыва ракеты missile."""
         r_pos = np.array(missile.currentPosition)
         r_vel = np.array(missile.velocity)
         t_pos = np.array(target.currentPosition)
@@ -98,11 +102,11 @@ class MissileController:
 
         D = B ** 2 - 4 *A * C
 
-        if D < 0:
+        if D <= 0:
             return False  # Не будет взрыва
 
         t1 = (-B - np.sqrt(D)) / (2 * A)
         t2 = (-B + np.sqrt(D)) / (2 * A)
-        return t2 >= 0
+        return t2 > 0
 
 
