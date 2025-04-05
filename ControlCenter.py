@@ -6,12 +6,16 @@ import dispatcher
 class ControlCenter:
     """Центр управления"""
 
+    """-------------public---------------"""
+
     def __init__(self, dispatcher):
         self._radarController = radarController(dispatcher)
         self._launcherController = launcherController(dispatcher)
         self._missileController = missileController()
         self._dispatcher = dispatcher
+        self._position = Point(25, 25)
         self._targets = []
+
 
 
     def update(self):
@@ -31,6 +35,9 @@ class ControlCenter:
 
         self._dispatcher.send_messege( CCToSkyEnv(Modules.SE, Priorities.STANDARD, self._get_missiles()) )
 
+
+    def get_position(self):
+        return self._position
 
     def get_launchers(self):
         """Возвращает список всех установок для запуска (Launcher)."""
@@ -52,7 +59,7 @@ class ControlCenter:
         return self._launcherController
 
 
-    """--------------------------------"""
+    """-------------private---------------"""
 
 
     def _get_missiles(self):
@@ -66,7 +73,8 @@ class ControlCenter:
         for target in self._targets:
 
             if target.status != 0: # неуничтоженная цель
-                if target.status == 3 and not target.get_missilesFollow():
+                active_missiles_count = sum(1 for missile in target.missilesFollowed if missile.status == MissileStatus.ACTIVE)
+                if target.status == 3 and active_missiles_count == 0:
                     self._dispatcher.send_messege( CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target) )
             self._missileController.process_missiles_of_target(target)
         self._missileController.process_unuseful_missiles()
@@ -109,11 +117,15 @@ class ControlCenter:
                 if launcher.countMissiles == 0: # бесполезный ПУ
                     continue
     
-                distance = launcher.coord - target.currentPosition
-                projection = distance.x * direction.x + distance.y * direction.y
+                distance = np.array([
+                    launcher.coord.x - target.currentPosition.x,
+                    launcher.coord.y - target.currentPosition.y ])
+
+                projection = np.dot(distance, direction)
                 signReverse = -1 if a >= 0 else 1
 
-                launcher_pr_list.append( (target.missilesFollowed, signReverse, abs(projection), target) )
+                active_missiles_count = sum(1 for missile in target.missilesFollowed if missile.status == MissileStatus.ACTIVE)
+                launcher_pr_list.append( (active_missiles_count, signReverse, abs(projection), target) )
 
             launcher_pr_list.sort( key=lambda x: (x[0], x[1], x[2]) )
             pr_list.append( launcher_pr_list[0] )
@@ -125,11 +137,11 @@ class ControlCenter:
 
 
 
-    def _direction(self, target):
-        e = target.end - target.start
-        module = (e.x ** 2 + e.y ** 2) ** 0.5
-        e.x /= module
-        e.y /= module
-        return e
 
+    def _direction(self, target):
+        e = np.array([target.velocity.x, target.velocity.y])
+        norm = np.linalg.norm(e)
+        if norm == 0:
+            return np.array([0.0, 0.0])
+        return e / norm
 

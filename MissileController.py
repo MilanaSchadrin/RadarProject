@@ -1,8 +1,11 @@
 import Missile
 import Target
+import numpy as np
 
 class MissileController:
     """Контроллер ракет"""
+
+    """-------------public---------------"""
 
     def __init__(self):
         self._missiles = []
@@ -17,10 +20,15 @@ class MissileController:
         for currMissile in missiles:
             currMissile.currLifeTime -= 3
             if target.status == 0: # уничтоженная цель
+                currMissile.status = MissileStatus.INACTIVE
                 self._unusefulMissiles.append(currMissile)
 
             elif self._collision(currMissile, target):
                 self._destroy_missile(currMissile)
+
+            elif self._will_explode(target, currMissile) == False:
+                currMissile.status = MissileStatus.INACTIVE
+                self._unusefulMissiles.append(currMissile)
 
         self._missiles.append(missiles)
 
@@ -29,7 +37,7 @@ class MissileController:
         for currMissile in self._unusefulMissiles:
             destroy = True
             for otherMissile in self._missiles:
-                if (otherMissile.currLifeTime > 0) and (otherMissile.missileId != currMissile.missileId) and \
+                if (otherMissile.currLifeTime > 0) and (otherMissile.missileID != currMissile.missileID) and \
                    (otherMissile not in self._unusefulMissiles) and self._collision(currMissile, otherMissile):
                     destroy = False
                     break
@@ -52,14 +60,49 @@ class MissileController:
         return missiles
 
 
-    """--------------------"""
+    """-------------private---------------"""
 
 
     def _destroy_missile(self, missile):
-        missile.currLifeTime = 0
+        if missile.currLifeTime > 0:
+            missile.currLifeTime = 0
 
 
     def _collision(self, mainObject, object1):
         """Проверяет наличие object1 в радиусе mainObject."""
         return ((object1.currentPosition.x - main_object.currentPosition.x) ** 2 + \
                 (object1.currentPosition.y - main_object.currentPosition.y) ** 2) ** 0.5 < mainObject.damageRadius
+
+
+
+    def _will_explode(self, target, missile):
+        r_pos = np.array(missile.currentPosition)
+        r_vel = np.array(missile.velocity)
+        t_pos = np.array(target.currentPosition)
+        t_vel = np.array(target.speed)
+
+        d = r_pos - t_pos
+        v = r_vel - t_vel
+
+        # A*t^2 + B*t + C < 0
+        A = np.dot(v, v)
+        B = 2 * np.dot(d, v)
+        C = np.dot(d, d) - missile.damageRadius ** 2
+
+        if A == 0:
+            if B == 0:
+                return C < 0  # Уже в радиусе взрыва
+            else:
+                t_hit = -C / B
+                return t_hit > 0
+
+        D = B ** 2 - 4 *A * C
+
+        if D < 0:
+            return False  # Не будет взрыва
+
+        t1 = (-B - np.sqrt(D)) / (2 * A)
+        t2 = (-B + np.sqrt(D)) / (2 * A)
+        return t2 >= 0
+
+
