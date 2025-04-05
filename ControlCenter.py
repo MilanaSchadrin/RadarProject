@@ -76,11 +76,12 @@ class ControlCenter:
         old_pr_targets = self._current_priority_targets()
         new_pr_targets = self._find_priority_targets()
 
+        # уменьшить приоритет
         for target in old_pr_targets:
             if (target not in new_pr_targets):
                 self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetID, 2)) )
 
-
+        # увеличить приоритет
         for target in new_pr_targets:
             if (target not in old_pr_targets):
                 self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetID, 3)) )        
@@ -95,6 +96,40 @@ class ControlCenter:
 
 
     def _find_priority_targets(self):
-        pass
+        pr_list = []
+        countPr = self._radarController.get_priority_count()
+
+        for target in self._targets:
+            if target.status == 0: # уничтоженная цель
+                continue
+
+            direction = self._direction(target)
+            launcher_pr_list = []
+            for launcher in self.get_launchers():
+                if launcher.countMissiles == 0: # бесполезный ПУ
+                    continue
+    
+                distance = launcher.coord - target.currentPosition
+                projection = distance.x * direction.x + distance.y * direction.y
+                signReverse = -1 if a >= 0 else 1
+
+                launcher_pr_list.append( (target.missilesFollowed, signReverse, abs(projection), target) )
+
+            launcher_pr_list.sort( key=lambda x: (x[0], x[1], x[2]) )
+            pr_list.append( launcher_pr_list[0] )
+
+
+        pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
+
+        return [item[3] for item in pr_list[:countPr]]
+
+
+
+    def _direction(self, target):
+        e = target.end - target.start
+        module = (e.x ** 2 + e.y ** 2) ** 0.5
+        e.x /= module
+        e.y /= module
+        return e
 
 
