@@ -78,78 +78,163 @@ class Plane(Target):
         return not self.attached_missiles
 
 class Radar:
-    """Класс, представляющий радар, который обнаруживает объекты в зоне видимости и передаёт данные в RadarController.
+    """Класс радара."""
 
-    Args:
-        position (tuple[float, float, float]): Координаты радара в глобальной системе (X, Y, Z).
-        range (float): Радиус зоны сканирования в метрах.
-        detectedObjects (list[dict]): Список обнаруженных объектов.
-        radarId (str): Уникальный идентификатор радара (например, "Radar-001").
-        maxTargetCount (int): Максимальное количество целей, которые радар может сопровождать одновременно.
-        currentTargetCount (int): Текущее количество сопровождаемых целей.
-        noiseLevel (float): Уровень внутренних шумов радара (в dB). Влияет на точность обнаружения.
-    """
-
-    def init(self, position: tuple[float, float, float], range_: float, radar_id: str, max_target_count: int, noise_level: float):
-        """
-        Args:
-            position (tuple[float, float, float]): Глобальные координаты радара (X, Y, Z).
-            range_ (float): Радиус зоны сканирования (в метрах).
-            radar_id (str): Уникальный идентификатор радара (например, "Radar-001").
-            max_target_count (int): Максимальное количество целей, которые можно сопровождать одновременно.
-            noise_level (float): Уровень шумов радара (в dB).
-        """
+    def __init__(
+        self,
+        radar_controller: 'RadarController',
+        dispatcher: 'Dispatcher',
+        radar_id: str,
+        position: Tuple[float, float, float],
+        max_range: float,
+        cone_angle_deg: float,
+        max_target_count: int,
+        noise_level: float,
+    ) -> None:
+        self.radar_controller = radar_controller
+        self.dispatcher = dispatcher
+        self.radar_id = radar_id
         self.position = position
-        self.range = range_
-        self.detectedObjects = []
-        self.radarId = radar_id
-        self.maxTargetCount = max_target_count
-        self.currentTargetCount = 0
-        self.noiseLevel = noise_level
-        self.detectedMissiles = []
+        self.max_range = max_range
+        self.cone_angle_deg = cone_angle_deg
+        self.detected_objects: Dict[str, Target] = {}
+        self.max_target_count = max_target_count
+        self.current_target_count = 0
+        self.noise_level = noise_level
+        self.followed_targets: Dict[str, Target] = {}
 
-    def scan(self) -> None:
-        """Выполняет сканирование зоны видимости и обновляет списки обнаруженных объектов и ракет.
+    def is_target_in_range(self, target: Target) -> bool:
+        """Проверяет, находится ли цель в зоне действия радара."""
+        target_position = target.get_coords()
+        if target_position[2] < 0:
+            return False
 
-        Обновляет:
-            - detectedObjects: Добавляет новые объекты и обновляет существующие.
+        dx = target_position[0] - self.position[0]
+        dy = target_position[1] - self.position[1]
+        dz = target_position[2] - self.position[2]
+        
+        distance = math.sqrt(dx**2 + dy**2 + dz**2)
+        if distance > self.max_range:
+            return False
+
+        if dz <= 0:
+            return False
+
+        horizontal_distance = math.sqrt(dx**2 + dy**2)
+        angle_rad = math.atan(horizontal_distance / dz)
+        cone_angle_rad = math.radians(self.cone_angle_deg) / 2
+        
+        return angle_rad <= cone_angle_rad
+
+    def scan(self, current_step: int) -> None:
         """
-        pass
-
-    def get_detected_objects(self) -> list[dict]:
-        """Возвращает список всех обнаруженных объектов.
-
-        Returns:
-            list[dict]: Список словарей, где каждый словарь содержит:
-                - id (str): Уникальный идентификатор объекта.
-                - coordinates (tuple[float, float, float]): Относительные координаты (X, Y, Z).
-                - type (str, optional): Тип объекта (самолёт, дрон, ракета и т. д.).
-                - speed (float, optional): Скорость объекта (в м/с).
+        Выполняет сканирование зоны на указанном шаге моделирования.
+        
+        Args:
+            current_step: Текущий шаг моделирования
         """
-        pass
+        objects_data = self.dispatcher.get_objects_data()
+        valid_targets = [
+            obj_id for obj_id, (start_step, _) in objects_data.items()
+            if start_step <= current_step and self.is_target_in_range(objects_data[obj_id])
+        ]
+        
+        followed_targets = self.radar_controller.get_followed_targets()
+        
+        for obj_id in valid_targets:
+            target_data = objects_data[obj_id]
+            current_pos = self._get_current_position(target_data, current_step)
+            current_speed = self._get_current_speed(target_data, current_step)
+            
+            noise = (random.random() - 0.5) * self.noise_level
+            noisy_pos = (
+                current_pos[0] + noise,
+                current_pos[1] + noise,
+                current_pos[2] + noise
+            )
+            
+            if obj_id in self.detected_objects:
+                target = self.detected_objects[obj_id]
+                target.update_position(noisy_pos)
+                target.update_speed_vector(current_speed)
+                
+                if obj_id in followed_targets:
+                    target.update_status(TargetStatus.FOLLOWED)
+                    self.followed_targets[obj_id] = target
+            else:
+                new_target = target_data.__class__(
+                    target_id=obj_id,
+                    coords=noisy_pos,
+                    speed_vector=current_speed
+                )
+                self.detected_objects[obj_id] = new_target
+                
+                if obj_id in followed_targets:
+                    new_target.update_status(TargetStatus.FOLLOWED)
+                    self.followed_targets[obj_id] = new_target
+                    self.current_target_count += 1
+
+        self._remove_outdated_targets(valid_targets)
+
+    def _get_current_position(
+        self, 
+        target_data: Tuple[int, List[Tuple[float, float, float]]],
+        current_step: int
+    ) -> Tuple[float, float, float]:
+        """Возвращает позицию цели на текущем шаге."""
+        start_step, coords = target_data
+        idx = current_step - start_step
+        return coords[idx]
+
+    def _get_current_speed(
+        self,
+        target_data: Tuple[int, List[Tuple[float, float, float]]],
+        current_step: int
+    ) -> Tuple[float, float, float]:
+        """Возвращает вектор скорости на текущем шаге."""
+        start_step, coords = target_data
+        idx = current_step - start_step
+        next_idx = idx + 1 if idx + 1 < len(coords) else idx
+        
+        return (
+            coords[next_idx][0] - coords[idx][0],
+            coords[next_idx][1] - coords[idx][1],
+            coords[next_idx][2] - coords[idx][2]
+        )
+
+    def _remove_outdated_targets(self, valid_target_ids: List[str]) -> None:
+        """Удаляет цели, которые больше не в зоне действия."""
+        for target_id in list(self.detected_objects.keys()):
+            if target_id not in valid_target_ids and self.detected_objects[target_id].can_be_removed():
+                self.detected_objects.pop(target_id)
+                if target_id in self.followed_targets:
+                    self.followed_targets.pop(target_id)
+                    self.current_target_count -= 1
+
+    def get_detected_objects(self) -> Dict[str, Target]:
+        """Возвращает обнаруженные цели."""
+        return self.detected_objects
 
     def track_target(self, target_id: str) -> None:
-        """Начинает сопровождение цели с повышенной точностью.
-
-        Args:
-            target_id (str): Идентификатор цели, которую нужно сопровождать.
-
-        Raises:
-            ValueError: Если target_id не найден в detectedObjects.
-            RuntimeError: Если достигнут лимит maxTargetCount.
-        """
-        pass
+        """Начинает сопровождение цели."""
+        if target_id in self.detected_objects:
+            target = self.detected_objects[target_id]
+            target.update_status(TargetStatus.FOLLOWED)
+            self.followed_targets[target_id] = target
+            self.current_target_count += 1
 
     def mark_target_as_destroyed(self, target_id: str) -> None:
-        """Помечает цель как уничтоженную и прекращает её сопровождение.
-
-        Args:
-            target_id (str): Идентификатор уничтоженной цели.
-
-        Raises:
-            ValueError: Если target_id не найден среди сопровождаемых целей.
-        """
-        pass
+        """Помечает цель как уничтоженную."""
+        if target_id in self.detected_objects:
+            target = self.detected_objects[target_id]
+            target.update_status(TargetStatus.DESTROYED)
+            
+            if target_id in self.followed_targets:
+                self.followed_targets.pop(target_id)
+                self.current_target_count -= 1
+            
+            if target.can_be_removed():
+                self.detected_objects.pop(target_id)
 
 class RadarController:
     """Контроллер радаров"""
