@@ -42,6 +42,40 @@ class Target:
 
     def get_coords(self):
         return self.coords
+    
+class Plane(Target):
+    """Класс самолета."""
+
+    def __init__(
+        self,
+        target_id: str,
+        priority: str = 'HIGH',
+        status: TargetStatus = TargetStatus.DETECTED,
+        coords: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+        speed: float = 0.0,
+        speed_vector: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    ) -> None:
+        super().__init__(target_id, status, coords, speed, speed_vector)
+        self.priority = priority
+        self.attached_missiles: List[str] = []
+
+    def attach_missile(self, missile_id: str) -> None:
+        """Добавляет ракету к списку привязанных."""
+        if missile_id not in self.attached_missiles:
+            self.attached_missiles.append(missile_id)
+            return True 
+        else: return False
+
+    def detach_missile(self, missile_id: str) -> bool:
+        """Удаляет ракету из списка привязанных."""
+        if missile_id in self.attached_missiles:
+            self.attached_missiles.remove(missile_id)
+            return True
+        return False
+
+    def can_be_removed(self) -> bool:
+        """Проверяет, можно ли удалить цель."""
+        return not self.attached_missiles
 
 class Radar:
     """Класс, представляющий радар, который обнаруживает объекты в зоне видимости и передаёт данные в RadarController.
