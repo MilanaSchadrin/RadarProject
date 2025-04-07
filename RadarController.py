@@ -7,6 +7,42 @@ class TargetStatus(Enum):
     DETECTED = 2
     FOLLOWED = 3
 
+class Target:
+    """Базовый класс для всех объектов, обнаруживаемых радаром."""
+
+    def __init__(
+        self,
+        target_id: str,
+        status: TargetStatus = TargetStatus.DETECTED,
+        coords: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+        speed: float = 0.0,
+        speed_vector: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    ) -> None:
+        self.id = target_id
+        self.status = status
+        self.coords = coords
+        self.speed = speed
+        self.speed_vector = speed_vector
+
+    def get_coords(self) -> Tuple[float, float, float]:
+        """Возвращает текущие координаты цели."""
+        return self.coords
+
+    def update_status(self, new_status: TargetStatus) -> None:
+        """Обновляет статус объекта."""
+        self.status = new_status
+
+    def update_position(self, new_coords: Tuple[float, float, float]) -> None:
+        """Обновляет координаты объекта."""
+        self.coords = new_coords
+
+    def update_speed_vector(self, new_speed_vector: Tuple[float, float, float]) -> None:
+        """Обновляет вектор скорости объекта."""
+        self.speed_vector = new_speed_vector
+
+    def get_coords(self):
+        return self.coords
+
 class Radar:
     """Класс, представляющий радар, который обнаруживает объекты в зоне видимости и передаёт данные в RadarController.
 
