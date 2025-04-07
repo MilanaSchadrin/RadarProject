@@ -1,3 +1,12 @@
+from enum import Enum
+
+class TargetStatus(Enum):
+    """Статусы цели для системы слежения."""
+    DESTROYED = 0
+    DISAPPEARED = 1
+    DETECTED = 2
+    FOLLOWED = 3
+
 class Radar:
     """Класс, представляющий радар, который обнаруживает объекты в зоне видимости и передаёт данные в RadarController.
 
@@ -76,12 +85,14 @@ class RadarController:
     """Контроллер радаров"""
 
     def init(self, control_center, dispatcher):
-        self._control_center = control_center
-        self._dispatcher = dispatcher  # Диспетчер сообщений
-        self._radars = []
+        self.control_center = control_center
+        self.dispatcher = dispatcher  # Диспетчер сообщений
+        self.radars = []
+        self.all_detected_objects = []
+
 
     def update(self):
-        """Метод для обновления состояния радаров."""
+        """Метод для обновления состояния радаров и получения списка обнаруженных целей с каждого радара."""
         for radar in self._radars:
             # Логика обновления каждого радара
             pass
@@ -89,3 +100,26 @@ class RadarController:
     def get_radars(self):
         """Возвращает список всех радаров."""
         return self._radars
+    
+    def get_all_detected_objects(self):
+        return self.all_detected_objects
+    
+    def send_message():
+        detected_objects = get_all_detected_objects(self)
+        self.dispetcher.send_message(data=detected_objects)
+
+    def get_message():
+
+        
+
+
+class Target:
+
+    def init(self, id, type, priority, status=2, is_followed=False, coords=(0,0,0), speed=0):
+        self.id = id
+        self.type = type
+        self.priority = priority
+        self.status = status
+        self.is_followed = is_followed
+        self.coords = coords
+        self.speed = speed
