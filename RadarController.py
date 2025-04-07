@@ -237,44 +237,99 @@ class Radar:
                 self.detected_objects.pop(target_id)
 
 class RadarController:
-    """Контроллер радаров"""
-
-    def init(self, control_center, dispatcher):
+    """Контроллер радаров, обрабатывающий сообщения от системы моделирования"""
+    
+    def __init__(self, control_center, dispatcher):
         self.control_center = control_center
-        self.dispatcher = dispatcher  # Диспетчер сообщений
-        self.radars = []
-        self.all_detected_objects = []
+        self.dispatcher = dispatcher
+        self.radars = []  # type: Dict[id: Radar]
+        self.all_targets = {}  # type: Dict[id: Target]
+        self.all_missiles = {}  # type: Dict[id: Missile]
+        self.followed_targets = [] # type: List[int] 
+        
+    def add_radar(self, radar: Radar) -> None:
+        """Добавляет радар под управление контроллера"""
+        self.radars.append(radar)
+        
+    def update(self, current_step: int) -> None:
+        """Обновляет состояние всех радаров"""
+        for radar in self.radars:
+            radar.scan()
+            self.all_targets.extend(radar.get_detected_objects())
+            
+    def process_message(self) -> None:
+        """Обрабатывает входящие сообщения"""
+        messages = dispatcher.get_message()
+        
+        handlers = {
+            'CCIoRadarFollowThisTarget': self._handle_follow_target,
+            'CCIoRadarRocketAdd': self._handle_add_rocket,
+            'CCioRadarRocketUpdate': self._handle_rocket_update,
+            'RadarioCCPlanesDetected': self._handle_planes_detected,
+            'RadarioCCPlaneKilled': self._handle_plane_killed,
+            'RadarioCCRocketsLocation': self._handle_rockets_location,
+            'RadarioGUICurrentTarget': self._handle_gui_target
+        }
+        for message in messages:
+            msg_type = type(message)
+            handlers[msg_type](message)
 
+    def _handle_follow_target(self, message) -> bool:
+        """
+        Функция для переведения статуса цели в режим FOLLOWED
+        """
+        planeid = message.get_data()
+        self.update()
+        if planeid in self.all_targets:
+            self.all_targets[planeid].update_status(new_status: TargetStatus.FOLLOWED)
+            return True
+        else: return False
 
-    def update(self):
-        """Метод для обновления состояния радаров и получения списка обнаруженных целей с каждого радара."""
-        for radar in self._radars:
-            # Логика обновления каждого радара
-            pass
-
-    def get_radars(self):
-        """Возвращает список всех радаров."""
-        return self._radars
-    
-    def get_all_detected_objects(self):
-        return self.all_detected_objects
-    
-    def send_message():
-        detected_objects = get_all_detected_objects(self)
-        self.dispetcher.send_message(data=detected_objects)
-
-    def get_message():
+    def _handle_add_rocket(self, message) -> bool:
+        """
+        Функция для привязки ракеты к цели
+        """
+        missleid, coords, planeid = message.get_data()
+        self.update()
+        if planeid in self.all_targets:
+            self.all_targets[planeid].attach_missile(self, missile_id: str)
+            return True
+        else: return False
 
         
+    def _handle_rocket_update(self, message):
+        """
+        ???
+        """
+        pass
 
+    def _handle_planes_detected(self, message) -> None:
+        """
+        Функция для отправления списка замеченный целей  
+        """
+        self.update()
+        targets = self.all_targets
+        message = RadartoCCPlanesDetected(data=targets)
+        self.dispatcher.send_message(message)
+                
+    def _handle_rockets_location(self, message) -> None:
+        """Обрабатывает сообщение о местоположении ракет"""
+        self.update()
+        rockets = self.all_missiles
+        message = RadartoCCRocketsLocation(rockets)
+        self.dispatcher.send_message(message)
 
-class Target:
+    def _handle_gui_target(self, message) -> None:
+        """
+        Отправка сопровождаемой цели GUI
 
-    def init(self, id, type, priority, status=2, is_followed=False, coords=(0,0,0), speed=0):
-        self.id = id
-        self.type = type
-        self.priority = priority
-        self.status = status
-        self.is_followed = is_followed
-        self.coords = coords
-        self.speed = speed
+        """
+        pass
+                      
+    def get_all_radars(self) -> Dict[str: Radar]:
+        """Возвращает список всех радаров"""
+        return self.radars
+        
+    def get_all_detected_objects(self) -> Dict[str: Target]:
+        """Возвращает список всех обнаруженных объектов"""
+        return self.all_targets
