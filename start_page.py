@@ -1,6 +1,6 @@
 from map_window import MapWindow
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
-
+import random
 
 class start_page(QWidget):
     def __init__(self):
@@ -40,12 +40,30 @@ class start_page(QWidget):
     def open_map_window(self):
         self.map_window=MapWindow()
 
-        #в качестве примера
-        coord=[(100, 200), (150, 250), (200, 250), (300, 300), (340, 350), (330, 340)]
+        #пример: самолеты
+        coord=[(100, 200), (150, 250), (200, 250), (300, 300), (340, 350), (400, 340)]
         self.map_window.get_data_plane(1, coord)
 
-        #self.map_window.visualize_plane_track()
+        #id будут получены от диспетчера
+        for i in range(2,4):
+                    plane_id = f"{i+1}"
+                    start_x = random.randint(50, 700)
+                    start_y = random.randint(50, 500)
+
+                    #координаты будут получены от диспетчера
+                    coords = [(start_x + j * 10, start_y + j * 5) for j in range(20)]
+
+                    self.map_window.get_data_plane(plane_id, coords)
+
+        #пример: запуск зур
+        zur_id=2025
+        coord=[(290, 300), (340, 300), (330, 350)]
+        detection_area=1
+
         self.map_window.visualize_rls_sector(3, 100)
+        zur_coords = [(640 - i * 15, 440 - i * 10) for i in range(15)]
+        self.map_window.visualize_zur_track(zur_id, zur_coords)
+
         self.map_window.show()
 
     def open_parameters_window(self, module_name):
@@ -115,7 +133,6 @@ class ParametersWindow(QWidget):
             self.setLayout(layout)
 
     #тут параметры записываются в файл txt; их нужно сохранять в БД;
-    #вопрос: кто должен сохранять заданные параметры в БД?
 
     def save_parameters(self):
         parameters = {}
