@@ -1,11 +1,13 @@
 from enum import Enum
+from _ import CCToRadarNewStatus, RadarToGUICurrentTarget, RadarControllerObjects, SEKilled, SEStarting, SEAddRocket
+from _ import Missile
 
 class TargetStatus(Enum):
     """Статусы цели для системы слежения."""
     DESTROYED = 0
-    DISAPPEARED = 1
-    DETECTED = 2
-    FOLLOWED = 3
+    DETECTED = 1
+    FOLLOWED = 2
+
 
 class Target:
     """Базовый класс для всех объектов, обнаруживаемых радаром."""
@@ -13,72 +15,143 @@ class Target:
     def __init__(
         self,
         target_id: str,
+        clear_coords: list[(int, int, int)],
         status: TargetStatus = TargetStatus.DETECTED,
-        coords: Tuple[float, float, float] = (0.0, 0.0, 0.0),
-        speed: float = 0.0,
-        speed_vector: Tuple[float, float, float] = (0.0, 0.0, 0.0),
     ) -> None:
         self.id = target_id
         self.status = status
-        self.coords = coords
-        self.speed = speed
-        self.speed_vector = speed_vector
+        self.clear_coords = clear_coords
+        self.current_coords = (0, 0, 0)
+        self.current_speed_vector = (0, 0, 0)
+        self.attached_missiles = {}
 
-    def get_coords(self) -> Tuple[float, float, float]:
-        """Возвращает текущие координаты цели."""
-        return self.coords
+    def update_current_coords(self, new_coords: tuple[int, int, int]):
+        """Обновить текущие координаты"""
+        self.current_coords = new_coords    
 
-    def update_status(self, new_status: TargetStatus) -> None:
+    def update_speed_vector(self, new_speed_vector: tuple[int, int, int]):
+        """Обновить текущий вектор скорости"""
+        self.current_speed_vector = new_speed_vector  
+
+    def update_status(self, new_status: TargetStatus):
         """Обновляет статус объекта."""
         self.status = new_status
 
-    def update_position(self, new_coords: Tuple[float, float, float]) -> None:
-        """Обновляет координаты объекта."""
-        self.coords = new_coords
-
-    def update_speed_vector(self, new_speed_vector: Tuple[float, float, float]) -> None:
-        """Обновляет вектор скорости объекта."""
-        self.speed_vector = new_speed_vector
-
-    def get_coords(self):
-        return self.coords
-    
-class Plane(Target):
-    """Класс самолета."""
-
-    def __init__(
-        self,
-        target_id: str,
-        priority: str = 'HIGH',
-        status: TargetStatus = TargetStatus.DETECTED,
-        coords: Tuple[float, float, float] = (0.0, 0.0, 0.0),
-        speed: float = 0.0,
-        speed_vector: Tuple[float, float, float] = (0.0, 0.0, 0.0),
-    ) -> None:
-        super().__init__(target_id, status, coords, speed, speed_vector)
-        self.priority = priority
-        self.attached_missiles: List[str] = []
-
-    def attach_missile(self, missile_id: str) -> None:
+    def attach_missile(self, missile: Missile):
         """Добавляет ракету к списку привязанных."""
-        if missile_id not in self.attached_missiles:
-            self.attached_missiles.append(missile_id)
-            return True 
-        else: return False
-
-    def detach_missile(self, missile_id: str) -> bool:
+        self.attached_missiles[missile.missileID] = missile
+        
+    def detach_missile(self, missile_id: str):
         """Удаляет ракету из списка привязанных."""
         if missile_id in self.attached_missiles:
-            self.attached_missiles.remove(missile_id)
-            return True
-        return False
+            self.attached_missiles.pop(missile_id)
 
-    def can_be_removed(self) -> bool:
-        """Проверяет, можно ли удалить цель."""
-        return not self.attached_missiles
+
+class MissileStatus(Enum):
+    ACTIVE = 1  # ракета ещё нужна
+    INACTIVE = 0  # ракета больше не нужна
+
+class Missile:
+    def __init__(self, missileID, start_time, damageRadius, targetid, clear_coords, status=MissileStatus.ACTIVE):
+        self.missileID = missileID
+        self.status = status
+        self.start_time = start_time
+        self.damageRadius = damageRadius
+        self.targetid = targetid
+        self.clear_coords = clear_coords
+        self.current_coords = (0, 0, 0)
+        self.current_speed_vector = (0, 0, 0)
+
+    def update_current_coords(self, new_coords: tuple[int, int, int]):
+        """Обновить текущие координаты"""
+        self.current_coords = new_coords    
+
+    def update_speed_vector(self, new_speed_vector: tuple[int, int, int]):
+        """Обновить текущий вектор скорости"""
+        self.current_speed_vector = new_speed_vector   
+    
+    def update_status(self, newstaus: MissileStatus):
+        """Сережа может поменять статус"""
+        self.status = newstaus
 
 class Radar:
-    """Класс радара."""
+    """Реализован ниже"""
+    pass
+
+class RadarController:
+    """Контроллер радаров, обрабатывающий сообщения от системы моделирования"""
+    
+    def __init__(self, dispatcher):
+        self.dispatcher = dispatcher
+        self.radars = {}, 
+        self.all_targets = {},  
+        self.detected_targets = {}, 
+        self.all_missiles = {},
+        
+    def add_radar(self, radar: Radar):
+        """Добавляет радар под управление контроллера"""
+        self.radars[radar.radar_id] = radar
+        
+    def update(self, step: int):
+        """Обновляет состояние всех радаров"""
+        for radar in self.radars.values():
+            radar.scan(step)
+            
+    def process_message(self):
+        """Обрабатывает входящие сообщения(Я получаю список сообщений, или одно сообщение?)"""
+        messages = self.dispatcher.get_message()
+        for message in messages:
+            if type(message) == CCToRadarNewStatus:
+                self.update_status(message)
+            if type(message) == SEKilled:
+                self.kill_object(message)
+            if type(message) == SEStarting:
+                self.start(message)
+            if type(message) == SEAddRocket:
+                self.add_rocket(message)
+
+    def update_status(self, message: CCToRadarNewStatus):
+        """Обновление статуса цели"""
+        object_id, new_status = message.target_new_status
+        self.detected_targets[object_id].update_status(new_status)
+
+    def kill_object(self, message: SEKilled):
+        """Обновление статуса цели на DESTROYED и отвязка уничтоженной ракеты"""
+        kill_rocket_id = message.rocketId
+        kill_target_id = message.planeId
+        killed_target = self.detected_target[kill_target_id]
+        killed_target.update_status(TargetStatus.DESTROYED)
+        killed_target.attached_missiles.pop(kill_rocket_id)
+        if len(killed_target.attached_missiles) == 0:
+            self.detected_targets.pop(kill_target_id)
+
+    def start(self, message: SEStarting):
+        """Функция для получения начальных данных о целях в небе"""
+        targets = message.planes
+        for targetid in targets.keys():
+            target_coords = targets[targetid]
+            new_target = Target(targetid, clear_coords=target_coords)
+            self.all_targets[targetid] = new_target
+
+    def add_rocket(self, message: SEAddRocket):
+        """Добавить id ракет и их координаты в данные ракеты(??? не доделан)"""
+        rocketId = message.rocketId
+        rocketCoords = message.rocketCoords
+        self.all_missiles[rocketId] = rocketCoords
+
+    def send_current_target(self, radar_id, target_id, sector_size):
+        """Отправить сообщение о приследуемой цели"""
+        message = RadarToGUICurrentTarget(radar_id,target_id,sector_size)
+        self.dispatcher.send_message(message)
+
+    def send_detected_objects(self):
+        """Отправить список замеченных целей"""
+        message = RadarControllerObjects(detected_objects=self.detected_objects)
+        self.dispatcher.send_message(message)
+
+    
+class Radar:
+    """Класс радара. ЕЩЕ НЕ ДОДЕЛАН"""
 
     def __init__(
         self,
@@ -235,101 +308,3 @@ class Radar:
             
             if target.can_be_removed():
                 self.detected_objects.pop(target_id)
-
-class RadarController:
-    """Контроллер радаров, обрабатывающий сообщения от системы моделирования"""
-    
-    def __init__(self, control_center, dispatcher):
-        self.control_center = control_center
-        self.dispatcher = dispatcher
-        self.radars = []  # type: Dict[id: Radar]
-        self.all_targets = {}  # type: Dict[id: Target]
-        self.all_missiles = {}  # type: Dict[id: Missile]
-        self.followed_targets = [] # type: List[int] 
-        
-    def add_radar(self, radar: Radar) -> None:
-        """Добавляет радар под управление контроллера"""
-        self.radars.append(radar)
-        
-    def update(self, current_step: int) -> None:
-        """Обновляет состояние всех радаров"""
-        for radar in self.radars:
-            radar.scan()
-            self.all_targets.extend(radar.get_detected_objects())
-            
-    def process_message(self) -> None:
-        """Обрабатывает входящие сообщения"""
-        messages = dispatcher.get_message()
-        
-        handlers = {
-            'CCIoRadarFollowThisTarget': self._handle_follow_target,
-            'CCIoRadarRocketAdd': self._handle_add_rocket,
-            'CCioRadarRocketUpdate': self._handle_rocket_update,
-            'RadarioCCPlanesDetected': self._handle_planes_detected,
-            'RadarioCCPlaneKilled': self._handle_plane_killed,
-            'RadarioCCRocketsLocation': self._handle_rockets_location,
-            'RadarioGUICurrentTarget': self._handle_gui_target
-        }
-        for message in messages:
-            msg_type = type(message)
-            handlers[msg_type](message)
-
-    def _handle_follow_target(self, message) -> bool:
-        """
-        Функция для переведения статуса цели в режим FOLLOWED
-        """
-        planeid = message.get_data()
-        self.update()
-        if planeid in self.all_targets:
-            self.all_targets[planeid].update_status(new_status: TargetStatus.FOLLOWED)
-            return True
-        else: return False
-
-    def _handle_add_rocket(self, message) -> bool:
-        """
-        Функция для привязки ракеты к цели
-        """
-        missleid, coords, planeid = message.get_data()
-        self.update()
-        if planeid in self.all_targets:
-            self.all_targets[planeid].attach_missile(self, missile_id: str)
-            return True
-        else: return False
-
-        
-    def _handle_rocket_update(self, message):
-        """
-        ???
-        """
-        pass
-
-    def _handle_planes_detected(self, message) -> None:
-        """
-        Функция для отправления списка замеченный целей  
-        """
-        self.update()
-        targets = self.all_targets
-        message = RadartoCCPlanesDetected(data=targets)
-        self.dispatcher.send_message(message)
-                
-    def _handle_rockets_location(self, message) -> None:
-        """Обрабатывает сообщение о местоположении ракет"""
-        self.update()
-        rockets = self.all_missiles
-        message = RadartoCCRocketsLocation(rockets)
-        self.dispatcher.send_message(message)
-
-    def _handle_gui_target(self, message) -> None:
-        """
-        Отправка сопровождаемой цели GUI
-
-        """
-        pass
-                      
-    def get_all_radars(self) -> Dict[str: Radar]:
-        """Возвращает список всех радаров"""
-        return self.radars
-        
-    def get_all_detected_objects(self) -> Dict[str: Target]:
-        """Возвращает список всех обнаруженных объектов"""
-        return self.all_targets
