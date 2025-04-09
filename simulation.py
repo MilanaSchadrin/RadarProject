@@ -1,37 +1,35 @@
 from skyenv import SkyEnv
+from databaseman import DatabaseManager
 
 class Simulation:
     def __init__(self):
         self.dispatcher = None
         self.gui = None
         self.skyEnv = None
-        self.launchers = []
         self.CC = None
-        self.plane_data = None
-        self.radar_data = None
-        self.launcher_data = None
+        self.CC_loc = (0,0,0)
+        self.db = DatabaseManager()
         self.steps = 250
-        #self.set_dispatcher()
-        #self.set_GUI()
+        self.set_dispatcher()
+        self.set_GUI()
         self.set_units()
 
-    """def set_dispatcher(self):
+    def set_dispatcher(self):
         self.dispatcher = Dispatcher()
 
     def set_GUI(self):
-        self.gui = GUI(self.dispatcher)
-        self.steps, self. plane_data, self.radar_data, self.launcher_data = self.gui.set_session_params()
-        #call save here to save data from user into db"""
-
-    def save(self):
-        pass
+        #start_page to StartPage
+        self.gui = start_page(self.dispatcher)
+        self.steps, self.CC_loc = self.gui.set_session_params(self.db)
     
     def set_units(self):
         self.skyEnv = SkyEnv(self.dispatcher)
-        #self.CC = ControlCenter(self.dispatcher)
-        #self.CC.set_units(self.radar_data,self.launcher_data)
+        self.CC = ControlCenter(self.dispatcher, self.CC_loc)
+        self.CC.start(self.db)
+        self.skyEnv.start(self.db)
         
-    def modulate(self, time_step=0):
-        for _ in range(self.steps):
+    def modulate(self):
+        for i in range(self.steps):
             self.skyEnv.update()
             self.CC.update()
+            self.gui.show()

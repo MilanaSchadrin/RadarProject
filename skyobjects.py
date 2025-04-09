@@ -58,7 +58,7 @@ class Plane(SkyObject):
         #добавить не 2 точки, а произвольное количество
         if self.points == []:
             pass
-        flightHeight = np.clip((self.start[2] + self.finish[2])/2, 5000, 10000)#min и max flight
+        flightHeight = np.clip((self.start[2] + self.finish[2])/2, 3000, 5000)#min и max flight
         direction = vector(self.start, self.finish)
         totalDistance = np.linalg.norm(direction[:2])#только горизонтальное расстояние
         pDirection = direction/np.linalg.norm(direction)# для чего я это добавила?
@@ -94,24 +94,36 @@ class Plane(SkyObject):
         self.status=False
 
 class Rocket(SkyObject):
-    def __init__(self, obj_id, start, speed, dirVector, startTime,timeSteps:int=250,radius:int=20, life_period:int=250):
-        super().__init__( obj_id, start, speed, timeSteps)
+    def __init__(self, obj_id, start, velocity, startTime, timeSteps:int=250,radius:int=20, life_period:int=250):
+        super().__init__( obj_id, start,timeSteps)
+        self.velocity = velocity
         self.radius = radius
         self.lifePeriod = life_period
         self.killed = False
-        self.dirVector = dirVector
         self.timeSteps = timeSteps
         self.startTime = startTime
+        self.dragcoeff = 0
         self.tarjectory = None
+        self.gravity = -9.8
         self.calculate_trajectory()
 
     def calculate_trajectory(self):
-        direction = self.dirVector / np. np.linalg.norm(self.dirVector)
-        stepDisplacement = self.speed * direction
-        self.trajectory = np.zeros((self.timeSteps-self.startTime + 1, 3))
-        self.trajectory[0] = self.start
-        for step in range(1,self.timeSteps-self.startTime+1):
-            self.trajectory[step] = self.trajectory[step - 1] + stepDisplacement
+        times = np.linspace(self.startTime,self.startTime + self.lifePeriod, num = self.timeSteps, dtype=np.float64)
+        timeReal = times - self.startTime
+        self.tarjectory = self.start
+        if self.dragcoeff > 0:
+            pass
+            """
+            drag_factor = np.exp(-self.dragcoeff * timeReal)
+            self.trajectory[:,:2] = self.startPoint[:2] + self.velocity[:2] * (1 - drag_factor)/self.dragcoeff
+            """
+        else:
+            self.trajectory[:,:2] = self.startPoint[:2] + self.velocity[:2] * timeReal[:, np.newaxis]
+        #z
+        if self.gravity != 0:
+            self.trajectory[:,2] = (self.startPoint[2] +self.velocity[2] * timeReal + 0.5 * self.gravity * timeReal**2)
+        else:
+            self.trajectory[:,2] = self.startPoint[2] + self.velocity[2] * timeReal
 
     def get_radius(self):
         return self.radius

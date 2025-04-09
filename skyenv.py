@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Dict
-from skyobjects import Plane, Rocket
-from messages import Message
+from skyobjects import SkyObject, Plane, Rocket
+from messages import SEKilled,SEAddRocket,SEAddRocketToRadar,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LauncherControllerMissileLaunched
 from queue import PriorityQueue
 
 def get_plane_trajectory_from_rocket(paires, rocket:Rocket):
@@ -15,12 +15,11 @@ class SkyEnv:
         self.id = 6
         self.dispatcher = dispatcher
         self.planes = List[Plane] = []
-        self.rockets: List[Rocket] = []
+        self.rockets: Dict[int, Rocket] = {} #{rocket id: rocket}
         self.pairs: Dict[int, Plane] = {} # {rocket id: plane}
         self.killedLastStep: List[int]
         self.timeSteps = timeSteps
         self.currentTime = 0
-
 
     def make_planes(self, plane_data):
         for data in plane_data:
@@ -42,22 +41,20 @@ class SkyEnv:
                 collateralDamage.append((i_id,position))
                 i.killed()
                 self.remove_plane(i.get_id())
-
-        for i in self.rockets:
-            i_trajectory = i.get_tragectory()
-            i_id = i.get_id()
-            i_startTime = i.get_startTime()
-            if i.is_killed() == True:
+        #here is now dict
+        for rocket_id, rocket in list(self.rockets.items()):
+            if rocket.is_killed():
+                continue   
+            trajectory = rocket.get_trajectory()
+            step = time - rocket.get_startTime()
+            if step < 0 or step >= len(trajectory):
                 continue
-            step = time - i_startTime
-            if step < 0:
-                continue
-            position = i_trajectory(step)
+            position = trajectory[step]
             distance = np.linalg.norm(position - explosionPos)
-            if distance <=radius:
-                collateralDamage.append((i_id,position))
-                i.boom()
-                self.remove_rocket(i.get_id())
+            if distance <= radius:
+                collateralDamage.append((rocket_id, position))
+                rocket.boom()
+                self.remove_rocket(rocket_id)
         return collateralDamage
     
     def check_collision(self, rocket:Rocket):
@@ -77,11 +74,9 @@ class SkyEnv:
                 self.pairs.get(rocket.get_id()).get_id().killed()
                 rocket.boom()
                 collateralDamage = self.check_if_in_radius()
-                data = (collisionStep,(rocket.get_id(),positionRocket),(get_plane_id_from_rocket(self.pairs,rocket),positionPlane),collateralDamage)
-                message = Message('killed','HIGH',data)
-                #нужно импортировать сообщения
+                message = SEKilled(Modules.GUI, Priorities.HIGH,collisionStep,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
                 self.dispatcher.send_message(GUI, message)
-                self.dispatcher.send_message(RadarController, message)
+                message = SEKilled(Modules.RadarController, Priorities.HIGH,collisionStep,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
                 self.remove_rocket(rocket.get_id())
                 self.remove_plane(get_plane_id_from_rocket(self.pairs, rocket))
 
@@ -89,15 +84,17 @@ class SkyEnv:
     def remove_plane(self, plane_id: int):
         self.planes = [p for p in self.planes if p.get_id() != plane_id]
     
-    def add_rocket(self, rocket, target_id):
-        self.rockets.append(rocket)
-        message = Message('Rocket', 'STANDARD',(rocket.get_id(),rocket.get_trajectory()))
-        self.dispatcher.send_message('GUI',message)
-        self.dispatcher.send_message('RadarController',message)
+    def add_rocket(self, rocket, missile, target_id):
+        self.rockets[rocket.get_id()] = rocket
+        message = SEAddRocket(Modules.GUI, Priorities.STANDARD,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
+        self.dispatcher.send_message(message)
+        message = SEAddRocketToRadar(Modules.RadarController,Priorities.STANDARD,target_id, rocket.get_id(),rocket.get_trajectory())
+        self.dispatcher.send_message(message)
         self.add_pair(rocket.get_id(),target_id)
     
     def remove_rocket(self, rocket_id: int):
-        self.rockets = [r for r in self.rockets if r.get_id() != rocket_id]
+        if rocket_id in self.rockets:
+            del self.rockets[rocket_id]
         if rocket_id in self.pairs:
             self.delete_pair(rocket_id)
     
@@ -109,43 +106,49 @@ class SkyEnv:
         if rocket_id in self.pairs:
             del self.pairs[rocket_id]
 
-    def start(self):
+    def start(self,db):
+        self.dispatcher.register(Modules.SE)
         #сейчас только координаты начала и конца, потом добавть промежуточные точки
-        stuff = self.dispatcher.get_start_data(self.id)
-        n, *objects = stuff
+        #засунуть это всё в make_planes
+        planesData = db.load_planes()
         current_id = 600 
-        for i in objects:
+        for plane_id, plane_info in planesData.items():
             current_id += 1
-            coords, *v = objects
+            coords=[1,2]
+            v=None
             if len(coords)==2:
                 if v == None:
-                    plane = Plane(current_id, coords[0], coords[1])
+                    plane = Plane(current_id, plane_info['start'],plane_info['end'])
                     self.planes.append(plane)
                 else:
-                    plane = Plane(current_id, coords[0], coords[1], v)
+                    plane = Plane(current_id, plane_info['start'],plane_info['end'], v)
                     self.planes.append(plane)
             else:
                 pass
-        data = []
+        data = {} #all planes in this period
         for j in self.planes:
-            data.append((j.get_id(),j.get_trajectory()))
-        message = Message('planes', 'STANDARD', data)
-        self.dispatcher.send_message('GUI', message)
-        self.dispatcher.send_message('RadarController', message)
+            data[j.get_id()] = j.get_trajectory()
+        message = SEStarting(Modules.GUI, Priorities.LOW, data)
+        self.dispatcher.send_message(message)
+        messagetoRadar = SEStarting(Modules.RadarController, Priorities.LOW, data)
+        self.dispatcher.send_message(messagetoRadar)
 
     def update(self):
-        if self.currentTime==0:
-            self.start()
-        else:
-            messages = self.dispatcher.get_messages(self.id)
-            while messages:
-                data = messages.get()
-                #вот тут может быть косяк
-                rocket = Rocket(data[2].get_missileId(),data[2].get_launcherPos(),data[2].get_speed(),data[2].get_vector(), self.currentTime-1)
-                self.add_rocket(rocket, data[1])
-        for i in self.rockets:
-            self.check_collision(i)
+        messages = self.dispatcher.get_message(Modules.SE)
+        for message in messages:
+            if isinstance(message,CCToSkyEnv):
+                rocketsCC = message.missiles
+                for missile in rocketsCC:
+                    if missile.lifePeriod == 0:
+                            #inactivate rocket
+                            self.rockets[missile.missileID].boom()
+                            message = ToGuiRocketInactivated(Modules.GUI, Priorities.STANDARD, missile.missileID)
+            elif isinstance(message,LauncherControllerMissileLaunched):
+                targetId = message.targetId
+                missiles = message.missile
+                rocket = Rocket(missiles.missileId,missiles.currentPosition,missiles.velocity,self.currentTime,self.timeSteps, missiles.damageRadius, missiles.currLifeTime)
+                self.add_rocket(rocket,missiles,targetId)
+            for rocket_id, rocket in self.rockets.items():
+                self.check_collision(rocket)
         self.currentTime+=1
             
-                
-
