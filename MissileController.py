@@ -49,11 +49,10 @@ class MissileController:
         self._unusefulMissiles = []
 
 
-    def process_new_missiles(self, new_missiles):
-        """Обрабатывает список новых ракет"""
-        for new_missile in new_missiles:
-            new_missile.currLifeTime -= 2;
-            self._missiles.append(new_missile)
+    def process_new_missile(self, new_missile):
+        """Обрабатывает новую ракету"""
+        new_missile.currLifeTime -= 2;
+        self._missiles.append(new_missile)
 
 
     def pop_missiles(self):

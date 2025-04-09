@@ -30,8 +30,8 @@ class ControlCenter:
                 self._update_priority_targets()
                 self._process_targets()
 
-            elif isinstance(message, LauncherControllerMissileLaunched):
-                self._missile_controller.process_new_missiles(message.missiles)
+            elif isinstance(message, LauncherToCCMissileLaunched):
+                self._missile_controller.process_new_missile(message.missile)
 
         self._dispatcher.send_messege( CCToSkyEnv(Modules.SE, Priorities.STANDARD, self._get_missiles()) )
 
