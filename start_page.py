@@ -64,7 +64,8 @@ class start_page(QWidget):
         #print('update')
 
     def handle_se_starting(self, message: SEStarting):
-                self.map_window.text_output.append(f"Запуск ЗУР с идентификатором: {zur_id}")
+                for plane_id, plane_data in message.planes.items():                        
+                    self.map_window.text_output.append(f"Добавлена воздушная цель с ID: {plane_id}")
                 pass
 
     def handle_se_killed(self, message: SeKilled):
