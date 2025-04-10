@@ -1,4 +1,5 @@
 import math
+import numpy as np
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QTextEdit, QLabel, QFrame
 from PyQt5.QtCore import Qt, QTimer, QPoint
 from PyQt5.QtGui import QPainter, QColor, QPixmap, QBrush, QColor, QPen
@@ -123,47 +124,68 @@ class MapWindow(QMainWindow):
         pass
         #self.visualize_plane_track (id, coord)
 
-    def visualize_plane_track(self, plane_id, coords):
-        self.text_output.append(f"✈ Самолет с ID {plane_id} появился в воздушном пространстве")
-        if not coords:
-            return
-        if plane_id not in self.planes:
-            icon = PlaneImageIcon("airplane.webp", self)
-            icon.setToolTip(f"ID самолёта: {plane_id}")
-            icon.show()
-            timer = QTimer(self)
-            timer.timeout.connect(lambda pid=plane_id: self.move_plane(pid))
-            self.planes[plane_id] = {'icon': icon, 'coords': coords, 'index': 0, 'timer': timer}
-        else:
-            self.planes[plane_id]['coords'] = coords
-            self.planes[plane_id]['index'] = 0
-        x, y = coords[0]
-        self.planes[plane_id]['icon'].move(x, y)
-        self.map_view.add_to_trail(plane_id, QPoint(x, y))
-        self.planes[plane_id]['timer'].start(1000)
+    def visualize_plane_track(self, plane_id, coords: np.ndarray):
+            self.text_output.append(f"✈️ Самолет с ID {plane_id} появился в воздушном пространстве")
+
+            if coords is None or len(coords) == 0:
+                return
+
+            # Убедимся, что coords — это массив формы (N, 3)
+            coords = np.atleast_2d(coords)
+            if coords.shape[1] < 2:
+                self.text_output.append(f"⚠️ Неверный формат координат для самолета {plane_id}")
+                return
+
+            # Берём только x и y
+            flat_coords = [(int(x), int(y)) for x, y in coords[:, :2]]
+
+            if plane_id not in self.planes:
+                icon = PlaneImageIcon("airplane.webp", self)
+                icon.setToolTip(f"ID самолёта: {plane_id}")
+                icon.show()
+                timer = QTimer(self)
+                timer.timeout.connect(lambda pid=plane_id: self.move_plane(pid))
+                self.planes[plane_id] = {
+                    'icon': icon,
+                    'coords': flat_coords,
+                    'index': 0,
+                    'timer': timer
+                }
+            else:
+                self.planes[plane_id]['coords'] = flat_coords
+                self.planes[plane_id]['index'] = 0
+
+            x, y = flat_coords[0]
+            self.planes[plane_id]['icon'].move(x, y)
+            self.map_view.add_to_trail(plane_id, QPoint(x, y))
+            self.planes[plane_id]['timer'].start(1000)
 
     def move_plane(self, plane_id):
-        plane_data = self.planes.get(plane_id)
-        if not plane_data:
-            return
-        coords = plane_data['coords']
-        index = plane_data['index']
-        if index < len(coords):
-            x, y = coords[index]
-            icon = plane_data['icon']
-            icon.move(x, y)
-            if index > 0:
-                prev_x, prev_y = coords[index - 1]
-                dx = x - prev_x
-                dy = y - prev_y
-                angle_rad = math.atan2(dx, -dy)
-                angle_deg = math.degrees(angle_rad)
-                icon.rotate_to(angle_deg)
-            self.map_view.add_to_trail(plane_id, QPoint(x, y))
-            plane_data['index'] += 1
-            self.map_view.update()
-        else:
-                plane_data['timer'].stop()
+                plane_data = self.planes.get(plane_id)
+                if not plane_data:
+                    return
+
+                coords = plane_data['coords']
+                index = plane_data['index']
+
+                if index < len(coords):
+                    x, y = coords[index]
+                    icon = plane_data['icon']
+                    icon.move(x, y)
+
+                    if index > 0:
+                        prev_x, prev_y = coords[index - 1]
+                        dx = x - prev_x
+                        dy = y - prev_y
+                        angle_rad = math.atan2(dx, -dy)
+                        angle_deg = math.degrees(angle_rad)
+                        icon.rotate_to(angle_deg)
+
+                    self.map_view.add_to_trail(plane_id, QPoint(x, y))
+                    plane_data['index'] += 1
+                    self.map_view.update()
+                else:
+                    plane_data['timer'].stop()
 
     def visualize_zur_track(self, zur_id, coords, detection_area=None):
         self.text_output.append(f"Запуск ЗУР с идентификатором: {zur_id}")
@@ -212,3 +234,5 @@ class MapWindow(QMainWindow):
         self.text_output.append(f"Старт работы радиолокатора")
         self.text_output.append(f"Угол обзора (азимут, °): {rls_sector}")
         self.text_output.append(f"Дальность действия, км : {dist}")
+
+

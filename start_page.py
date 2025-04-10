@@ -1,11 +1,19 @@
+#from enums import Modules
+#from messages import SEKilled,SEAddRocket,SEAddRocketToRadar,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LauncherControllerMissileLaunched
+#from queue import PriorityQueue
 from map_window import MapWindow
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
 import random
+import time
 
 class start_page(QWidget):
-    def __init__(self):
+    def __init__(self, dispatcher):
+    #def __init__(self):
         super().__init__()
         self.init_ui()
+        self.dispatcher=dispatcher
+        self.current_time=0
+        self.steps=300
 
     def init_ui(self):
         self.setWindowTitle("Start")
@@ -37,34 +45,66 @@ class start_page(QWidget):
         self.setLayout(layout)
         self.show()
 
+    def update(self):
+        ''' Обработка сообщений от диспетчера'''
+
+        mess = self.dispatcher.get_message(Modules.GUI)
+        for message in mess:
+                    if isinstance(message, SEStarting):
+                        self.handle_se_starting(message)
+                    elif isinstance(message, SeKilled):
+                        self.handle_se_killed(message)
+                    elif isinstance(message, SEAddRocket):
+                        self.handle_se_add_rocket(message)
+                    elif isinstance(message, RadarToGUICurrentTarget):
+                        self.handle_radar_to_gui_current_target(message)
+
+        self.current_time += 1
+'
+        #print('update')
+
+    def handle_se_starting(self, message: SEStarting):
+                self.map_window.text_output.append(f"Запуск ЗУР с идентификатором: {zur_id}")
+                pass
+
+    def handle_se_killed(self, message: SeKilled):
+                self.map_window.text_output.append(f"Уничтоженние самолета с ID: {message.plane_id}")
+                pass
+    def handle_se_add_rocket(self, message: SEAddRocket):
+                self.map_window.text_output.append(f"Добавлена ракета с ID: {message.rocket_id}")
+                pass
+    def handle_radar_to_gui_current_target(self, message: RadarToGUICurrentTarget):
+                self.map_window.text_output.append(f"Радар с ID: {message.radar_id} отслеживает цель с ID: {message.target_id}")
+                pass
+
     def open_map_window(self):
+
         self.map_window=MapWindow()
-
-        #пример: самолеты
-        coord=[(100, 200), (150, 250), (200, 250), (300, 300), (340, 350), (400, 340)]
-        self.map_window.get_data_plane(1, coord)
-
-        #id будут получены от диспетчера
-        for i in range(2,4):
-                    plane_id = f"{i+1}"
-                    start_x = random.randint(50, 700)
-                    start_y = random.randint(50, 500)
-
-                    #координаты будут получены от диспетчера
-                    coords = [(start_x + j * 10, start_y + j * 5) for j in range(20)]
-
-                    self.map_window.get_data_plane(plane_id, coords)
-
-        #пример: запуск зур
-        zur_id=2025
-        coord=[(290, 300), (340, 300), (330, 350)]
-        detection_area=1
-
-        self.map_window.visualize_rls_sector(3, 100)
-        zur_coords = [(640 - i * 15, 440 - i * 10) for i in range(15)]
-        self.map_window.visualize_zur_track(zur_id, zur_coords)
-
         self.map_window.show()
+        self.dispatcher.register(Modules.GUI)
+
+        for i in range(self.steps):
+                self.update()
+                time.sleep(3)
+
+        '''
+        plane_data = {
+            1: np.array(
+            [[100.0, 200.0, 1000.0]] ),
+
+            2: np.array([[150.5, 250.2], [400.0, 500.0]]),
+            3: np.array([[110.0, 210.0], [500.0, 500.0]])
+        }
+
+        mes = self.dispatcher.get_message(Modules.GUI)
+        if isinstance(mes, SEStarting):
+                print("Получено сообщение SEStarting")
+                for plane_id, plane_data in mes.planes.items():
+                    #print(plane_id)
+                    #print(plane_data)
+                    self.map_window.visualize_plane_track(plane_id, plane_data)
+         '''
+
 
     def open_parameters_window(self, module_name):
                self.params_window = ParametersWindow(module_name)
@@ -127,6 +167,13 @@ class ParametersWindow(QWidget):
             layout.addWidget(QLabel("Количество воздушных целей, шт : "))
             self.count_goal = QLineEdit(self)
             layout.addWidget(self.count_goal)
+
+            #добавить поля для стартовых позиций
+            layout.addWidget(QLabel("Стартовые позиции воздушной цели (x, y , z) : "))
+            self.coord_goal = QLineEdit(self)
+            layout.addWidget(self.coord_goal)
+
+
             self.submit_button = QPushButton('Сохранить параметры', self)
             layout.addWidget(self.submit_button)
             self.submit_button.clicked.connect(self.save_parameters)
@@ -159,3 +206,5 @@ class ParametersWindow(QWidget):
             for key, value in parameters.items():
                 file.write(f"{key}: {value}\n")
             file.write("\n")
+
+
