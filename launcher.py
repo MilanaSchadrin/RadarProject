@@ -33,15 +33,23 @@ class Launcher:
                 print("Silo", i, "status: empty")
 
 class LaunchController:
-    def __init__(self, launchers, lchr_coords):
+    def __init__(self, dispatcher, launchers, lchr_coords):
+        self._dispatcher = dispatcher
         self.lchr_num = launchers
         self._launchers = []
         for i in range(launchers):
             self._launchers.append(Launcher(self, i, lchr_coords[i], 4))
+
     def update(self):
-        pass
+        messages = self._dispatcher.get_message(Modules.ControlCenter)
+        for message in messages:
+            if isinstance(message, CCLaunchMissile):
+                self.create(message.target)
+        
     def acknowledge(self, targetID, missile):
-        msg=LaunchertoCCMissileMessage([targetID, missile])
+        self._dispatcher.send_message(LaunchertoSEMissileLaunched(SkyEnv, STANDARD, targetID, missile))
+        self._dispatcher.send_message(LaunchertoCCMissileLaunched(ControlCenter, STANDARD, missile))
+
     def create(self, target):
         D=10**10
         k=0
