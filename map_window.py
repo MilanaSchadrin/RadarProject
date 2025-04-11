@@ -130,13 +130,12 @@ class MapWindow(QMainWindow):
             if coords is None or len(coords) == 0:
                 return
 
-            # Убедимся, что coords — это массив формы (N, 3)
+
             coords = np.atleast_2d(coords)
             if coords.shape[1] < 2:
-                self.text_output.append(f"⚠️ Неверный формат координат для самолета {plane_id}")
                 return
 
-            # Берём только x и y
+            
             flat_coords = [(int(x), int(y)) for x, y in coords[:, :2]]
 
             if plane_id not in self.planes:
