@@ -140,7 +140,6 @@ class ParametersWindow(QWidget):
         self.module_name = module_name
         self.on_save = on_save_callback
         self.init_ui()
-
     def init_ui(self):
         self.setWindowTitle(f"Параметры для {self.module_name}")
         layout = QVBoxLayout()
@@ -188,16 +187,16 @@ class ParametersWindow(QWidget):
              self.coord_goal = QLineEdit()
              layout.addWidget(self.coord_goal)
 
-              layout.addWidget(QLabel("Конечная позиция (x, y, z):"))
-              self.coord_goal_end = QLineEdit()
-              layout.addWidget(self.coord_goal_end)
+             layout.addWidget(QLabel("Конечная позиция (x, y, z):"))
+             self.coord_goal_end = QLineEdit()
+             layout.addWidget(self.coord_goal_end)
 
 
-              self.submit_button = QPushButton('Сохранить параметры')
-              layout.addWidget(self.submit_button)
-              self.submit_button.clicked.connect(self.save_parameters)
+             self.submit_button = QPushButton('Сохранить параметры')
+             layout.addWidget(self.submit_button)
+             self.submit_button.clicked.connect(self.save_parameters)
 
-              self.setLayout(layout)
+             self.setLayout(layout)
 
     def save_parameters(self):
            params = {}
