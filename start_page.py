@@ -192,11 +192,10 @@ class ParametersWindow(QWidget):
              layout.addWidget(self.coord_goal_end)
 
 
-             self.submit_button = QPushButton('Сохранить параметры')
-             layout.addWidget(self.submit_button)
-             self.submit_button.clicked.connect(self.save_parameters)
-
-             self.setLayout(layout)
+        self.submit_button = QPushButton('Сохранить параметры')
+        layout.addWidget(self.submit_button)
+        self.submit_button.clicked.connect(self.save_parameters)
+        self.setLayout(layout)
 
     def save_parameters(self):
            params = {}
