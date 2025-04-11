@@ -7,7 +7,8 @@ from dispatcher.enums import *
 from queue import PriorityQueue
 
 def get_plane_trajectory_from_rocket(paires, rocket:Rocket):
-        return paires.get(rocket.get_id()).get_trajectory()
+        keys = paires.get(rocket.get_id())
+        return keys.get_trajectory()
 
 def get_plane_id_from_rocket(paires, rocket:Rocket):
     return paires.get(rocket.get_id()).get_id()
@@ -71,7 +72,7 @@ class SkyEnv:
             positionPlane = planetarjectory[t]
             positionRocket = rockettrajectory[trIndex]
             distance = np.linalg.norm(positionPlane-positionRocket)
-            if distance <= rocket.get_radius:
+            if distance <= rocket.get_radius():
                 collisionStep = t
                 self.pairs.get(rocket.get_id()).get_id().killed()
                 rocket.boom()
@@ -102,8 +103,9 @@ class SkyEnv:
             self.delete_pair(rocket_id)
     
     def add_pair(self, rocket_id: int, plane_id:int):
-        plane = [p for p in self.planes if p.get_id() == plane_id]
-        self.pairs[rocket_id] = plane
+        plane = next((p for p in self.planes if p.get_id() == plane_id), None)
+        if plane is not None:
+            self.pairs[rocket_id] = plane
     
     def delete_pair(self, rocket_id: int):
         if rocket_id in self.pairs:
@@ -131,10 +133,17 @@ class SkyEnv:
         data = {} #all planes in this period
         for j in self.planes:
             data[j.get_id()] = j.get_trajectory()
+            print(j.get_trajectory())
         message = SEStarting(recipient_id=Modules.GUI,
                              priority=Priorities.LOW,
                              planes=data)
         self.dispatcher.send_message(message)
+        #just needed just testing
+        rocket = Rocket(701, (300,300,0), np.array([-210,-210,10]), 3)
+        self.rockets[rocket.get_id()] = rocket
+        message = SEAddRocket(Modules.GUI, Priorities.STANDARD,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
+        self.dispatcher.send_message(message)
+        self.add_pair(rocket.get_id(),601)
         messagetoRadar = SEStarting(recipient_id=Modules.RadarMain,
                                     priority=Priorities.LOW,
                                     planes=data)

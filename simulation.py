@@ -17,28 +17,34 @@ class Simulation:
         self.app = QApplication(sys.argv)
         self.set_dispatcher()
         self.set_GUI()
-        self.set_units()
 
     def set_dispatcher(self):
         self.dispatcher = Dispatcher()
 
     def set_GUI(self):
-        self.gui = startPage(self.dispatcher,self.app)
+        self.gui = startPage(self.dispatcher,self.app, self)
         #self.steps = self.gui.set_session_params(self.db)
-        self.gui.set_session_params(self.db)
+        #self.gui.set_session_params(self.db)
     
     def set_units(self):
         self.skyEnv = SkyEnv(self.dispatcher)
         self.CC = ControlCenter(self.dispatcher, self.db.load_cc())
-        self.CC.start(self.db)
-        self.skyEnv.start(self.db)
+        self.CC.start(self.db)#send_done()
+        self.skyEnv.start(self.db)#send_done)
+
+        #while dispatcher.get_done!=2:
+        #wait
+        #main window
         
     def modulate(self):
-        print('Hi')
+        print('Начало моделирования')
         for i in range(self.steps):
             self.skyEnv.update()
             self.CC.update()
             self.gui.update()
             #self.app.exec_()#передовать и вызывать в update у тебя
-            print('Laaa')
+            print(f'Шаг моделирования {i}')
+            
+    def run(self):
+        self.app.exec_()
         

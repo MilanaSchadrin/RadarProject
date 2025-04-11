@@ -67,11 +67,11 @@ class MapView(QFrame):
 
         #в качестве примера
 
-        self.radar = RadarIcon('radar.png', 250, 450, parent=self)
-        self.pu_image = PUIcon('pu.png', 650, 450, parent=self)
-        self.radar_x = 250
-        self.radar_y = 450
-        self.radius = 200
+        #self.radar = RadarIcon('radar.png', 250, 450, parent=self)
+        #self.pu_image = PUIcon('pu.png', 650, 450, parent=self)
+        #self.radar_x = 250
+        #self.radar_y = 450
+        #self.radius = 200
 
     def add_to_trail(self, plane_id, point):
         if plane_id not in self.trails:
@@ -90,7 +90,7 @@ class MapView(QFrame):
                 painter.drawLine(trail[i - 1], trail[i])
              painter.setBrush(QBrush(QColor(173, 216, 230, 0)))
              painter.setPen(QPen(QColor(81, 121, 94), 2))
-             painter.drawEllipse(self.radar_x + self.radar.width() / 2 - self.radius, self.radar_y + self.radar.height() / 2 - self.radius, self.radius * 2, self.radius * 2)
+             #painter.drawEllipse(self.radar_x + self.radar.width() / 2 - self.radius, self.radar_y + self.radar.height() / 2 - self.radius, self.radius * 2, self.radius * 2)
 
 class MapWindow(QMainWindow):
     def __init__(self):
@@ -130,12 +130,10 @@ class MapWindow(QMainWindow):
             if coords is None or len(coords) == 0:
                 return
 
-
             coords = np.atleast_2d(coords)
             if coords.shape[1] < 2:
                 return
 
-            
             flat_coords = [(int(x), int(y)) for x, y in coords[:, :2]]
 
             if plane_id not in self.planes:
@@ -187,9 +185,12 @@ class MapWindow(QMainWindow):
                     plane_data['timer'].stop()
 
     def visualize_zur_track(self, zur_id, coords, detection_area=None):
-        self.text_output.append(f"Запуск ЗУР с идентификатором: {zur_id}")
-        if not coords:
+        if coords is None or len(coords) == 0:
            return
+        coords = np.atleast_2d(coords)
+        if coords.shape[1] < 2:
+               return
+        flat_coords = [(int(x), int(y)) for x, y in coords[:, :2]]
         if zur_id not in self.rockets:
            icon = RocketIcon("C:/Users/milan/Documents/Uni/Python/RadarProject/vizualization/pictures/rocket.png", self)
            icon.setToolTip(f"ID ракеты: {zur_id}")
@@ -198,9 +199,9 @@ class MapWindow(QMainWindow):
            timer.timeout.connect(lambda zid=zur_id: self.move_zur(zid))
            self.rockets[zur_id] = {'icon': icon, 'coords': coords, 'index': 0, 'timer': timer}
         else:
-           self.rockets[zur_id]['coords'] = coords
+           self.rockets[zur_id]['coords'] = flat_coords
            self.rockets[zur_id]['index'] = 0
-        x, y = coords[0]
+        x, y = flat_coords[0]
         self.rockets[zur_id]['icon'].move(x, y)
         self.map_view.add_to_trail(zur_id, QPoint(x, y))
         self.rockets[zur_id]['timer'].start(1500)
@@ -213,10 +214,13 @@ class MapWindow(QMainWindow):
            coords = zur_data['coords']
            index = zur_data['index']
            if index < len(coords):
-                x, y = coords[index]
-                zur_data['icon'].move(x, y)
+                x, y, z = coords[index]
+                icon = zur_data['icon']
+                x = int(x)
+                y = int(y)
+                icon.move(x, y)
                 if index > 0:
-                    prev_x, prev_y = coords[index - 1]
+                    prev_x, prev_y, z = coords[index - 1]
                     dx = x - prev_x
                     dy = y - prev_y
                     angle_rad = math.atan2(dx, -dy)

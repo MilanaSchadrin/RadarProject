@@ -81,8 +81,8 @@ class Plane(SkyObject):
                 dist = (climb + cruise) * totalDistance + phase * descend*totalDistance
 
             xy_progress = dist / totalDistance
-            x = self.start[0] + direction[0] * xy_progress
-            y = self.start[1] + direction[1] * xy_progress
+            x = abs(self.start[0] + direction[0] * xy_progress)
+            y = abs(self.start[1] + direction[1] * xy_progress)
             self.trajectory[i] = [x, y, z]
 
     def get_status(self):
@@ -93,7 +93,6 @@ class Plane(SkyObject):
 
 class Rocket(SkyObject):
     def __init__(self, obj_id, start, velocity, startTime, timeSteps:int=250,radius:int=20, life_period:int=250):
-        super().__init__( obj_id, start,timeSteps)
         self.velocity = velocity
         self.radius = radius
         self.lifePeriod = life_period
@@ -103,10 +102,11 @@ class Rocket(SkyObject):
         self.dragcoeff = 0
         self.tarjectory = None
         self.gravity = -9.8
+        super().__init__( obj_id, start, timeSteps)
         self.calculate_trajectory()
 
     def calculate_trajectory(self):
-        times = np.linspace(self.startTime,self.startTime + self.lifePeriod, num = self.timeSteps, dtype=np.float64)
+        times = np.linspace(self.startTime, self.startTime + self.lifePeriod, num = self.timeSteps, dtype=np.float64)
         timeReal = times - self.startTime
         self.tarjectory = self.start
         if self.dragcoeff > 0:
@@ -116,12 +116,12 @@ class Rocket(SkyObject):
             self.trajectory[:,:2] = self.startPoint[:2] + self.velocity[:2] * (1 - drag_factor)/self.dragcoeff
             """
         else:
-            self.trajectory[:,:2] = self.startPoint[:2] + self.velocity[:2] * timeReal[:, np.newaxis]
+            self.trajectory[:,:2] = self.start[:2] + self.velocity[:2] * timeReal[:, np.newaxis]
         #z
         if self.gravity != 0:
-            self.trajectory[:,2] = (self.startPoint[2] +self.velocity[2] * timeReal + 0.5 * self.gravity * timeReal**2)
+            self.trajectory[:,2] = (self.start[2] +self.velocity[2] * timeReal + 0.5 * self.gravity * timeReal**2)
         else:
-            self.trajectory[:,2] = self.startPoint[2] + self.velocity[2] * timeReal
+            self.trajectory[:,2] = self.start[2] + self.velocity[2] * timeReal
 
     def get_radius(self):
         return self.radius
@@ -136,4 +136,4 @@ class Rocket(SkyObject):
         return self.killed
     
     def get_trajectory(self):
-        return super().get_trajectory()
+        return self.trajectory
