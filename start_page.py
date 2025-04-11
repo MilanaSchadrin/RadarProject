@@ -17,7 +17,7 @@ class startPage(QWidget):
         self.dispatcher=dispatcher
         self.map_window=None
         #self.app = app
-
+        self.modeling_started = False
         self.module_params = {}
         self.init_ui()
 
@@ -61,9 +61,10 @@ class startPage(QWidget):
         print('update')
         messages = []
         message_queue = self.dispatcher.get_message(Modules.GUI)
-        while not message_queue.empty():
-            messages.append(message_queue.get())
-        for priority, message in messages:
+        if self.modeling_started == True:
+            while not message_queue.empty():
+                messages.append(message_queue.get())
+            for priority, message in messages:
                     if isinstance(message, SEStarting):
                         self.handle_se_starting(message)
                     elif isinstance(message, SEKilled):
@@ -77,10 +78,10 @@ class startPage(QWidget):
 
     def open_map_window(self):
         self.map_window = MapWindow()
+        self.modeling_started = True
         self.map_window.show()
         #self.app.exec()
         self.dispatcher.register(Modules.GUI)
-
         '''
         plane_data = {
             1: np.array(
@@ -101,19 +102,15 @@ class startPage(QWidget):
 
         
     def handle_se_starting(self, message: SEStarting):
-        if self.map_window is not None:
                 self.map_window.text_output.append(f"Запуск самолета с ID: {message.plane_id}")
                 pass
     def handle_se_killed(self, message: SEKilled):
-        if self.map_window is not None:
                 self.map_window.text_output.append(f"Уничтоженние самолета с ID: {message.plane_id}")
                 pass
     def handle_se_add_rocket(self, message: SEAddRocket):
-        if self.map_window is not None:
                 self.map_window.text_output.append(f"Добавлена ракета с ID: {message.rocket_id}")
                 pass
     def handle_radar_to_gui_current_target(self, message: RadarToGUICurrentTarget):
-        if self.map_window is not None:
                 self.map_window.text_output.append(f"Радар с ID: {message.radar_id} отслеживает цель с ID: {message.target_id}")
                 pass
 
