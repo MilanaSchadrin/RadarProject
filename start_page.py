@@ -177,7 +177,16 @@ class ParametersWindow(QWidget):
              layout.addWidget(QLabel("Скорость (м/с):"))
              self.vel_zur = QLineEdit()
              layout.addWidget(self.vel_zur)
-
+            
+        elif self.module_name == 'ПБУ':
+            layout.addWidget(QLabel("Количество одновременно контролируемых ЗУР, шт :"))
+            self.cout_zur_control = QLineEdit(self)
+            layout.addWidget(self.cout_zur_control)
+            self.submit_button = QPushButton('Сохранить параметры', self)
+            layout.addWidget(self.submit_button)
+            self.submit_button.clicked.connect(self.save_parameters)
+            self.setLayout(layout)
+            
         elif self.module_name == 'ВО':
              layout.addWidget(QLabel("Количество целей:"))
              self.count_goal = QLineEdit()
