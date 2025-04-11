@@ -1,10 +1,24 @@
 import sqlite3
 from typing import List, Dict, Tuple, Union
+from common.commin import Point
 import numpy as np
+import os
 
 class DatabaseManager:
-    def __init__(self, db_name: str = "sky.db"):
-        self.conn = sqlite3.connect(db_name)
+    def __init__(self):
+        self.db_name = 'skydb.db'
+        self.db_folder ='database'
+        self.db_path = os.path.join(self.db_folder,self.db_name)
+        os.makedirs(self.db_folder, exist_ok=True)
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+        self._create_tables()
+
+    def add_name(self, name):
+        self.close()
+        self.db_name = name if name.endswith('.db') else f"{name}.db"
+        self.db_path = os.path.join(self.db_folder,self.db_name)
+        self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
         self._create_tables()
 
@@ -41,10 +55,20 @@ class DatabaseManager:
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL,
                 cout_zur INTEGER NOT NULL,
-                dist INTEGER NOT NULL,
-                velocity_zur INTEGER NOT NULL 
+                dist_zur INTEGER NOT NULL,
+                vel_zur  INTEGER NOT NULL 
             )
         """)
+
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS CC (
+                cc_id INTEGER PRIMARY KEY,
+                pos_x REAL NOT NULL,
+                pos_y REAL NOT NULL,
+                pos_z REAL NOT NULL
+            )
+        """)
+
         self.conn.commit()
 
     def add_plane(self, 
@@ -75,13 +99,23 @@ class DatabaseManager:
                     launcher_id: int,
                     position: Tuple[float, float, float],
                     cout_zur : int,
-                    dist:int,
-                    velocity_zur:int) -> None:
+                    dist_zur:int,
+                    vel_zur:int) -> None:
         self.cursor.execute(
             """INSERT INTO launchers 
-            (launcher_id, pos_x, pos_y, pos_z, cout_zur,dist,velocity_zu)
-            VALUES (?, ?, ?, ?, ?,?,?)""",
-            (launcher_id, *position, cout_zur,dist,velocity_zur))
+            (launcher_id, pos_x, pos_y, pos_z, cout_zur, dist_zur, vel_zur)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (launcher_id, *position, cout_zur,dist_zur,vel_zur))
+        self.conn.commit()
+
+    def add_cc(self,
+              cc_id: int,
+              position: Tuple[float, float, float]) -> None:
+        self.cursor.execute(
+            """INSERT INTO CC 
+            (cc_id, pos_x, pos_y, pos_z)
+            VALUES (?, ?, ?, ?)""",
+            (cc_id, *position))
         self.conn.commit()
 
     def load_planes(self) -> Dict[int, Dict[str, np.ndarray]]:
@@ -94,6 +128,7 @@ class DatabaseManager:
                 'start': np.array([sx, sy, sz], dtype=np.float32),
                 'end': np.array([ex, ey, ez], dtype=np.float32)}
         return planes
+    
     def load_radars(self) -> Dict[int, Dict[str, Union[np.ndarray, int, float]]]:
    #{radar_id: {'position': np.array,'max_targets': int,'angle_input': float,'range_input': float}}
         self.cursor.execute("SELECT * FROM radars")
@@ -101,7 +136,7 @@ class DatabaseManager:
         for row in self.cursor.fetchall():
             radar_id, px, py, pz, max_t, angle, range_ = row
             radars[radar_id] = {
-                'position': np.array([px, py, pz], dtype=np.float32),
+                'position': Point(px, py, pz),
                 'max_targets': max_t,
                 'angle_input': angle,
                 'range_input': range_}
@@ -112,14 +147,23 @@ class DatabaseManager:
         self.cursor.execute("SELECT * FROM launchers")
         launchers = {}
         for row in self.cursor.fetchall():
-            launcher_id, px, py, pz, count, dist, velocity = row
+            launcher_id, px, py, pz, count, dist_zur, vel_zur  = row
             launchers[launcher_id] = {
-                'position': np.array([px, py, pz], dtype=np.float32),
+                'position': Point(px, py, pz),
                 'cout_zur': count,
-                'dist': dist,
-                'velocity_zur': velocity}
+                'dist_zur': dist_zur,
+                'velocity_zur': vel_zur }
         return launchers
+    
+    def load_cc(self) -> Dict[int, Dict[str, np.ndarray]]:
+        self.cursor.execute("SELECT * FROM CC")
+        cc = {}
+        for row in self.cursor.fetchall():
+            cc_id, px, py, pz = row
+            cc[cc_id] = {
+                'position': Point(px, py, pz)}
+        return cc
 
-def close(self) -> None:
-    self.conn.close()
+    def close(self) -> None:
+        self.conn.close()
     
