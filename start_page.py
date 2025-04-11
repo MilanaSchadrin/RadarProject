@@ -14,7 +14,7 @@ class start_page(QWidget):
         self.current_time=0
         self.steps=300
         self.dispatcher=None
-        #self.dispatcher=dispatcher
+        self.dispatcher=dispatcher
 
         self.module_params = {}
         self.init_ui()
@@ -163,7 +163,7 @@ class ParametersWindow(QWidget):
             self.range_input = QLineEdit()
             layout.addWidget(self.range_input)
 
-      elif self.module_name == 'ПУ':
+       elif self.module_name == 'ПУ':
              layout.addWidget(QLabel("Положение (x, y, z):"))
              self.pos_pu = QLineEdit()
              layout.addWidget(self.pos_pu)
@@ -180,14 +180,14 @@ class ParametersWindow(QWidget):
              self.vel_zur = QLineEdit()
              layout.addWidget(self.vel_zur)
 
-     elif self.module_name == 'ВО':
+      elif self.module_name == 'ВО':
              layout.addWidget(QLabel("Количество целей:"))
              self.count_goal = QLineEdit()
              layout.addWidget(self.count_goal)
 
              layout.addWidget(QLabel("Стартовая позиция (x, y, z):"))
-              self.coord_goal = QLineEdit()
-              layout.addWidget(self.coord_goal)
+             self.coord_goal = QLineEdit()
+             layout.addWidget(self.coord_goal)
 
               layout.addWidget(QLabel("Конечная позиция (x, y, z):"))
               self.coord_goal_end = QLineEdit()
