@@ -1,24 +1,25 @@
-from enums import Modules
-from messages import SEKilled,SEAddRocket,SEAddRocketToRadar,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LauncherControllerMissileLaunched
+from dispatcher.enums import Modules
+from dispatcher.messages import SEKilled,SEAddRocket,SEStarting, ToGuiRocketInactivated,RadarToGUICurrentTarget
+from dispatcher.dispatcher import Dispatcher
 from queue import PriorityQueue
-from map_window import MapWindow
+from vizualization.map_window import MapWindow
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
+from PyQt5.QtCore import QTimer
 import random
 import time
-from databaseman import DatabaseManager
 
-class start_page(QWidget):
-    def __init__(self, dispatcher):
+class startPage(QWidget):
+    def __init__(self, dispatcher, app):
     #def __init__(self):
         super().__init__()
         self.current_time=0
         self.steps=300
         self.dispatcher=dispatcher
+        self.map_window=None
+        #self.app = app
 
         self.module_params = {}
         self.init_ui()
-
-
 
     def init_ui(self):
         self.setWindowTitle("Start")
@@ -51,17 +52,21 @@ class start_page(QWidget):
         layout.addStretch(1)
         self.setLayout(layout)
         self.show()
-        for i in range(self.steps):
-                self.update()
+        #self.app.exec_()
+        #for i in range(self.steps):
+               #self.update()
 
     def update(self):
         ''' Обработка сообщений от диспетчера'''
-
-        mess = self.dispatcher.get_message(Modules.GUI)
-        for message in mess:
+        print('update')
+        messages = []
+        message_queue = self.dispatcher.get_message(Modules.GUI)
+        while not message_queue.empty():
+            messages.append(message_queue.get())
+        for priority, message in messages:
                     if isinstance(message, SEStarting):
                         self.handle_se_starting(message)
-                    elif isinstance(message, SeKilled):
+                    elif isinstance(message, SEKilled):
                         self.handle_se_killed(message)
                     elif isinstance(message, SEAddRocket):
                         self.handle_se_add_rocket(message)
@@ -70,29 +75,11 @@ class start_page(QWidget):
 
         self.current_time += 1
 
-        print('update')
-
-    def handle_se_starting(self, message: SEStarting):
-                self.map_window.text_output.append(f"Запуск самолета с ID: {message.plane_id}")
-                pass
-
-    def handle_se_killed(self, message: SeKilled):
-                self.map_window.text_output.append(f"Уничтоженние самолета с ID: {message.plane_id}")
-                pass
-    def handle_se_add_rocket(self, message: SEAddRocket):
-                self.map_window.text_output.append(f"Добавлена ракета с ID: {message.rocket_id}")
-                pass
-    def handle_radar_to_gui_current_target(self, message: RadarToGUICurrentTarget):
-                self.map_window.text_output.append(f"Радар с ID: {message.radar_id} отслеживает цель с ID: {message.target_id}")
-                pass
-
     def open_map_window(self):
-
-        self.map_window=MapWindow()
+        self.map_window = MapWindow()
         self.map_window.show()
+        #self.app.exec()
         self.dispatcher.register(Modules.GUI)
-
-
 
         '''
         plane_data = {
@@ -112,10 +99,28 @@ class start_page(QWidget):
                     self.map_window.visualize_plane_track(plane_id, plane_data)
          '''
 
+        
+    def handle_se_starting(self, message: SEStarting):
+        if self.map_window is not None:
+                self.map_window.text_output.append(f"Запуск самолета с ID: {message.plane_id}")
+                pass
+    def handle_se_killed(self, message: SEKilled):
+        if self.map_window is not None:
+                self.map_window.text_output.append(f"Уничтоженние самолета с ID: {message.plane_id}")
+                pass
+    def handle_se_add_rocket(self, message: SEAddRocket):
+        if self.map_window is not None:
+                self.map_window.text_output.append(f"Добавлена ракета с ID: {message.rocket_id}")
+                pass
+    def handle_radar_to_gui_current_target(self, message: RadarToGUICurrentTarget):
+        if self.map_window is not None:
+                self.map_window.text_output.append(f"Радар с ID: {message.radar_id} отслеживает цель с ID: {message.target_id}")
+                pass
 
     def open_parameters_window(self, module_name):
         self.params_window = ParametersWindow(module_name, self.store_parameters)
         self.params_window.show()
+
     def store_parameters(self, module_name, params_dict):
                 self.module_params[module_name] = params_dict
                 print(f'Параметры модуля {module_name} сохранены: {params_dict}')
