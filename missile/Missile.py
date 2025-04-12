@@ -1,7 +1,26 @@
-from enum import Enum
 from common.commin import *
 
+from enum import Enum
 from typing import Tuple
+
+
+class MissileType(Enum):
+    TYPE_1 = 1
+    TYPE_2 = 2
+
+
+MISSILE_TYPE_CONFIG = {
+    MissileType.TYPE_1: {
+        "speed": 100, # абсолютная величина скорости
+        "currLifeTime": 30,
+        "damageRadius": 20
+    },
+    MissileType.TYPE_2: {
+        "speed": 150,
+        "currLifeTime": 20,
+        "damageRadius": 25
+    }
+}
 
 
 class MissileStatus(Enum):
@@ -10,10 +29,13 @@ class MissileStatus(Enum):
 
 
 class Missile:
-    def __init__(self, missileID, velocity, currentCoords, startTime, damageRadius, status=MissileStatus.ACTIVE):
+    def __init__(self, missileID: str, missileType: MissileType, currentCoords: Tuple[float, float, float], velocity: Tuple[float, float, float], status=MissileStatus.ACTIVE):
+        config = MISSILE_TYPE_CONFIG[missileType]
+
         self.missileID: str = missileID
-        self.velocity: Tuple[float, float, float] = velocity
+        self.missileType: MissileType = missileType
         self.currentCoords: Tuple[float, float, float] = currentCoords
-        self.currLifeTime: int = startTime
-        self.damageRadius: float = damageRadius
+        self.velocity: Tuple[float, float, float] = velocity
+        self.currLifeTime: int = config["currLifeTime"]
+        self.damageRadius: float = config["damageRadius"]
         self.status: MissileStatus = status
