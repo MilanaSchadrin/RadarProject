@@ -9,13 +9,47 @@ class ControlCenter:
 
     """-------------public---------------"""
 
-    def __init__(self, dispatcher):
+    def __init__(self, dispatcher, position):
         self._radarController = radarController(dispatcher)
         self._launcherController = launcherController(dispatcher)
         self._missileController = missileController()
         self._dispatcher = dispatcher
-        self._position = Point(25, 25)
+        self._position = position
         self._targets = [] # все цели на данной итерации
+
+
+
+    def start(self, db):
+    # Загрузка данных радаров и ПУ из базы
+    radars_data = db.load_radars()
+    launchers_data = db.load_launchers()
+
+    # Создание объектов радаров
+    for radar_id, radar_info in radars_data.items():
+        radar = Radar(
+            radarController = self._radarController,
+            dispatcher = self._dispatcher,
+            radarId = radar_id,
+            position = radar_info['position'],
+            maxRange = radar_info['range_input'],
+            coneAngleDeg = radar_info['angle_input'],
+            maxTargetCount = radar_info['max_targets']
+        )
+        self._radarController.add_radar(radar)
+
+
+    # Создание объектов ПУ (Launcher)
+    for launcher_id, launcher_info in launchers_data.items():
+        launcher = Launcher(
+            launcher_id = launcher_id,
+            position = launcher_info['position'],
+            count_missiles = launcher_info['cout_zur'],
+            missile_range = launcher_info['dist'],
+            missile_velocity = launcher_info['velocity_zur']
+        )
+        self._puController.add_launcher(launcher)
+
+
 
 
     def update(self):
@@ -123,7 +157,7 @@ class ControlCenter:
                     launcher.coord.y - target.currentPosition.y ])
 
                 projection = np.dot(distance, direction)
-                signReverse = -1 if a >= 0 else 1
+                signReverse = -1 if projection >= 0 else 1
 
                 active_missiles_count = sum(1 for missile in target.missilesFollowed if missile.status == MissileStatus.ACTIVE)
                 launcher_pr_list.append( (active_missiles_count, signReverse, abs(projection), target) )
