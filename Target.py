@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, Tuple
 
-from _ import Missile
+from missile.Missile import Missile
 
 
 class TargetStatus(Enum):
@@ -24,6 +24,7 @@ class Target:
         self.currentCoords: Tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.currentSpeedVector: Tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.attachedMissiles: Dict[str, Missile] = {}
+        self.priority: int = 0
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]) -> None:
         """Обновить текущие координаты."""
