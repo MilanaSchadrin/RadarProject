@@ -1,26 +1,19 @@
-from enum import Enum
 from typing import Dict, Tuple, List
 
 
 from Target import TargetStatus, Target
 from Radar import Radar
-from _ import (
+
+from dispatcher.dispatcher import Dispatcher
+
+from dispatcher.messages import (
     CCToRadarNewStatus,
     RadarToGUICurrentTarget,
     RadarControllerObjects,
     SEKilled,
     SEStarting,
     SEAddRocketToRadar,
-    Missile,
-    Dispatcher,
 )
-
-
-class TargetStatus(Enum):
-    """Статусы цели для системы слежения."""
-    DESTROYED = 0
-    DETECTED = 1
-    FOLLOWED = 2
 
 class TargetEnv:
     """Класс для хранения реальных координат цели, полученных от SkyEnv."""
@@ -105,9 +98,10 @@ class RadarController:
 
     def updateStatus(self, message: CCToRadarNewStatus) -> None:
         """Обновляет статус цели."""
-        objectId, newStatus = message.targetNewStatus
+        objectId, newStatus, priority = message.targetNewStatus
         if objectId in self.detectedTargets:
             self.detectedTargets[objectId].updateStatus(newStatus)
+            self.detectedTargets[objectId].priority = priority
 
     def killObject(self, message: SEKilled) -> None:
         """Обновляет статус цели на DESTROYED и отвязывает уничтоженную ракету."""
@@ -123,6 +117,8 @@ class RadarController:
                 
             if not killedTarget.attachedMissiles:
                 self.detectedTargets.pop(killTargetId)
+                self.allTargets.pop(killTargetId)
+                self.allMissiles.pop(killRocketId)
 
     def start(self, message: SEStarting) -> None:
         """Получает начальные данные о целях в небе."""
