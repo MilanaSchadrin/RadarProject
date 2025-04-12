@@ -115,31 +115,19 @@ class ControlCenter:
         self._missileController.process_unuseful_missiles()
 
 
-    def _update_proirity_targets(self):
-        """Изменяет приоритетность целям на данной итерации"""
-        old_pr_targets = self._current_priority_targets()
-        new_pr_targets = self._find_priority_targets()
+    def _update_priority_targets(self):
+        """Обновляет приоритетность целям на данной итерации"""
+        list_pr_targets = self._find_priority_targets()
 
-        # уменьшить приоритет
-        for target in old_pr_targets:
-            if (target not in new_pr_targets):
-                self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetId, TargetStatus.DETECTED)) )
-
-        # увеличить приоритет
-        for target in new_pr_targets:
-            if (target not in old_pr_targets):
-                self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetId, TargetStatus.FOLLOWED)) )        
-            
-
-    def _current_priority_targets(self):
-        """Находит старые приоритетные цели прошлой итерации"""
-        return [target for target in self._targets if target.status == TargetStatus.FOLLOWED]
+        priority = 1
+        for target in list_pr_targets:
+            self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetId, priority)) )
+            priority += 1
 
 
     def _find_priority_targets(self):
         """Находит приоритетные цели на данной итерации"""
         pr_list = []
-        countPr = self._radarController.get_priority_count()
 
         for target in self._targets:
             if target.status == TargetStatus.DESTROYED: # уничтоженная цель
@@ -165,7 +153,7 @@ class ControlCenter:
 
         pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
 
-        return [item[3] for item in pr_list[:countPr]]
+        return [item[3] for item in pr_list]
 
 
     def _direction(self, target):
