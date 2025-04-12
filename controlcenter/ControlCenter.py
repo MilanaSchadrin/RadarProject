@@ -6,7 +6,9 @@ from dispatcher.dispatcher import Dispatcher
 from dispatcher.enums import *
 from dispatcher.messages import RadarControllerObjects,LaunchertoCCMissileLaunched,CCToSkyEnv,CCLaunchMissile,CCToRadarNewStatus
 from missile.Missile import MissileStatus
-from common.commin import Point
+from common.commin import *
+
+from typing import Tuple, List
 import numpy as np
 
 
@@ -15,13 +17,13 @@ class ControlCenter:
 
     """-------------public---------------"""
 
-    def __init__(self, dispatcher:Dispatcher,position):
-        self._radarController = RadarController(dispatcher)
-        self._launcherController = LaunchController(dispatcher)
-        self._missileController = MissileController()
-        self._dispatcher = dispatcher
-        self._position = position
-        self._targets = [] # все цели на данной итерации
+    def __init__(self, dispatcher:Dispatcher, position:Tuple[float, float, float]):
+        self._radarController: RadarController = RadarController(dispatcher)
+        self._launcherController: LaunchController = LaunchController(dispatcher)
+        self._missileController: MissileController = MissileController()
+        self._dispatcher: Dispatcher = dispatcher
+        self._position: Tuple[float, float, float] = position
+        self._targets: List[Target] = [] # все цели на данной итерации
 
     def start(self,db):
         self._dispatcher.register(Modules.ControlCenter)
@@ -35,7 +37,6 @@ class ControlCenter:
                 maxRange=radar_info['range_input'],
                 coneAngleDeg=radar_info['angle_input'],
                 maxTargetCount=radar_info['max_targets'],
-                noiseLevel=0.1  # Значение по умолчанию
             )
             self._radarController.addRadar(radar)
         launchers_data = db.load_launchers()
@@ -45,8 +46,6 @@ class ControlCenter:
                 id=launcher_id,
                 coord=launcher_info['position'],
                 silos=launcher_info['cout_zur'],
-                #dist=launcher_info['dist_zur'],
-                #velocity=launcher_info['velocity_zur']
             )
             self._launcherController.add_launcher(launcher)
 
@@ -108,9 +107,9 @@ class ControlCenter:
 
         for target in self._targets:
 
-            if target.status != 0: # неуничтоженная цель
-                active_missiles_count = sum(1 for missile in target.missilesFollowed if missile.status == MissileStatus.ACTIVE)
-                if target.status == 3 and active_missiles_count == 0:
+            if target.status != TargetStatus.DESTROYED: # неуничтоженная цель
+                active_missiles_count = sum(1 for missile in target.attachedMissiles if missile.status == MissileStatus.ACTIVE)
+                if target.status == TargetStatus.FOLLOWED and active_missiles_count == 0:
                     self._dispatcher.send_messege( CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target) )
             self._missileController.process_missiles_of_target(target)
         self._missileController.process_unuseful_missiles()
@@ -124,17 +123,17 @@ class ControlCenter:
         # уменьшить приоритет
         for target in old_pr_targets:
             if (target not in new_pr_targets):
-                self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetID, 2)) )
+                self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetId, TargetStatus.DETECTED)) )
 
         # увеличить приоритет
         for target in new_pr_targets:
             if (target not in old_pr_targets):
-                self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetID, 3)) )        
+                self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetId, TargetStatus.FOLLOWED)) )        
             
 
     def _current_priority_targets(self):
         """Находит старые приоритетные цели прошлой итерации"""
-        return [target for target in self._targets if target.status == 3]
+        return [target for target in self._targets if target.status == TargetStatus.FOLLOWED]
 
 
     def _find_priority_targets(self):
@@ -143,7 +142,7 @@ class ControlCenter:
         countPr = self._radarController.get_priority_count()
 
         for target in self._targets:
-            if target.status == 0: # уничтоженная цель
+            if target.status == TargetStatus.DESTROYED: # уничтоженная цель
                 continue
 
             direction = self._direction(target)
@@ -152,14 +151,12 @@ class ControlCenter:
                 if launcher.countMissiles == 0: # бесполезный ПУ
                     continue
     
-                distance = np.array([
-                    launcher.coord.x - target.currentPosition.x,
-                    launcher.coord.y - target.currentPosition.y ])
+                distance = np.array(launcher.coord) - np.array(target.currentCoords)
 
                 projection = np.dot(distance, direction)
-                signReverse = -1 if  projection >= 0 else 1
+                signReverse = -1 if projection >= 0 else 1
 
-                active_missiles_count = sum(1 for missile in target.missilesFollowed if missile.status == MissileStatus.ACTIVE)
+                active_missiles_count = sum(1 for missile in target.attachedMissiles if missile.status == MissileStatus.ACTIVE)
                 launcher_pr_list.append( (active_missiles_count, signReverse, abs(projection), target) )
 
             launcher_pr_list.sort( key=lambda x: (x[0], x[1], x[2]) )
@@ -172,10 +169,11 @@ class ControlCenter:
 
 
     def _direction(self, target):
-        """Вычисляет единичный вектор направления цели target"""
-        e = np.array([target.velocity.x, target.velocity.y])
-        norm = np.linalg.norm(e)
+        """Вычисляет единичный вектор направления цели target в 3D"""
+        v = np.array(target.currentSpeedVector)
+        norm = np.linalg.norm(v)
         if norm == 0:
-            return np.array([0.0, 0.0])
-        return e / norm
+            return np.array([0.0, 0.0, 0.0])
+        return v / norm
+
 

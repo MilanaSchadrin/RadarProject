@@ -1,5 +1,8 @@
 from enum import Enum
-from common.commin import Point
+from common.commin import *
+
+from typing import Tuple
+
 
 class MissileStatus(Enum):
     ACTIVE = 1  # ракета ещё нужна
@@ -7,10 +10,10 @@ class MissileStatus(Enum):
 
 
 class Missile:
-    def __init__(self, missileID, velocity, currentPosition, startTime, damageRadius, status=MissileStatus.ACTIVE):
-        self.missileID = missileID
-        self.velocity = velocity
-        self.currentPosition = currentPosition
-        self.currLifeTime = startTime
-        self.damageRadius = damageRadius
-        self.status = status
+    def __init__(self, missileID, velocity, currentCoords, startTime, damageRadius, status=MissileStatus.ACTIVE):
+        self.missileID: str = missileID
+        self.velocity: Tuple[float, float, float] = velocity
+        self.currentCoords: Tuple[float, float, float] = currentCoords
+        self.currLifeTime: int = startTime
+        self.damageRadius: float = damageRadius
+        self.status: MissileStatus = status
