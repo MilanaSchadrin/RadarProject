@@ -2,6 +2,8 @@ import random
 from dispatcher.enums import *
 from dispatcher.messages import CCLaunchMissile, LaunchertoSEMissileLaunched,LaunchertoCCMissileLaunched
 from missile.Missile import Missile
+from typing import Tuple
+
 def dir(A, B):
     return (B[0]-A[0], B[1]-A[1], B[2]-A[2])
 
@@ -12,7 +14,7 @@ class Launcher:
     def __init__(self, ctrl, id, coord, silos):
         self.ctrl=ctrl
         self.id=id
-        self.coord=coord
+        self.coord: Tuple[float, float, float] =coord
         self.silo_num=silos
         self._silos=[1]*silos
 

@@ -1,7 +1,9 @@
 from missile.Missile import Missile, MissileStatus
-from radar.Target import Target
-import numpy as np
+from radar.Target import Target, TargetStatus
 from dispatcher.enums import *
+
+from typing import List
+import numpy as np
 
 
 class MissileController:
@@ -10,18 +12,18 @@ class MissileController:
     """-------------public---------------"""
 
     def __init__(self):
-        self._missiles = [] # ракеты на данной итерации
-        self._unusefulMissiles = [] # ненужные ракеты на данной итерации
+        self._missiles: List[Missile] = [] # ракеты на данной итерации
+        self._unusefulMissiles: List[Missile] = [] # ненужные ракеты на данной итерации
 
 
     def process_missiles_of_target(self, target):
         """Обрабатывает список ракет у данной цели."""
 
-        missiles = target.missilesFollowed
+        missiles = target.attachedMissiles
 
         for currMissile in missiles:
-            currMissile.currLifeTime -= 3
-            if target.status == 0: # уничтоженная цель
+            currMissile.currLifeTime -= TICKSPERCYCLERADAR
+            if target.status == TargetStatus.DESTROYED: # уничтоженная цель
                 currMissile.status = MissileStatus.INACTIVE
                 self._unusefulMissiles.append(currMissile)
 
@@ -52,7 +54,7 @@ class MissileController:
 
     def process_new_missile(self, new_missile):
         """Обрабатывает новую ракету"""
-        new_missile.currLifeTime -= 2;
+        new_missile.currLifeTime -= TICKSPERCYCLELAUNCHER;
         self._missiles.append(new_missile)
 
 
@@ -72,45 +74,39 @@ class MissileController:
             missile.currLifeTime = 0
 
 
-    def _collision(self, mainObject, object1):
+    def _collision(self, mainObject, other_object):
         """Проверяет наличие object1 в радиусе mainObject."""
-        distance = ((object1.currentPosition.x - mainObject.currentPosition.x) ** 2 +
-                   (object1.currentPosition.y - mainObject.currentPosition.y) ** 2 +
-                   (object1.currentPosition.z - mainObject.currentPosition.z) ** 2) ** 0.5
+        distance = np.linalg.norm( np.array(mainObject.currentCoords) - np.array(other_object.currentCoords))
         return distance < mainObject.damageRadius
+
 
     def _will_explode(self, target, missile):
         """Проверяет, что target будет в радиусе взрыва ракеты missile."""
-        r_pos = missile.currentPosition.to_vector()
-        r_vel = missile.velocity.to_vector()
-        t_pos = target.currentPosition.to_vector()
-        t_vel = target.speed.to_vector()
+        r_pos = np.array(missile.currentCoords)
+        r_vel = np.array(missile.velocity)
+        t_pos = np.array(target.currentCoords)
+        t_vel = np.array(target.currentSpeedVector)
 
         # Вычисляем относительные позицию и скорость
         d = r_pos - t_pos
         v = r_vel - t_vel
-        R_sq = missile.damageRadius ** 2
 
-        # Коэффициенты квадратного уравнения A*t^2 + B*t + C < 0
+        # A*t^2 + B*t + C < 0
         A = np.dot(v, v)
         B = 2 * np.dot(d, v)
-        C = np.dot(d, d) -  R_sq
+        C = np.dot(d, d) - missile.damageRadius ** 2
 
-       # Анализ решения квадратного уравнения
         if A == 0:
-            # Случай нулевой относительной скорости
-            return C <= 0  # Уже в зоне поражения или на границе
+            if B == 0:
+                return C < 0  # Уже в радиусе взрыва
 
-        discriminant = B**2 - 4*A*C
+        D = B ** 2 - 4 *A * C
+        if D <= 0:
+            return False  # Не будет взрыва
 
-        if discriminant < 0:
-            return False  # Нет пересечений
+        t1 = (-B - np.sqrt(D)) / (2 * A)
+        t2 = (-B + np.sqrt(D)) / (2 * A)
 
-        sqrt_discr = np.sqrt(discriminant)
-        t1 = (-B - sqrt_discr) / (2*A)
-        t2 = (-B + sqrt_discr) / (2*A)
+        life_time = missile.currLifeTime / TICKSPERSECOND
 
-        # Нас интересуют только будущие моменты времени (t >= 0)
-        return (t1 >= 0 and t1 <= t2) or (t2 >= 0 and t1 <= 0)
-
-
+        return (t1 < 0 and t2 > 0) or (0 < t1 < life_time)
