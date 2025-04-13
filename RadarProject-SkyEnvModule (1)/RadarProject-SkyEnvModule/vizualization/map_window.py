@@ -68,8 +68,8 @@ class MapView(QFrame):
         self.pu_image = PUIcon('./vizualization/pictures/pu.png', 650, 450, parent=self)
 
         #РЛС
-        self.rls_radius = None
-        self.view_angle = None
+        self.rls_radius = 0
+        self.view_angle = 0
         self.tracked_targets = {}
         self.scan_angle = 0
         self.scan_timer = QTimer()
@@ -131,7 +131,7 @@ class MapView(QFrame):
 
                 if not self.background_image.isNull():
                     painter.drawPixmap(0, 0, self.width(), self.height(), self.background_image)
-                painter.setPen(QPen(QColor(0, 0, 255), 2))  в
+                painter.setPen(QPen(QColor(0, 0, 255), 2))
                 for trail in self.trails.values():
                     for i in range(1, len(trail)):
                         painter.drawLine(trail[i-1], trail[i])
@@ -222,20 +222,24 @@ class MapWindow(QMainWindow):
                 icon = PlaneImageIcon("./vizualization/pictures/airplane.webp", self)
                 icon.setToolTip(f"ID самолёта: {plane_id}")
                 icon.show()
+                initial_angle=0
                 timer = QTimer(self)
                 timer.timeout.connect(lambda pid=plane_id: self.move_plane(pid))
                 self.planes[plane_id] = {
                     'icon': icon,
                     'coords': flat_coords,
                     'index': 0,
-                    'timer': timer
+                    'timer': timer,
+                    'current_angle':initial_angle
                 }
             else:
                 self.planes[plane_id]['coords'] = flat_coords
                 self.planes[plane_id]['index'] = 0
+                if 'current_angle' not in self.planes[plane_id]:
+                    self.planes[plane_id]['current_angle'] = 0
 
             x, y = flat_coords[0]
-            self.planes[plane_id]['icon'].move(x, y)
+            self.planes[plane_id]['icon'].move(x-20, y-20)
             self.map_view.add_to_trail(plane_id, QPoint(x, y))
             self.planes[plane_id]['timer'].start(1000)
 
@@ -246,19 +250,24 @@ class MapWindow(QMainWindow):
 
                 coords = plane_data['coords']
                 index = plane_data['index']
-
+                correct_angle=plane_data['current_angle']
                 if index < len(coords):
                     x, y = coords[index]
                     icon = plane_data['icon']
-                    icon.move(x, y)
-
+                    icon.move(x-20, y-20)
+                    correct_angle=plane_data.get('current_angle', 0)
                     if index > 0:
                         prev_x, prev_y = coords[index - 1]
                         dx = x - prev_x
                         dy = y - prev_y
-                        angle_rad = math.atan2(dx, -dy)
-                        angle_deg = math.degrees(angle_rad)
-                        icon.rotate_to(angle_deg)
+                        if dx!=0 and dy!=0:
+                            angle_rad = math.atan2(dy, dx)
+                            angle_deg = math.degrees(angle_rad)
+                            mov_angle=math.degrees(math.atan2(-dy,dx))
+                            correct_angle=(-mov_angle+90)%360
+                            if abs(correct_angle - plane_data['current_angle']) > 1:
+                                        icon.rotate_to(correct_angle)
+                                        plane_data['current_angle'] = correct_angle
 
                     self.map_view.add_to_trail(plane_id, QPoint(x, y))
                     plane_data['index'] += 1

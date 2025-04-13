@@ -5,20 +5,22 @@ from queue import PriorityQueue
 from vizualization.map_window import MapWindow
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
 from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QIntValidator
 import random
 import time
 
 class startPage(QWidget):
-    def __init__(self, dispatcher, app):
+    def __init__(self, dispatcher, app, simulation):
     #def __init__(self):
         super().__init__()
         self.current_time=0
         self.steps=300
         self.dispatcher=dispatcher
         self.map_window=None
-        #self.app = app
-        self.modeling_started = False
+        self.simulation = simulation
         self.module_params = {}
+        self.on_params_save_callback = None
+        self.expect_modules=set()
         self.init_ui()
 
     def init_ui(self):
@@ -29,42 +31,50 @@ class startPage(QWidget):
         for label in text_labels:
             text = QLabel(label)
             layout.addWidget(text)
+
         self.button_radar = QPushButton('Модуль радиолокатора', self)
         self.button_pbu = QPushButton('Модуль ПБУ', self)
         self.button_pu = QPushButton('Модуль ПУ', self)
-        self.button_zur = QPushButton('Модуль ЗУР', self)
+        #self.button_zur = QPushButton('Модуль ЗУР', self)
         self.button_vo = QPushButton('Модуль ВО', self)
+
         layout.addWidget(self.button_radar)
         layout.addWidget(self.button_pbu)
         layout.addWidget(self.button_pu)
-        layout.addWidget(self.button_zur)
+        #layout.addWidget(self.button_zur)
         layout.addWidget(self.button_vo)
+        steps_label = QLabel ('Введите количество шагов моделирования:')
+        layout.addWidget(steps_label)
+
+        self.steps_input=QLineEdit(str(self.steps))
+        self.steps_input.setValidator(QIntValidator(1,1000))
+        layout.addWidget(self.steps_input)
 
         self.button_radar.clicked.connect(lambda: self.open_parameters_window('Радиолокатор'))
         self.button_pbu.clicked.connect(lambda: self.open_parameters_window('ПБУ'))
         self.button_pu.clicked.connect(lambda: self.open_parameters_window('ПУ'))
-        self.button_zur.clicked.connect(lambda: self.open_parameters_window('ЗУР'))
+        #self.button_zur.clicked.connect(lambda: self.open_parameters_window('ЗУР'))
         self.button_vo.clicked.connect(lambda: self.open_parameters_window('ВО'))
-
         self.button_start_model = QPushButton('Начать моделирование')
         layout.addWidget(self.button_start_model)
         self.button_start_model.clicked.connect(self.open_map_window)
         layout.addStretch(1)
         self.setLayout(layout)
         self.show()
-        #self.app.exec_()
-        #for i in range(self.steps):
-               #self.update()
+
+    def set_params_callback(self, callback, expect_modules):
+        self.on_params_save_callback = callback
+        if expect_modules:
+            self.expect_modules=set(expect_modules)
 
     def update(self):
         ''' Обработка сообщений от диспетчера'''
         print('update')
         messages = []
         message_queue = self.dispatcher.get_message(Modules.GUI)
-        if self.modeling_started == True:
-            while not message_queue.empty():
+        while not message_queue.empty():
                 messages.append(message_queue.get())
-            for priority, message in messages:
+        for priority, message in messages:
                     if isinstance(message, SEStarting):
                         self.handle_se_starting(message)
                     elif isinstance(message, SEKilled):
@@ -78,51 +88,43 @@ class startPage(QWidget):
 
     def open_map_window(self):
         self.map_window = MapWindow()
-        self.modeling_started = True
         self.map_window.show()
-        #self.app.exec()
         self.dispatcher.register(Modules.GUI)
-        '''
-        plane_data = {
-            1: np.array(
-            [[100.0, 200.0, 1000.0]] ),
+        self.simulation.set_units()
+        self.simulation.modulate()
 
-            2: np.array([[150.5, 250.2], [400.0, 500.0]]),
-            3: np.array([[110.0, 210.0], [500.0, 500.0]])
-        }
-
-        mes = self.dispatcher.get_message(Modules.GUI)
-        if isinstance(mes, SEStarting):
-                print("Получено сообщение SEStarting")
-                for plane_id, plane_data in mes.planes.items():
-                    #print(plane_id)
-                    #print(plane_data)
-                    self.map_window.visualize_plane_track(plane_id, plane_data)
-         '''
-
-        
     def handle_se_starting(self, message: SEStarting):
-                self.map_window.text_output.append(f"Запуск самолета с ID: {message.plane_id}")
-                pass
+                for plane_id, plane_data in message.planes.items():
+                      self.map_window.text_output.append(f"Запуск самолета с ID: {plane_id}")
+                      self.map_window.visualize_plane_track(plane_id, plane_data)
+                      self.map_window.text_output.append(f"РЛС отслеживает самолет с ID: {plane_id}")
+                      self.map_window.visualize_rls(plane_id, 60, 350)
+
     def handle_se_killed(self, message: SEKilled):
                 self.map_window.text_output.append(f"Уничтоженние самолета с ID: {message.plane_id}")
                 pass
     def handle_se_add_rocket(self, message: SEAddRocket):
                 self.map_window.text_output.append(f"Добавлена ракета с ID: {message.rocket_id}")
-                pass
+                self.map_window.visualize_zur_track(message.rocket_id, message.rocket_coords, detection_area=None)
     def handle_radar_to_gui_current_target(self, message: RadarToGUICurrentTarget):
                 self.map_window.text_output.append(f"Радар с ID: {message.radar_id} отслеживает цель с ID: {message.target_id}")
-                pass
+                #раскомментировать для тестирования; пока значения 60,350 для примера, я добавлю их считывание с бл
+                #self.map_window.visualize_rls(plane_id, 60, 350)
 
     def open_parameters_window(self, module_name):
-        self.params_window = ParametersWindow(module_name, self.store_parameters)
+        self.params_window = ParametersWindow(module_name, self.store_parameters, self)
         self.params_window.show()
 
     def store_parameters(self, module_name, params_dict):
-                self.module_params[module_name] = params_dict
+        #if self.on_params_save_callback:
+         self.module_params[module_name] = params_dict
+         if self.expect_modules and self.on_params_save_callback:
+             if self.expect_modules.issubset(self.module_params.keys()):
+                self.on_params_save_callback(self.module_params)
                 print(f'Параметры модуля {module_name} сохранены: {params_dict}')
 
     def set_session_params(self, db):
+                print('set')
                 for module_name, params in self.module_params.items():
                     if module_name == 'Радиолокатор':
                         radar_id = len(db.load_radars()) + 1
@@ -132,15 +134,22 @@ class startPage(QWidget):
                         launcher_id = len(db.load_launchers()) + 1
                         db.add_launcher(launcher_id, params['position'], params['missile_count'], params['range'], params['velocity'])
 
+                    elif module_name == 'ПБУ':
+                         сс_id = len(db.load_cc()) + 1
+                         db.add_cc(сс_id, params['position'])
+
                     elif module_name == 'ВО':
                         plane_id = len(db.load_planes()) + 1
                         db.add_plane(plane_id, params['start'], params['end'])
 
+
+
 class ParametersWindow(QWidget):
-    def __init__(self, module_name, on_save_callback):
+    def __init__(self, module_name, on_save_callback, main_wind):
         super().__init__()
         self.module_name = module_name
         self.on_save = on_save_callback
+        self.main_wind = main_wind
         self.init_ui()
     def init_ui(self):
         self.setWindowTitle(f"Параметры для {self.module_name}")
@@ -151,7 +160,7 @@ class ParametersWindow(QWidget):
             self.pos_input = QLineEdit()
             layout.addWidget(self.pos_input)
 
-            layout.addWidget(QLabel("Макс. количество целей:"))
+            layout.addWidget(QLabel("Максимальное количество сопровождаемых целей:"))
             self.max_targets_input = QLineEdit()
             layout.addWidget(self.max_targets_input)
 
@@ -164,11 +173,11 @@ class ParametersWindow(QWidget):
             layout.addWidget(self.range_input)
 
         elif self.module_name == 'ПУ':
-             layout.addWidget(QLabel("Положение (x, y, z):"))
+             layout.addWidget(QLabel("Координаты (x, y, z):"))
              self.pos_pu = QLineEdit()
              layout.addWidget(self.pos_pu)
 
-             layout.addWidget(QLabel("Кол-во ракет:"))
+             layout.addWidget(QLabel("Количество ракет:"))
              self.cout_zur = QLineEdit()
              layout.addWidget(self.cout_zur)
 
@@ -181,13 +190,9 @@ class ParametersWindow(QWidget):
              layout.addWidget(self.vel_zur)
             
         elif self.module_name == 'ПБУ':
-            layout.addWidget(QLabel("Количество одновременно контролируемых ЗУР, шт :"))
-            self.cout_zur_control = QLineEdit(self)
-            layout.addWidget(self.cout_zur_control)
-            self.submit_button = QPushButton('Сохранить параметры', self)
-            layout.addWidget(self.submit_button)
-            self.submit_button.clicked.connect(self.save_parameters)
-            self.setLayout(layout)
+            layout.addWidget(QLabel("Положение (x, y, z):"))
+            self.pos_control = QLineEdit(self)
+            layout.addWidget(self.pos_control)
             
         elif self.module_name == 'ВО':
              layout.addWidget(QLabel("Количество целей:"))
@@ -223,11 +228,13 @@ class ParametersWindow(QWidget):
                 params['range'] = int(self.dist_zur.text())
                 params['velocity'] = int(self.vel_zur.text())
 
+           elif self.module_name == 'ПБУ':
+                     params['position'] = tuple(map(float, self.pos_control.text().split(',')))
+
            elif self.module_name == 'ВО':
                 params['count'] = int(self.count_goal.text())
                 params['start'] = tuple(map(float, self.coord_goal.text().split(',')))
                 params['end'] = tuple(map(float, self.coord_goal_end.text().split(',')))
-
-
            self.on_save(self.module_name, params)
            self.close()
+
