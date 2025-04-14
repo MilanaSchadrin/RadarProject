@@ -90,9 +90,10 @@ class SkyEnv:
     
     def add_rocket(self, rocket, missile, target_id):
         self.rockets[rocket.get_id()] = rocket
-        message = SEAddRocket(Modules.GUI, Priorities.STANDARD,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
+        print(rocket.id, rocket.start, rocket.velocity, rocket.trajectory)
+        message = SEAddRocket(Modules.GUI, Priorities.LOW,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
         self.dispatcher.send_message(message)
-        message = SEAddRocketToRadar(Modules.RadarMain,Priorities.STANDARD,target_id, missile, rocket.get_trajectory())
+        message = SEAddRocketToRadar(Modules.RadarMain,Priorities.LOW,rocket.get_startTime(),target_id, missile, rocket.get_trajectory())
         self.dispatcher.send_message(message)
         self.add_pair(rocket.get_id(),target_id)
     
@@ -133,17 +134,10 @@ class SkyEnv:
         data = {} #all planes in this period
         for j in self.planes:
             data[j.get_id()] = j.get_trajectory()
-            print(j.get_trajectory())
         message = SEStarting(recipient_id=Modules.GUI,
                              priority=Priorities.LOW,
                              planes=data)
         self.dispatcher.send_message(message)
-        #just needed just testing
-        rocket = Rocket(701, (300,300,0), np.array([-210,-210,10]), 3)
-        self.rockets[rocket.get_id()] = rocket
-        message = SEAddRocket(Modules.GUI, Priorities.STANDARD,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
-        self.dispatcher.send_message(message)
-        self.add_pair(rocket.get_id(),601)
         messagetoRadar = SEStarting(recipient_id=Modules.RadarMain,
                                     priority=Priorities.LOW,
                                     planes=data)
@@ -158,15 +152,15 @@ class SkyEnv:
             if isinstance(message,CCToSkyEnv):
                 rocketsCC = message.missiles
                 for missile in rocketsCC:
-                    if missile.lifePeriod == 0:
+                    if missile.currLifeTime == 0:
                             #inactivate rocket
                             self.rockets[missile.missileID].boom()
                             message = ToGuiRocketInactivated(Modules.GUI, Priorities.STANDARD, missile.missileID)
             elif isinstance(message,LaunchertoSEMissileLaunched):
                 targetId = message.targetId
-                missiles = message.missile
-                rocket = Rocket(missiles.missileId,missiles.currentPosition,missiles.velocity,self.currentTime,self.timeSteps, missiles.damageRadius, missiles.currLifeTime)
-                self.add_rocket(rocket,missiles,targetId)
+                miss = message.missile
+                rocket = Rocket(miss.missileID,miss.currentCoords,miss.velocity,self.currentTime,self.timeSteps, miss.damageRadius, miss.currLifeTime)
+                self.add_rocket(rocket,miss,targetId)
             for rocket_id, rocket in self.rockets.items():
                 self.check_collision(rocket)
         self.currentTime+=1

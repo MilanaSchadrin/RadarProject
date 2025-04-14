@@ -1,7 +1,9 @@
 import random
 from dispatcher.enums import *
 from dispatcher.messages import CCLaunchMissile, LaunchertoSEMissileLaunched,LaunchertoCCMissileLaunched
-from missile.Missile import Missile
+from dispatcher.dispatcher import Dispatcher
+from missile.Missile import Missile, MissileType
+from radar.Target import Target
 def dir(A, B):
     return (B[0]-A[0], B[1]-A[1], B[2]-A[2])
 
@@ -15,16 +17,27 @@ class Launcher:
         self.coord=coord
         self.silo_num=silos
         self._silos=[1]*silos
+        self.current_id = 700
 
     def launch(self, target):
+        available_silo = None
         i=0
-        while self._silos[i]==0:
-            i+=1
-        self._silo[i]=0
-        M=Missile("active", random.randint(0, 1000), self.coord,
-                  dir(self.coord, target.currentPosition), 100.0, self.coord)
-        self.ctrl.acknowledge(target.targetID, M)
-        target.add_missilesFollow(M)
+        for i in range(self.silo_num):
+            available_silo=i
+            break
+        if available_silo is None:
+            pass  # handle appropriatel
+        self._silos[available_silo] = 0
+        start_coords = (self.coord[0], self.coord[1], self.coord[2])
+        velocity = dir(self.coord, target.currentCoords)
+        M = Missile(
+        missileID=str(self.current_id),
+        missileType=MissileType.TYPE_1,
+        currentCoords=start_coords,
+        velocity=velocity)
+        self.current_id+=1
+        self.ctrl.acknowledge(target.targetId, M)
+        target.attachMissile(M)
 
     def status(self):
         print("Launcher", self.id, "status:")
@@ -39,14 +52,20 @@ class LaunchController:
         self._dispatcher = dispatcher
         self._launchers = []
         self.lchr_num = len(self._launchers)
+
+    def get_launchers(self):
+        return self._launchers
     
     def add_launcher(self, launcher: Launcher):
         """Добавляет пусковую установку под управление контроллера"""
         self._launchers.append(launcher)
 
     def update(self):
-        messages = self._dispatcher.get_message(Modules.ControlCenter)
-        for message in messages:
+        message_queue = self._dispatcher.get_message(Modules.LauncherMain)
+        messages = []
+        while not message_queue.empty():
+            messages.append(message_queue.get())
+        for priority, message in messages:
             if isinstance(message, CCLaunchMissile):
                 self.create(message.target)
         
@@ -58,13 +77,13 @@ class LaunchController:
         D=10**10
         k=0
         for i in range(self.lchr_num):
-            d=dist(self._launchers[i].coord, target.currentPosition)
-            if (d<D):
-                D=d
-                k=i
+            if self._launchers[i].silo_num!=0:
+                d=dist(self._launchers[i].coord, target.currentPosition)
+                if (d<D):
+                    D=d
+                    k=i
         self._launchers[k].launch(target)
 
     def status(self):
-        print("LauncherController status:")
         for L in self._launchers:
             L.status()

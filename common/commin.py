@@ -1,4 +1,6 @@
 import numpy as np
+from datetime import datetime
+"""
 class Point:
     def __init__(self, x=0, y=0, z=0):
         self.x = x
@@ -10,3 +12,12 @@ class Point:
     
     def distance_to(self, other: 'Point') -> float:
         return np.linalg.norm(self.to_vector() - other.to_vector())
+"""
+
+TICKSPERSECOND = 10
+TICKSPERCYCLERADAR = 3
+TICKSPERCYCLELAUNCHER = 2
+
+def to_integer():
+    dt = datetime.today()
+    return int(dt.timestamp())

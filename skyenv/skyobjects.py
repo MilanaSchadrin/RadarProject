@@ -57,7 +57,7 @@ class Plane(SkyObject):
     def calculate_trajectory(self):
         #добавить не 2 точки, а произвольное количество
         flightHeight = np.clip((self.start[2] + self.finish[2])/2, 3000, 5000)#min и max flight
-        direction = vector(self.start, self.finish)
+        direction = vector(self.finish, self.start)
         totalDistance = np.linalg.norm(direction[:2])#только горизонтальное расстояние
         pDirection = direction/np.linalg.norm(direction)# для чего я это добавила?
 
@@ -81,8 +81,8 @@ class Plane(SkyObject):
                 dist = (climb + cruise) * totalDistance + phase * descend*totalDistance
 
             xy_progress = dist / totalDistance
-            x = abs(self.start[0] + direction[0] * xy_progress)
-            y = abs(self.start[1] + direction[1] * xy_progress)
+            x = self.start[0] + direction[0] * xy_progress
+            y = self.start[1] + direction[1] * xy_progress
             self.trajectory[i] = [x, y, z]
 
     def get_status(self):
@@ -108,7 +108,8 @@ class Rocket(SkyObject):
     def calculate_trajectory(self):
         times = np.linspace(self.startTime, self.startTime + self.lifePeriod, num = self.timeSteps, dtype=np.float64)
         timeReal = times - self.startTime
-        self.tarjectory = self.start
+        self.tarjectory =  np.zeros((self.timeSteps, 3))
+        self.trajectory[0] = self.start
         if self.dragcoeff > 0:
             pass
             """
