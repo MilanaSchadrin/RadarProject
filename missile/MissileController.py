@@ -4,6 +4,8 @@ from dispatcher.enums import *
 from common.commin import TICKSPERCYCLERADAR,TICKSPERCYCLELAUNCHER,TICKSPERSECOND
 from typing import List
 import numpy as np
+from typing import List
+import numpy as np
 
 
 class MissileController:
@@ -18,7 +20,6 @@ class MissileController:
 
     def process_missiles_of_target(self, target):
         """Обрабатывает список ракет у данной цели."""
-
         for currMissile in target.attachedMissiles.values():
             currMissile.currLifeTime -= TICKSPERCYCLERADAR
             if target.status == TargetStatus.DESTROYED: # уничтоженная цель
