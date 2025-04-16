@@ -39,7 +39,7 @@ class Simulation:
     def modulate(self):
         print('Начало моделирования')
         for i in range(self.steps):
-            print('Шаг моделирования', i)
+            #print('Шаг моделирования', i)
             self.skyEnv.update()
             self.CC.update()
             self.gui.update()

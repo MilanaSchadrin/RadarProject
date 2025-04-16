@@ -56,7 +56,7 @@ class Plane(SkyObject):
         
     def calculate_trajectory(self):
         #добавить не 2 точки, а произвольное количество
-        flightHeight = np.clip((self.start[2] + self.finish[2])/2, 3000, 5000)#min и max flight
+        flightHeight = np.clip((self.start[2] + self.finish[2])/2, 100, 500)#min и max flight
         direction = vector(self.finish, self.start)
         totalDistance = np.linalg.norm(direction[:2])#только горизонтальное расстояние
         pDirection = direction/np.linalg.norm(direction)# для чего я это добавила?
@@ -85,6 +85,8 @@ class Plane(SkyObject):
             y = self.start[1] + direction[1] * xy_progress
             self.trajectory[i] = [x, y, z]
 
+    def get_id(self):
+        return super().get_id()
     def get_status(self):
         return self.status
     

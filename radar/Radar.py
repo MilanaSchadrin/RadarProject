@@ -113,7 +113,7 @@ class Radar:
     def scan(self, currentStep: int) -> None:
         """Основная функция сканирования"""
 
-        for target_id, target in self.followedTargets.items():
+        for target_id, target in list(self.followedTargets.items()):
             if target.status != TargetStatus.FOLLOWED:
                 self.followedTargets.pop(target.targetId)
                 self.currentTargetCount -= 1

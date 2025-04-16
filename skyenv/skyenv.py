@@ -11,7 +11,8 @@ def get_plane_trajectory_from_rocket(paires, rocket:Rocket):
         return keys.get_trajectory()
 
 def get_plane_id_from_rocket(paires, rocket:Rocket):
-    return paires.get(rocket.get_id()).get_id()
+    plane = paires.get(rocket.get_id())
+    return plane.get_id()
 
 class SkyEnv:
     def __init__(self, dispatcher:Dispatcher, timeSteps:int=250):
@@ -32,15 +33,16 @@ class SkyEnv:
     def check_if_in_radius(self, time, explosionPos, radius):
         collateralDamage = []
         for i in self.planes:
-            i_trajectory = i.get_tragectory()
+            i_trajectory = i.get_trajectory()
             i_id = i.get_id()
             if i.get_status()  == False:
                 continue
             if time >= i_trajectory.shape[0]:
                 continue
-            position = i_trajectory(time)
+            position = i_trajectory[time]
             distance = np.linalg.norm(position - explosionPos)
             if distance <=radius:
+                print('CollateralDamage')
                 collateralDamage.append((i_id,position))
                 i.killed()
                 self.remove_plane(i.get_id())
@@ -61,6 +63,9 @@ class SkyEnv:
         return collateralDamage
     
     def check_collision(self, rocket:Rocket):
+        if rocket.get_id() not in self.pairs:
+            #print(f"Warning: Rocket {rocket.get_id()} not paired with any plane")
+            return
         collisionStep=None
         planetarjectory = get_plane_trajectory_from_rocket(self.pairs, rocket)
         rockettrajectory = rocket.get_trajectory()
@@ -73,16 +78,22 @@ class SkyEnv:
             positionRocket = rockettrajectory[trIndex]
             distance = np.linalg.norm(positionPlane-positionRocket)
             if distance <= rocket.get_radius():
+                print('Collision', t)
                 collisionStep = t
-                self.pairs.get(rocket.get_id()).get_id().killed()
+                plane = self.pairs[rocket.get_id()]
+                #self.pairs.get(rocket.get_id()).killed()
+                #self.pairs.get(rocket.get_id()).get_id().killed()
+                plane.killed
                 rocket.boom()
-                collateralDamage = self.check_if_in_radius()
+                collateralDamage = self.check_if_in_radius(collisionStep,positionRocket,rocket.get_radius())
                 message = SEKilled(Modules.GUI, Priorities.HIGH,collisionStep,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
                 self.dispatcher.send_message(message)
+                print(rocket.get_id())
                 message = SEKilled(Modules.RadarMain, Priorities.HIGH,collisionStep,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
                 self.dispatcher.send_message(message)
+                self.remove_plane(plane.get_id())
                 self.remove_rocket(rocket.get_id())
-                self.remove_plane(get_plane_id_from_rocket(self.pairs, rocket))
+                break
 
     
     def remove_plane(self, plane_id: int):
@@ -90,10 +101,9 @@ class SkyEnv:
     
     def add_rocket(self, rocket, missile, target_id):
         self.rockets[rocket.get_id()] = rocket
-        print(rocket.id, rocket.start, rocket.velocity, rocket.trajectory)
         message = SEAddRocket(Modules.GUI, Priorities.LOW,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
         self.dispatcher.send_message(message)
-        message = SEAddRocketToRadar(Modules.RadarMain,Priorities.LOW,rocket.get_startTime(),target_id, missile, rocket.get_trajectory())
+        message = SEAddRocketToRadar(Modules.RadarMain,Priorities.SUPERHIGH,rocket.get_startTime(),target_id, missile, rocket.get_trajectory())
         self.dispatcher.send_message(message)
         self.add_pair(rocket.get_id(),target_id)
     
@@ -148,12 +158,12 @@ class SkyEnv:
         message_queue = self.dispatcher.get_message(Modules.SE)
         while not message_queue.empty():
             messages.append(message_queue.get())
+        print(len(messages))
         for priority, message in messages:
             if isinstance(message,CCToSkyEnv):
                 rocketsCC = message.missiles
                 for missile in rocketsCC:
                     if missile.currLifeTime == 0:
-                            #inactivate rocket
                             self.rockets[missile.missileID].boom()
                             message = ToGuiRocketInactivated(Modules.GUI, Priorities.STANDARD, missile.missileID)
             elif isinstance(message,LaunchertoSEMissileLaunched):
@@ -161,7 +171,7 @@ class SkyEnv:
                 miss = message.missile
                 rocket = Rocket(miss.missileID,miss.currentCoords,miss.velocity,self.currentTime,self.timeSteps, miss.damageRadius, miss.currLifeTime)
                 self.add_rocket(rocket,miss,targetId)
-            for rocket_id, rocket in self.rockets.items():
+            for rocket_id, rocket in list(self.rockets.items()):
                 self.check_collision(rocket)
         self.currentTime+=1
             
