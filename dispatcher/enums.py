@@ -2,9 +2,11 @@ from enum import Enum
 
 
 class Priorities(Enum):
+    SUPERHIGH = 0
     HIGH = 1
     STANDARD = 2
     LOW = 3
+    SUPERLOW = 4
 
 
 class Modules(Enum):

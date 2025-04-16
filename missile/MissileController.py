@@ -1,7 +1,9 @@
 from missile.Missile import Missile, MissileStatus
 from radar.Target import Target, TargetStatus
 from dispatcher.enums import *
-
+from common.commin import TICKSPERCYCLERADAR,TICKSPERCYCLELAUNCHER,TICKSPERSECOND
+from typing import List
+import numpy as np
 from typing import List
 import numpy as np
 
@@ -18,10 +20,7 @@ class MissileController:
 
     def process_missiles_of_target(self, target):
         """Обрабатывает список ракет у данной цели."""
-
-        missiles = target.attachedMissiles
-
-        for currMissile in missiles:
+        for currMissile in target.attachedMissiles.values():
             currMissile.currLifeTime -= TICKSPERCYCLERADAR
             if target.status == TargetStatus.DESTROYED: # уничтоженная цель
                 currMissile.status = MissileStatus.INACTIVE
@@ -34,7 +33,7 @@ class MissileController:
                 currMissile.status = MissileStatus.INACTIVE
                 self._unusefulMissiles.append(currMissile)
 
-        self._missiles.append(missiles)
+            self._missiles.append(currMissile)
 
 
     def process_unuseful_missiles(self):
@@ -61,6 +60,7 @@ class MissileController:
     def pop_missiles(self):
         """Удаляет и возвращает список всех ракет."""
         missiles = self._missiles
+        #print("Sending missiles:", type(missiles), [type(m) for m in missiles])
         self._missiles = []
         return missiles
 

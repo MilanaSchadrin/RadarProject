@@ -6,7 +6,7 @@ from radar.Target import Target
 import numpy as np
 from numpy.typing import NDArray
 
-@dataclass
+@dataclass(order=True) 
 class Message:
     recipient_id: Union[Modules, int]
     priority: Union[Priorities, int]
@@ -44,9 +44,10 @@ class CCLaunchMissile(Message):
     target: Target
 
 
-@dataclass
+@dataclass(order=True) 
 class CCToRadarNewStatus(Message):
-    new_target_status: Tuple[int]
+    priority_s: int
+    new_target_status: Tuple[int, int]
 
 @dataclass
 class CCToSkyEnv(Message):
@@ -54,9 +55,9 @@ class CCToSkyEnv(Message):
 
 @dataclass
 class RadarToGUICurrentTarget(Message):
-    radar_id: int 
-    target_id: int
-    sector_size: int
+    radar_id: str
+    target_id: str
+    sector_size: float
 
 @dataclass
 class RadarControllerObjects(Message):

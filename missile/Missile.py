@@ -1,5 +1,4 @@
 from common.commin import *
-
 from enum import Enum
 from typing import Tuple
 
@@ -11,7 +10,7 @@ class MissileType(Enum):
 
 MISSILE_TYPE_CONFIG = {
     MissileType.TYPE_1: {
-        "speed": 100, # абсолютная величина скорости
+        "speed": 1000, # абсолютная величина скорости
         "currLifeTime": 30,
         "damageRadius": 20
     },
@@ -39,3 +38,9 @@ class Missile:
         self.currLifeTime: int = config["currLifeTime"]
         self.damageRadius: float = config["damageRadius"]
         self.status: MissileStatus = status
+
+    def updateCurrentCoords(self, newCoords: Tuple[float, float, float]):
+        self.currentCoords = newCoords
+
+    def updateSpeedVector(self, newSpeedVector: Tuple[float, float, float]):
+        self.velocity = newSpeedVector

@@ -1,6 +1,5 @@
 from queue import PriorityQueue
 
-
 class Dispatcher:
     def __init__(self):
         self.currentTime = 0
