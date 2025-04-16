@@ -139,7 +139,7 @@ class SkyEnv:
                              planes=data)
         self.dispatcher.send_message(message)
         #just needed just testing
-        rocket = Rocket(701, [300.0,300.0,0.0],[50.0, 30.0, 100.0], 0.0)
+        rocket = Rocket(701, [100.0,100.0,0.0],[50.0, 30.0, 100.0], 0.0)
         self.rockets[rocket.get_id()] = rocket
         message = SEAddRocket(Modules.GUI, Priorities.STANDARD,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
         self.dispatcher.send_message(message)
