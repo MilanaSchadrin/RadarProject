@@ -11,11 +11,9 @@ class Message:
     recipient_id: Union[Modules, int]
     priority: Union[Priorities, int]
 
-
 @dataclass
 class SEStarting(Message):
     planes: Dict[int, NDArray[np.float64]]
-
 
 @dataclass
 class SEKilled(Message):
@@ -25,7 +23,10 @@ class SEKilled(Message):
     plane_id: int
     plane_coords: NDArray[np.float64]
     collateral_damage: List[Tuple[int, NDArray[np.float64]]]
-
+@dataclass
+class RocketInactivated(Message):
+    rocket_id:int
+    timeStep:int
 @dataclass
 class SEAddRocket(Message):
     startTime: int

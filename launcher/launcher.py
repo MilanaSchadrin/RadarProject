@@ -26,7 +26,7 @@ class Launcher:
             available_silo=i
             break
         if available_silo is None:
-            pass  # handle appropriatel
+            return  # handle appropriatel
         self._silos[available_silo] = 0
         start_coords = (self.coord[0], self.coord[1], self.coord[2])
         velocity = dir(self.coord, target.currentCoords)
@@ -77,7 +77,7 @@ class LaunchController:
         D=10**10
         k=0
         for i in range(self.lchr_num):
-            if self._launchers[i].silo_num!=0:
+            if self._launchers[i].silo_num>=0:
                 d=dist(self._launchers[i].coord, target.currentPosition)
                 if (d<D):
                     D=d
