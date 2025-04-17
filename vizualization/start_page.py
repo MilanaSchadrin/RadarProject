@@ -136,7 +136,7 @@ class startPage(QWidget):
     def handle_se_killed(self, message: SEKilled):
         self.map_window.text_output.append(f"Уничтоженние самолета с ID: {message.plane_id}")
         pass
-        #self.map_window.handle_explosion_event()
+        self.map_window.handle_explosion_event(  message.rocket_id, message.rocket_coords, message.plane_id, message.plane_coords, message.collateral_damage)
         # rocket = Rocket(701, [300.0,300.0,0.0],[50.0, 30.0, 100.0], 0.0)
         # plane (400,400,
         """test_message = SEKilled(

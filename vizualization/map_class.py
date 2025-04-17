@@ -138,13 +138,13 @@ class MapWindow(QMainWindow):
            coords = zur_data['coords']
            index = zur_data['index']
            if index < len(coords):
-                x, y, z = coords[index]
+                x, y,z = coords[index]
                 icon = zur_data['icon']
                 x = int(x)
                 y = int(y)
                 icon.move(x, y)
                 if index > 0:
-                    prev_x, prev_y, z = coords[index - 1]
+                    prev_x, prev_y,z = coords[index - 1]
                     dx = x - prev_x
                     dy = y - prev_y
                     angle_rad = math.atan2(dx, -dy)
