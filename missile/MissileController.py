@@ -59,7 +59,7 @@ class MissileController:
 
     def pop_missiles(self):
         """Удаляет и возвращает список всех ракет."""
-        missiles = self._missiles
+        missiles = self._missiles.copy()
         #print("Sending missiles:", type(missiles), [type(m) for m in missiles])
         self._missiles = []
         return missiles

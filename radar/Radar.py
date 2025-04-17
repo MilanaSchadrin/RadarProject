@@ -7,7 +7,7 @@ from dispatcher.dispatcher import Dispatcher
 
 
 class Radar:
-    """Класс радара. Еще не доделан"""
+    """Класс радара"""
     
     def __init__(self, radarController, dispatcher, radarId, position, maxRange, coneAngleDeg, maxFollowedCount) -> None:
         self.radarController = radarController
@@ -49,20 +49,23 @@ class Radar:
         noise = self.noiseLevel
         if target_id in self.radarController.detectedTargets:
             target = self.radarController.detectedTargets[target_id]
-            if target.status == TargetStatus.FOLLOWED:
-                if target_id not in self.followedTargets:
-                    if self.currentTargetCount < self.maxFollowedCount:
-                        self.currentTargetCount += 1
-                        self.followedTargets[target_id] = target
-                        self.radarController.sendCurrentTarget(self.radarId, target_id, self.coneAngleDeg)
+            if target.status == TargetStatus.FOLLOWED and target_env.isFollowed == False:
+                if self.currentTargetCount < self.maxFollowedCount:
+                    target_env.isFollowed = True
+                    self.currentTargetCount += 1
+                    self.followedTargets[target_id] = target
+                    self.radarController.sendCurrentTarget(self.radarId, target_id, self.coneAngleDeg)
 
-                    else:
-                        self.followedTargets[target_id] = target
-                        min_priority_target = max(self.followedTargets.values(), key=lambda x: x.priority)
-                        self.followedTargets.pop(min_priority_target.targetId)
-                        self.radarController.detectedTargets[min_priority_target.targetId].updateStatus(TargetStatus.DETECTED)
-                        if target_id in self.followedTargets:
-                            self.radarController.sendCurrentTarget(self.radarId, target_id, self.coneAngleDeg)          
+                else:
+                    self.followedTargets[target_id] = target
+                    min_priority_target = max(self.followedTargets.values(), key=lambda x: x.priority)
+                    self.followedTargets.pop(min_priority_target.targetId)
+                    self.radarController.detectedTargets[min_priority_target.targetId].updateStatus(TargetStatus.DETECTED)
+                    #isFollowed needed
+                    self.radarController.allTargets[min_priority_target.targetId].isFollowed  = False
+                    if target_id in self.followedTargets:
+                        target_env.isFollowed = True
+                        self.radarController.sendCurrentTarget(self.radarId, target_id, self.coneAngleDeg)          
 
                 noise = 0.1 * self.noiseLevel
         else: 
@@ -112,11 +115,10 @@ class Radar:
 
     def scan(self, currentStep: int) -> None:
         """Основная функция сканирования"""
+        #dict not list
+        self.followedTargets.clear() 
+        self.currentTargetCount = 0
 
-        for target_id, target in list(self.followedTargets.items()):
-            if target.status != TargetStatus.FOLLOWED:
-                self.followedTargets.pop(target.targetId)
-                self.currentTargetCount -= 1
         # Обработка целей
         for target_id, target_env in self.radarController.allTargets.items():
             if self.isTargetInRange(target_env, currentStep):
@@ -124,5 +126,4 @@ class Radar:
         # Обработка ракет
         for missile_id, missile_env in self.radarController.allMissiles.items():
             if self.isTargetInRange(missile_env, currentStep):
-                self._process_missile(missile_id, missile_env, currentStep)   
-
+                self._process_missile(missile_id, missile_env, currentStep)  

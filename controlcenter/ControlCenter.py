@@ -41,7 +41,7 @@ class ControlCenter:
                 maxRange=radar_info['range_input'],
                 coneAngleDeg=radar_info['angle_input'],
                 maxFollowedCount=radar_info['max_targets'],
-                maxTargetCount=radar_info['max_targets'],
+                #maxTargetCount=radar_info['max_targets'],
             )
             self._radarController.addRadar(radar)
 
@@ -75,7 +75,7 @@ class ControlCenter:
         self._launcherController.update()
         t = self._get_missiles()
         if len(t)!=0:
-            self._dispatcher.send_message(CCToSkyEnv(Modules.SE, Priorities.LOW, self._get_missiles()) )
+            self._dispatcher.send_message(CCToSkyEnv(Modules.SE, Priorities.LOW,t) )
         self.currentStep+=1
 
 
