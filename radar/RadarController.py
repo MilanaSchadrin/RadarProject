@@ -18,6 +18,7 @@ class TargetEnv:
     def __init__(self, targetId: str, clearCoords: List[Tuple[float, float, float]]) -> None:
         self.targetId: str = targetId
         self.clearCoords: List[Tuple[float, float, float]] = clearCoords
+        self.isFollowed = False
 
     def getCurrentCoords(self, step: int) -> Tuple[float, float, float]:
         """Возвращает текущие координаты цели на указанном шаге."""
