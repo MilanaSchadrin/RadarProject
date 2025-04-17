@@ -41,7 +41,7 @@ class ControlCenter:
                 maxRange=radar_info['range_input'],
                 coneAngleDeg=radar_info['angle_input'],
                 maxFollowedCount=radar_info['max_targets'],
-                maxTargetCount=radar_info['max_targets'],
+                #maxTargetCount=radar_info['max_targets'],
             )
             self._radarController.addRadar(radar)
 
