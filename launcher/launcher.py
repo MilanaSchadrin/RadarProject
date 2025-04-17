@@ -14,7 +14,7 @@ class Launcher:
     def __init__(self, ctrl, id, coord, silos):
         self.ctrl=ctrl
         self.id=id
-        self.coord=coord
+        self.coord: Tuple[float, float, float] =coord
         self.silo_num=silos
         self._silos=[1]*silos
         self.current_id = 700

@@ -8,7 +8,6 @@ from dispatcher.messages import RadarControllerObjects,LaunchertoCCMissileLaunch
 from missile.Missile import MissileStatus
 from radar.Target import Target, TargetStatus
 from common.commin import *
-
 from typing import Tuple, List
 import numpy as np
 import datetime
@@ -42,6 +41,7 @@ class ControlCenter:
                 maxRange=radar_info['range_input'],
                 coneAngleDeg=radar_info['angle_input'],
                 maxFollowedCount=radar_info['max_targets'],
+                maxTargetCount=radar_info['max_targets'],
             )
             self._radarController.addRadar(radar)
 
@@ -121,7 +121,6 @@ class ControlCenter:
             self._missileController.process_missiles_of_target(target)
         self._missileController.process_unuseful_missiles()
 
-
     def _update_priority_targets(self):
         """Обновляет приоритетность целям на данной итерации"""
         list_pr_targets = self._find_priority_targets()
@@ -135,7 +134,6 @@ class ControlCenter:
                 priority_s=p,
                 new_target_status =  data))
             priority += 1
-
 
     def _find_priority_targets(self):
         """Находит приоритетные цели на данной итерации"""
