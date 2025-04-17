@@ -1,11 +1,8 @@
 from typing import Dict, Tuple, List
-
-
-from Target import TargetStatus, Target
-from Radar import Radar
-
+from radar.Target import TargetStatus, Target
+from radar.Radar import Radar
 from dispatcher.dispatcher import Dispatcher
-
+from dispatcher.enums import Modules,Priorities
 from dispatcher.messages import (
     CCToRadarNewStatus,
     RadarToGUICurrentTarget,
@@ -21,6 +18,7 @@ class TargetEnv:
     def __init__(self, targetId: str, clearCoords: List[Tuple[float, float, float]]) -> None:
         self.targetId: str = targetId
         self.clearCoords: List[Tuple[float, float, float]] = clearCoords
+        self.isFollowed = False
 
     def getCurrentCoords(self, step: int) -> Tuple[float, float, float]:
         """Возвращает текущие координаты цели на указанном шаге."""
@@ -78,6 +76,8 @@ class RadarController:
         """Обновляет состояние всех радаров, текущие координаты всех целей и ракет."""
         for radar in self.radars.values():
             radar.scan(step)
+        self.sendDetectedObjects()
+        self.processMessage()
 
     def addDetectedTarget(self, target: Target) -> None:
         """Добавляет цель в список обнаруженных целей."""
@@ -85,8 +85,11 @@ class RadarController:
 
     def processMessage(self) -> None:
         """Обрабатывает входящие сообщения."""
-        messages = self.dispatcher.getMessages()
-        for message in messages:
+        message_queue = self.dispatcher.get_message(Modules.RadarMain)
+        messages = []
+        while not message_queue.empty():
+            messages.append(message_queue.get())
+        for priority, message in messages:
             if isinstance(message, CCToRadarNewStatus):
                 self.updateStatus(message)
             elif isinstance(message, SEKilled):
@@ -98,15 +101,15 @@ class RadarController:
 
     def updateStatus(self, message: CCToRadarNewStatus) -> None:
         """Обновляет статус цели."""
-        objectId, newStatus, priority = message.targetNewStatus
+        objectId, priority = message.new_target_status
         if objectId in self.detectedTargets:
-            self.detectedTargets[objectId].updateStatus(newStatus)
+            self.detectedTargets[objectId].updateStatus(TargetStatus.FOLLOWED)
             self.detectedTargets[objectId].priority = priority
 
     def killObject(self, message: SEKilled) -> None:
         """Обновляет статус цели на DESTROYED и отвязывает уничтоженную ракету."""
-        killRocketId = message.rocketId
-        killTargetId = message.planeId
+        killRocketId = message.rocket_id
+        killTargetId = message.plane_id
         
         if killTargetId in self.detectedTargets:
             killedTarget = self.detectedTargets[killTargetId]
@@ -128,11 +131,11 @@ class RadarController:
     def addRocket(self, message: SEAddRocketToRadar) -> None:
         """Добавляет новую ракету в список всех ракет."""
         missileEnv = MissileEnv(
-            message.missile.missileId,
+            message.missile.missileID,
             message.planeId,
-            message.rocketCoords
+            message.rocket_coords
         )
-        self.allMissiles[message.missile.missileId] = missileEnv
+        self.allMissiles[message.missile.missileID] = missileEnv
 
     def sendCurrentTarget(
         self,
@@ -141,12 +144,12 @@ class RadarController:
         sectorSize: float
     ) -> None:
         """Отправляет сообщение о сопровождаемой цели."""
-        message = RadarToGUICurrentTarget(radarId, targetId, sectorSize)
-        self.dispatcher.sendMessage(message)
+        message = RadarToGUICurrentTarget(Modules.GUI,Priorities.STANDARD, radarId, targetId, sectorSize)
+        self.dispatcher.send_message(message)
 
     def sendDetectedObjects(self) -> None:
         """Отправляет список обнаруженных целей."""
-        message = RadarControllerObjects(detectedObjects=self.detectedTargets)
-        self.dispatcher.sendMessage(message)
+        message = RadarControllerObjects(Modules.ControlCenter,Priorities.LOW,self.detectedTargets)
+        self.dispatcher.send_message(message)
 
     
