@@ -55,3 +55,12 @@ class Logger:
         data[timestamp] = self.convert_message_to_json(message)
         with open(file_path, "w") as f:
             json.dump(data, f)
+    def finish(self, final_step):
+        data = {}
+        json_dir = self.path / "jsons"
+        for i in range(final_step+1):
+            file_path = json_dir / f"{final_step}.json"
+            with open(file_path, 'r') as f:
+                data[i] = json.load(f)
+        with open(json_dir/'final_log.json', 'w') as f:
+            json.dump(data, f)
