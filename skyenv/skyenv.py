@@ -92,9 +92,9 @@ class SkyEnv:
                 plane.killed
                 rocket.boom()
                 collateralDamage = self.check_if_in_radius(collisionStep,positionRocket,rocket.get_radius())
-                message = SEKilled(Modules.GUI, Priorities.HIGH,collisionStep,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
+                message = SEKilled(Modules.GUI, Priorities.SUPERHIGH,collisionStep,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
                 self.dispatcher.send_message(message)
-                message = SEKilled(Modules.RadarMain, Priorities.HIGH,collisionStep,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
+                message = SEKilled(Modules.RadarMain, Priorities.LOW,collisionStep,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
                 self.dispatcher.send_message(message)
                 self.to_remove.add(('plane', plane.get_id()))
                 self.to_remove.add(('rocket', rocket.get_id()))
@@ -119,9 +119,9 @@ class SkyEnv:
     
     def add_rocket(self, rocket, missile, target_id):
         self.rockets[rocket.get_id()] = rocket
-        message = SEAddRocket(Modules.GUI, Priorities.LOW,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
+        message = SEAddRocket(Modules.GUI, Priorities.HIGH,rocket.get_startTime(),rocket.get_id(),rocket.get_trajectory())
         self.dispatcher.send_message(message)
-        message = SEAddRocketToRadar(Modules.RadarMain,Priorities.SUPERHIGH,rocket.get_startTime(),target_id, missile, rocket.get_trajectory())
+        message = SEAddRocketToRadar(Modules.RadarMain,Priorities.HIGH,rocket.get_startTime(),target_id, missile, rocket.get_trajectory())
         self.dispatcher.send_message(message)
         self.add_pair(rocket.get_id(),target_id)
     
@@ -163,11 +163,11 @@ class SkyEnv:
         for j in self.planes:
             data[j.get_id()] = j.get_trajectory()
         message = SEStarting(recipient_id=Modules.GUI,
-                             priority=Priorities.LOW,
+                             priority=Priorities.SUPERHIGH,
                              planes=data)
         self.dispatcher.send_message(message)
         messagetoRadar = SEStarting(recipient_id=Modules.RadarMain,
-                                    priority=Priorities.LOW,
+                                    priority=Priorities.SUPERHIGH,
                                     planes=data)
         self.dispatcher.send_message(messagetoRadar)
 
@@ -189,7 +189,7 @@ class SkyEnv:
                 for missile in rocketsCC:
                     if missile.currLifeTime <=0 and missile.missileID in self.rockets: 
                         self.rockets[missile.missileID].boom()
-                        message = ToGuiRocketInactivated(Modules.GUI, Priorities.STANDARD, missile.missileID)
+                        message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
                         print('rocket inactivated')
                         self.to_remove.add(('rocket', missile.missileID))
                 """for rocket_id, rocket in list(self.rockets.items()):

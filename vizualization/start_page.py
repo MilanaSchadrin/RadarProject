@@ -1,18 +1,19 @@
+import sys
+import time
+import numpy as np
+from queue import PriorityQueue
 from dispatcher.enums import Modules
 from dispatcher.enums import Priorities
 from dispatcher.messages import SEKilled,SEAddRocket,SEStarting, ToGuiRocketInactivated,RadarToGUICurrentTarget
 from dispatcher.dispatcher import Dispatcher
-from queue import PriorityQueue
+from vizualization.data_collector_for_visual import  SimulationDataCollector
 from vizualization.parametr_window import ParametersWindow
-import random
-import time
-import numpy as np
-from PyQt5.QtWidgets import QApplication, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
-from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QApplication,QProgressBar, QDialog, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox,QHBoxLayout
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QIntValidator
 from vizualization.map_class import MapWindow
 
-class startPage(QWidget):
+class StartPage(QWidget):
     def __init__(self, dispatcher, app, simulation):
         super().__init__()
         self.steps=300
@@ -25,7 +26,7 @@ class startPage(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Start")
+        self.setWindowTitle("Параметры моделирования")
         self.setGeometry(300, 300, 400, 400)
         layout = QVBoxLayout()
         text_labels = ['Моделирование работы ЗРС', 'Задать параметры моделирования:']
@@ -62,7 +63,6 @@ class startPage(QWidget):
         self.setLayout(layout)
         self.show()
 
-
     def update_params_display(self):
         if not self.module_params:
             self.params_display.setPlainText("Параметры не заданы")
@@ -75,93 +75,82 @@ class startPage(QWidget):
             display_text.append("")
         self.params_display.setPlainText("\n".join(display_text))
 
-
     def set_params_callback(self, callback, expect_modules):
         self.on_params_save_callback = callback
         if expect_modules:
             self.expect_modules=set(expect_modules)
 
-    def update(self):
-        messages = []
-        message_queue = self.dispatcher.get_message(Modules.GUI)
-        while not message_queue.empty():
-                messages.append(message_queue.get())
-        for priority, message in messages:
-                    if isinstance(message, SEStarting):
-                        self.handle_se_starting(message)
-                    elif isinstance(message, SEKilled):
-                        self.handle_se_killed(message)
-                    elif isinstance(message, SEAddRocket):
-                        self.handle_se_add_rocket(message)
-                    elif isinstance(message, RadarToGUICurrentTarget):
-                        self.handle_radar_to_gui_current_target(message)
-
-
     def open_map_window(self):
-        self.map_window = MapWindow()
-        self.map_window.show()
-        self.dispatcher.register(Modules.GUI)
+        try:
+            self.steps = int(self.steps_input.text())
+        except ValueError:
+            #QMessageBox.warning(self, "Ошибка", "Некорректное количество шагов")
+            print("Некорректное количество шагов")
+            return
+        self.data_collector = SimulationDataCollector(self.dispatcher)
+        self.data_collector.dispatcher.register(Modules.GUI)
+        self.simulation.data_colector = self.data_collector
+        loading_window = QDialog(self)
+        loading_window.setWindowTitle("Моделирование работы ЗРС")
+        loading_window.setFixedSize(400, 200)
+        loading_window.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint)
+        loading_layout = QVBoxLayout()
+        loading_layout.setContentsMargins(30, 30, 30, 30)
+        loading_layout.setSpacing(20)
+        title_label = QLabel("Пожалуйста, подождите")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #333;")
+        loading_layout.addWidget(title_label)
+        status_label = QLabel("Загрузка результатов моделирования...")
+        status_label.setAlignment(Qt.AlignCenter)
+        status_label.setStyleSheet("font-size: 14px; color: #666;")
+        loading_layout.addWidget(status_label)
+        progress = QProgressBar()
+        progress.setMaximum(self.steps)
+        progress.setTextVisible(False)
+        progress.setFixedHeight(10)
+        progress.setStyleSheet("""QProgressBar {border: 1px solid #ccc; border-radius: 5px;background: #f0f0f0;}
+                                QProgressBar::chunk {background: qlineargradient( spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 #4facfe, stop:1 #00f2fe);
+                            border-radius: 4px;}""")
+        loading_layout.addWidget(progress)
+        percent_label = QLabel("0%")
+        percent_label.setAlignment(Qt.AlignCenter)
+        percent_label.setStyleSheet("font-size: 14px; color: #4facfe; font-weight: bold;")
+        loading_layout.addWidget(percent_label)
+        loading_window.setLayout(loading_layout)
+        self.dot_animation = QTimer(loading_window)
+        self.dot_count = 0
+        def animate_dots():
+            dots = "." * (self.dot_count % 4)
+            title_label.setText(f"Процесс моделирования...{dots}")
+            self.dot_count += 1
+        self.dot_animation.timeout.connect(animate_dots)
+        self.dot_animation.start(500)
+        loading_window.show()
+
+        def update_progress(step):
+            progress.setValue(step)
+            percent = int(step / self.steps * 100)
+            percent_label.setText(f"{percent}%")
+            status_label.setText(f"Выполнено {step} из {self.steps} шагов...")
+            QApplication.processEvents()
         self.simulation.set_units()
-        self.simulation.modulate()
+        self.simulation.modulate(progress_callback=update_progress)
+        loading_window.close()
+        self.show_results()
 
-    def handle_se_starting(self, message: SEStarting):
-        for plane_id, plane_data in message.planes.items():
-            self.map_window.text_output.append(f"✈️ Запуск самолета с ID: {plane_id}")
-            self.map_window.visualize_plane_track(plane_id, plane_data)
-            self.map_window.text_output.append(f"РЛС отслеживает самолет с ID: {plane_id}")
-            self.map_window.visualize_rls(plane_id, 60, 350)
-            self.test_id=plane_id
-        self.map_window.text_output.append(f"Уничтоженние самолета с ID: {self.test_id}")
-        #pass
-            #self.map_window.handle_explosion_event()
-            # rocket = Rocket(701, [300.0,300.0,0.0],[50.0, 30.0, 100.0], 0.0)
-            # plane (400,400,
-        test_message = SEKilled(Modules.GUI, Priorities.STANDARD,
-                collision_step=42,
-                rocket_id=701,
-                rocket_coords=np.array([450.0, 400.0, 50.0]),  # x, y, z
-                plane_id=self.test_id,
-                plane_coords=np.array([600.0, 600.0, 55.0]),
-                collateral_damage=[
-                    #(301, np.array([170.0, 220.0, 60.0])),  # Поврежденный объект 1
-                   # (302, np.array([140.0, 190.0, 45.0]))   # Поврежденный объект 2
-                ]
-        )
-        #self.map_window.handle_explosion_event(   rocket_id=test_message.rocket_id,
-        #rocket_coords=test_message.rocket_coords,
-        #plane_id=test_message.plane_id,
-        #plane_coords=test_message.plane_coords,
-        #collateral_damage=test_message.collateral_damage)
-
-    def handle_se_killed(self, message: SEKilled):
-        self.map_window.text_output.append(f"Уничтоженние самолета с ID: {message.plane_id}")
-        pass
-        self.map_window.handle_explosion_event(  message.rocket_id, message.rocket_coords, message.plane_id, message.plane_coords, message.collateral_damage)
-        # rocket = Rocket(701, [300.0,300.0,0.0],[50.0, 30.0, 100.0], 0.0)
-        # plane (400,400,
-        """test_message = SEKilled(
-            collision_step=42,
-            rocket_id=701,
-            rocket_coords=np.array([450.0, 400.0, 50.0]),  # x, y, z
-            plane_id=601,
-            plane_coords=np.array([400.0, 400.0, 55.0]),
-            collateral_damage=[
-                #(301, np.array([170.0, 220.0, 60.0])),  # Поврежденный объект 1
-               # (302, np.array([140.0, 190.0, 45.0]))   # Поврежденный объект 2
-            ]
-        )
-        self.map_window.handle_explosion_event( test_message )"""
-
-    def handle_se_add_rocket(self, message: SEAddRocket):
-        #self.text_output.append(f'<span style="color: blue;">• Ракета с ID {zur_id} появилася в воздушном пространстве</span>')
-        self.map_window.text_output.append(f'<span style="color: blue;">• Добавлена ракета с ID: {message.rocket_id}</span>')
-        self.map_window.visualize_zur_track(message.rocket_id, message.rocket_coords, detection_area=None)
-
-    def handle_radar_to_gui_current_target(self, message: RadarToGUICurrentTarget):
-        self.map_window.text_output.append(f"<span style='color: red;'>•</span> Радар с ID: {message.radar_id} отслеживает цель с ID: {message.target_id}")
-        #раскомментировать для тестирования; пока значения 60,350 для примера, я добавлю их считывание с бл
-        #self.map_window.visualize_rls(plane_id, 60, 350)
-
+    def show_results(self):
+        self.map_window = MapWindow()
+        self.map_window.set_simulation_data(self.data_collector.steps_data)
+        self.map_window.show()
+        for i, step in enumerate(self.data_collector.steps_data):
+            msg_count = len(step['messages'])
+            if msg_count > 0:
+                #print(f"Шаг {i}: {msg_count} сообщений")
+                for msg in step['messages']:
+                    pass
+                    #print(f"  - {msg['type']} (приоритет: {msg['priority']})")
+        self.hide()
 
     def open_parameters_window(self, module_name):
         self.params_window = ParametersWindow(module_name, self.store_parameters, self)
@@ -174,7 +163,6 @@ class startPage(QWidget):
            if self.expect_modules.issubset(self.module_params.keys()):
                self.on_params_save_callback(self.module_params)
                print(f'Параметры модуля {module_name} сохранены: {params_dict}')
-
 
     def set_session_params(self, db):
        for module_name, params in self.module_params.items():
