@@ -11,7 +11,6 @@ class ParametersWindow(QWidget):
         self.main_wind = main_wind
         self.init_ui()
 
-
     def init_ui(self):
         self.setWindowTitle(f"Параметры для {self.module_name}")
         layout = QVBoxLayout()
@@ -75,7 +74,6 @@ class ParametersWindow(QWidget):
         self.submit_button.clicked.connect(self.save_parameters)
         self.setLayout(layout)
 
-
     def create_vo_data(self):
         for i in reversed(range(self.vo_container.count())):
             self.vo_container.itemAt(i).widget().setParent(None)
@@ -95,7 +93,6 @@ class ParametersWindow(QWidget):
             group_box.setLayout(group_layout)
             self.vo_container.addWidget(group_box)
             self.vo_fields.append({ 'start': start_input, 'end': end_input,})
-
 
     def save_parameters(self):
         params = {}
