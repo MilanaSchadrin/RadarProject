@@ -27,10 +27,14 @@ class Simulation:
         expect_modules=['Радиолокатор', 'ПУ', 'ПБУ', 'ВО']
         self.gui.set_params_callback(self.on_params_ready, expect_modules)
         self.gui.set_session_params(self.db)
+        self.gui.steps_input.editingFinished.connect(self.on_step)
+        self.gui.db_name_input.editingFinished.connect(self.on_name)
+    def on_step(self):
+        self.steps = self.gui.get_step()
+    def on_name(self):
+        self.name = self.gui.get_db_name()
     def on_params_ready(self, params):
         self.gui.set_session_params(self.db)
-        self.steps = self.gui.get_step()
-        self.name=self.gui.get_db_name()
     def set_units(self):
         self.skyEnv = SkyEnv(self.dispatcher)
         self.CC = ControlCenter(self.dispatcher, self.db.load_cc())
