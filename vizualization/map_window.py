@@ -155,6 +155,7 @@ class MapView(QFrame):
                 core_color = QColor(255, 165, 0, exp['alpha'])
                 painter.setPen(QPen(core_color, 4))
                 painter.setBrush(QBrush(core_color, Qt.SolidPattern))
+                exp['current_radius'] = 30
                 painter.drawEllipse(exp['center'], exp['current_radius'], exp['current_radius'])
                 if steps_passed < exp['duration'] * 0.7:
                     wave_alpha = int(exp['alpha'] * 0.7)
@@ -213,9 +214,15 @@ class MapView(QFrame):
         dash_pen.setDashPattern([4, 4])
         for target_id in list(self.tracked_targets.keys()):
             if target_id in self.trails and self.trails[target_id]:
+                print('CHECK DRAW RADAR')
+                print(target_id)
                 target_point = self.trails[target_id][-1]
                 dx = target_point.x() - radar_center.x()
+                print(target_point.x(), 'TARGET X')
+                print( radar_center.x(), 'RADAR X')
                 dy = radar_center.y() - target_point.y()
+                print(target_point.y(), 'TARGET Y')
+                print( radar_center.y(), 'RADAR Y')
                 azimuth = np.degrees(np.arctan2(dy, dx)) % 360
                 self.tracked_targets[target_id] = azimuth
                 distance = np.sqrt(dx*dx + dy*dy)

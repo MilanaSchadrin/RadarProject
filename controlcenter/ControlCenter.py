@@ -125,7 +125,6 @@ class ControlCenter:
 
         self._missileController.process_unuseful_missiles()
 
-
     def _update_priority_targets(self):
         """Обновляет приоритетность целям на данной итерации"""
         list_pr_targets = self._find_priority_targets()
