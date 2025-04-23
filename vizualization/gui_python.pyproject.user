@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 6.0.2, 2025-04-21T01:02:49. -->
+<!-- Written by QtCreator 6.0.2, 2025-04-23T09:26:35. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -191,6 +191,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">/home/astra/Desktop/4/RadarProject-SkyEnvModule/vizualization/data_collector_for_visual.py</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">PythonEditor.RunConfiguration./home/astra/Desktop/4/RadarProject-SkyEnvModule/vizualization/data_collector_for_visual.py</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/astra/Desktop/4/RadarProject-SkyEnvModule/vizualization/data_collector_for_visual.py</value>
+    <value type="QString" key="PythonEditor.RunConfiguation.Interpreter">{3cc21c05-c6d8-4e12-9919-818491316aac}</value>
     <value type="QString" key="PythonEditor.RunConfiguation.Script">/home/astra/Desktop/4/RadarProject-SkyEnvModule/vizualization/data_collector_for_visual.py</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>

@@ -122,7 +122,7 @@ class ControlCenter:
                 CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target)
             )
             self._missileController.process_missiles_of_target(target)
-            self._missileController.process_unuseful_missiles()
+        self._missileController.process_unuseful_missiles()
 
     def _update_priority_targets(self):
         """Обновляет приоритетность целям на данной итерации"""
