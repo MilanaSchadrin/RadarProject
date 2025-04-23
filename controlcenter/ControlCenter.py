@@ -114,12 +114,15 @@ class ControlCenter:
     def _process_targets(self):
         """Обрабатывает цель."""
         for target in self._targets:
-            if target.status != TargetStatus.DESTROYED: # неуничтоженная цель
-                active_missiles_count = sum(1 for missile in target.attachedMissiles.values() if missile.status == MissileStatus.ACTIVE)
-                if target.status == TargetStatus.FOLLOWED and active_missiles_count == 0:
-                    self._dispatcher.send_message(CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target) )
+            if target.status == TargetStatus.DESTROYED:
+                break
+            active_missiles = [m for m in target.attachedMissiles.values() if m.status == MissileStatus.ACTIVE]
+            if not active_missiles and target.status == TargetStatus.FOLLOWED:
+                self._dispatcher.send_message(
+                CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target)
+            )
             self._missileController.process_missiles_of_target(target)
-        self._missileController.process_unuseful_missiles()
+            self._missileController.process_unuseful_missiles()
 
     def _update_priority_targets(self):
         """Обновляет приоритетность целям на данной итерации"""
@@ -145,24 +148,24 @@ class ControlCenter:
 
             direction = self._direction(target)
             launcher_pr_list = []
+
             for launcher in self.get_launchers():
-                if launcher.silo_num == 0: # бесполезный ПУ
+                if launcher.available_missiles() == 0: # бесполезный ПУ
                     continue
     
                 distance = np.array(launcher.coord) - np.array(target.currentCoords)
-
                 projection = np.dot(distance, direction)
                 signReverse = -1 if projection >= 0 else 1
 
                 active_missiles_count = sum(1 for missile in target.attachedMissiles.values() if missile.status == MissileStatus.ACTIVE)
                 launcher_pr_list.append( (active_missiles_count, signReverse, abs(projection), target) )
 
-            launcher_pr_list.sort( key=lambda x: (x[0], x[1], x[2]) )
-            pr_list.append( launcher_pr_list[0] )
+            if launcher_pr_list:
+                launcher_pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
+                pr_list.append(launcher_pr_list[0])
 
 
         pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
-
         return [item[3] for item in pr_list]
     
 

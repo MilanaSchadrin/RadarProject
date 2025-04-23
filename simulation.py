@@ -1,7 +1,7 @@
 from skyenv.skyenv import SkyEnv
 from controlcenter.ControlCenter import ControlCenter
 from dispatcher.dispatcher import Dispatcher
-from vizualization.start_page import startPage
+from vizualization.start_page import StartPage
 from database.databaseman import DatabaseManager
 from PyQt5.QtWidgets import QApplication
 import sys
@@ -12,6 +12,7 @@ class Simulation:
         self.gui = None
         self.skyEnv = None
         self.CC = None
+        self.data_colector=None
         self.db = DatabaseManager()
         self.steps = 250
         self.app = QApplication(sys.argv)
@@ -22,7 +23,8 @@ class Simulation:
         self.dispatcher = Dispatcher()
 
     def set_GUI(self):
-        self.gui = startPage(self.dispatcher,self.app, self)
+        self.gui = StartPage(self.dispatcher,self.app, self)
+        expect_modules=['Радиолокатор', 'ПУ', 'ПБУ', 'ВО']
         #self.steps = self.gui.set_session_params(self.db)
         #self.gui.set_session_params(self.db)
     
@@ -36,13 +38,18 @@ class Simulation:
         #wait
         #main window
         
-    def modulate(self):
+    def modulate(self,progress_callback):
         print('Начало моделирования')
         for i in range(self.steps):
             #print('Шаг моделирования', i)
+            self.data_colector.begin_step(i)
             self.skyEnv.update()
             self.CC.update()
+            self.data_colector.collect_messages()
             self.gui.update()
+            if progress_callback:
+                progress_callback(i+1)
+                QApplication.processEvents()
             #self.app.exec_()#передовать и вызывать в update у тебя
             
     def run(self):
