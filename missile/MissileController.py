@@ -61,7 +61,7 @@ class MissileController:
         """Удаляет и возвращает список всех ракет."""
         missiles = self._missiles.copy()
         self._missiles.clear()
-
+        return missiles
 
     """-------------private---------------"""
 

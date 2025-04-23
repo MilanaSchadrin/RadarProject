@@ -68,7 +68,6 @@ class ControlCenter:
                 self._targets = list(message.detected_objects.values())
                 self._update_priority_targets()
                 self._process_targets()
-
             elif isinstance(message, LaunchertoCCMissileLaunched):
                 self._missileController.process_new_missile(message.missile)
         self._radarController.update(self.currentStep)
