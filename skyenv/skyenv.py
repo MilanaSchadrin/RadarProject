@@ -163,11 +163,11 @@ class SkyEnv:
         for j in self.planes:
             data[j.get_id()] = j.get_trajectory()
         message = SEStarting(recipient_id=Modules.GUI,
-                             priority=Priorities.SUPERHIGH,
+                             priority=Priorities.LOW,
                              planes=data)
         self.dispatcher.send_message(message)
         messagetoRadar = SEStarting(recipient_id=Modules.RadarMain,
-                                    priority=Priorities.SUPERHIGH,
+                                    priority=Priorities.LOW,
                                     planes=data)
         self.dispatcher.send_message(messagetoRadar)
 

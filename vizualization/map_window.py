@@ -334,7 +334,6 @@ class MapView(QFrame):
        if obj_id not in self.trails:
             self.trails[obj_id] = []
        self.trails[obj_id].append(QPointF(point))
-       #self.trails[obj_id].append(point)
        self.update()
 
     def process_explosion_message(self, msg: dict):

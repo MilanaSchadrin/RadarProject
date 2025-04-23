@@ -19,7 +19,11 @@ class MapWindow(QMainWindow):
     def __init__(self, ):
         super().__init__()
         self.setWindowTitle("Моделирование ЗРС")
-        self.setGeometry(100, 100, 800, 600)
+        self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        screen_geometry = QApplication.desktop().screenGeometry()
+        self.resize(int(screen_geometry.width()*0.8),int(screen_geometry.height()*0.8))
+        self.move(int(screen_geometry.width()*0.1), int(screen_geometry.height()*0.1))
+        #self.setGeometry(100, 100, 800, 600)
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QHBoxLayout(self.central_widget)
@@ -41,9 +45,9 @@ class MapWindow(QMainWindow):
         self.simulation_events = []  # List of events to be visualized
         self.playback_timer = QTimer(self)
         self.playback_timer.timeout.connect(self.next_step)
-        self.playback_speed = 90
+        self.playback_speed = 100
         self.is_playing = False
-
+        #self.showFullScreen()
     def setup_control_panel(self, main_layout):
          right_panel = QVBoxLayout()
          self.text_output = QTextEdit()
@@ -223,16 +227,22 @@ class MapWindow(QMainWindow):
     def process_message(self, msg):
            try:
                 if msg['type'] == 'plane_start':
+
                     for plane_id, coords in msg['data'].planes.items():
                         self.visualize_plane_track(plane_id, coords)
+
                 elif msg['type'] == 'rocket_add':
                     rocket_data=msg['data']
+                    #print('ROCKET', rocket_data.rocket_coords)
                     self.visualize_zur_track(rocket_data.rocket_id, rocket_data.rocket_coords)
                 elif msg['type'] == 'radar_tracking':
                     #пример; msg['data']. target_id
                     self.map_view.handle_target_detection(603, msg['data'].sector_size)
                     self.text_output.append(f"Обнаружена цель{msg['data'].target_id}")
                 elif msg['type'] == 'explosion':
+                    #pass
+
+                    print(self.current_step, 'Коллизия')
                     explosion_data = {'collision_step': self.current_step, 'rocket_id': msg['data'].rocket_id, 'rocket_coords': msg['data'].rocket_coords,
                                                                     'plane_id': msg['data'].plane_id, 'plane_coords': msg['data'].plane_coords,
                                                                     'collateral_damage': [(damage[0], damage[1]) for damage in msg['data'].collateral_damage] if hasattr(msg['data'], 'collateral_damage') else []}
@@ -240,6 +250,7 @@ class MapWindow(QMainWindow):
                     self.handle_explosion_event(explosion_data)
            except Exception as e:
                 print(f"Ошибка при обработке сообщения: {e}")
+
 
     def update_rls_visualization(self, step_data):
            if 'radar_tracking' in step_data:
