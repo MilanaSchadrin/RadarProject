@@ -26,10 +26,11 @@ class Simulation:
         self.gui = StartPage(self.dispatcher,self.app, self)
         expect_modules=['Радиолокатор', 'ПУ', 'ПБУ', 'ВО']
         self.gui.set_params_callback(self.on_params_ready, expect_modules)
-        #self.steps = self.gui.set_session_params(self.db)
         self.gui.set_session_params(self.db)
     def on_params_ready(self, params):
         self.gui.set_session_params(self.db)
+        self.steps = self.gui.get_step()
+        self.name=self.gui.get_db_name()
     def set_units(self):
         self.skyEnv = SkyEnv(self.dispatcher)
         self.CC = ControlCenter(self.dispatcher, self.db.load_cc())
@@ -42,6 +43,7 @@ class Simulation:
 
     def modulate(self, progress_callback):
         print('Начало моделирования')
+        print(self.steps)
         for i in range(self.steps):
             #print('Шаг моделирования', i)
             self.data_colector.begin_step(i)
