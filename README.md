@@ -15,15 +15,18 @@
 
 ## Архитектура
 
-![Архитектура](https://github.com/user-attachments/assets/997eb556-d5ee-4d42-9c20-647a46ef9ff4)
->
+![Архитектура](https://github.com/user-attachments/assets/2efd7701-1923-4253-93a7-a8e660c45b87)
+
+>Диаграммы классов и процессов  - https://drive.google.com/file/d/1NRzsn4hVriHqQKuGoWiO6pbLNernI-Td/view?usp=sharing
+
+## Документация
+Здесь она когда-нибудь будет
+
 >**Используемые Ресурсы**
 >
 >![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 >![Qt](https://img.shields.io/badge/Qt-%23217346.svg?style=for-the-badge&logo=Qt&logoColor=white)
->![MySQL](https://img.shields.io/badge/mysql-4479A1.svg?style=for-the-badge&logo=mysql&logoColor=white)
-
-
+>![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
 
 
 

@@ -60,9 +60,7 @@ class MissileController:
     def pop_missiles(self):
         """Удаляет и возвращает список всех ракет."""
         missiles = self._missiles.copy()
-        #print("Sending missiles:", type(missiles), [type(m) for m in missiles])
-        self._missiles = []
-        return missiles
+        self._missiles.clear()
 
 
     """-------------private---------------"""
@@ -97,8 +95,7 @@ class MissileController:
         C = np.dot(d, d) - missile.damageRadius ** 2
 
         if A == 0:
-            if B == 0:
-                return C < 0  # Уже в радиусе взрыва
+            return C < 0  # Уже в радиусе взрыва
 
         D = B ** 2 - 4 *A * C
         if D <= 0:
