@@ -35,3 +35,5 @@ class SimulationDataCollector:
             return 'rocket_add'
         elif isinstance(message, RadarToGUICurrentTarget):
                 return 'radar_tracking'
+        elif isinstance(message, ToGuiRocketInactivated):
+                    return 'rocket_inactivate'

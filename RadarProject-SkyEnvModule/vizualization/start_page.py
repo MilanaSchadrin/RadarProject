@@ -41,11 +41,20 @@ class StartPage(QWidget):
         layout.addWidget(self.button_pbu)
         layout.addWidget(self.button_pu)
         layout.addWidget(self.button_vo)
+
         steps_label = QLabel ('Введите количество шагов моделирования:')
         layout.addWidget(steps_label)
-        self.steps_input=QLineEdit(str(self.steps))
+        #self.steps_input=QLineEdit(str(self.steps))
+        self.steps_input=QLineEdit()
         self.steps_input.setValidator(QIntValidator(1,1000))
         layout.addWidget(self.steps_input)
+
+        #Загрузка БД по названию
+        self.db_name = QLabel ('Введите название базы данных для загрузки:')
+        layout.addWidget(self.db_name)
+        self.db_name_input=QLineEdit()
+        layout.addWidget(self.db_name_input)
+
         self.saved_params_label = QLabel("Введенные параметры:")
         layout.addWidget(self.saved_params_label)
         self.params_display = QTextEdit()
