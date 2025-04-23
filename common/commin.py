@@ -1,5 +1,5 @@
 import numpy as np
-
+from datetime import datetime
 """
 class Point:
     def __init__(self, x=0, y=0, z=0):
@@ -17,3 +17,7 @@ class Point:
 TICKSPERSECOND = 10
 TICKSPERCYCLERADAR = 3
 TICKSPERCYCLELAUNCHER = 2
+
+def to_integer():
+    dt = datetime.today()
+    return int(dt.timestamp())

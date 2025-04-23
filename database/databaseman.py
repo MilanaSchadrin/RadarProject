@@ -1,6 +1,6 @@
 import sqlite3
 from typing import List, Dict, Tuple, Union
-from common.commin import Point
+#from common.commin import Point
 import numpy as np
 import os
 
@@ -136,7 +136,7 @@ class DatabaseManager:
         for row in self.cursor.fetchall():
             radar_id, px, py, pz, max_t, angle, range_ = row
             radars[radar_id] = {
-                'position': Point(px, py, pz),
+                'position': (px, py, pz),
                 'max_targets': max_t,
                 'angle_input': angle,
                 'range_input': range_}
@@ -149,7 +149,7 @@ class DatabaseManager:
         for row in self.cursor.fetchall():
             launcher_id, px, py, pz, count, dist_zur, vel_zur  = row
             launchers[launcher_id] = {
-                'position': Point(px, py, pz),
+                'position': (px, py, pz),
                 'cout_zur': count,
                 'dist_zur': dist_zur,
                 'velocity_zur': vel_zur }
@@ -161,7 +161,7 @@ class DatabaseManager:
         for row in self.cursor.fetchall():
             cc_id, px, py, pz = row
             cc[cc_id] = {
-                'position': Point(px, py, pz)}
+                'position': (px, py, pz)}
         return cc
 
     def close(self) -> None:

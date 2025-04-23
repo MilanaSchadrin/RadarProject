@@ -6,10 +6,11 @@ from dispatcher.dispatcher import Dispatcher
 from dispatcher.enums import *
 from dispatcher.messages import RadarControllerObjects,LaunchertoCCMissileLaunched,CCToSkyEnv,CCLaunchMissile,CCToRadarNewStatus
 from missile.Missile import MissileStatus
+from radar.Target import Target, TargetStatus
 from common.commin import *
-
 from typing import Tuple, List
 import numpy as np
+import datetime
 
 
 class ControlCenter:
@@ -24,10 +25,13 @@ class ControlCenter:
         self._dispatcher: Dispatcher = dispatcher
         self._position: Tuple[float, float, float] = position
         self._targets: List[Target] = [] # все цели на данной итерации
+        self.steps = 250
+        self.currentStep = 0 
 
     def start(self,db):
         self._dispatcher.register(Modules.ControlCenter)
         radars_data = db.load_radars()
+        self._dispatcher.register(Modules.RadarMain)
         for radar_id, radar_info in radars_data.items():
             radar = Radar(
                 radarController=self._radarController,
@@ -36,10 +40,13 @@ class ControlCenter:
                 position=radar_info['position'],
                 maxRange=radar_info['range_input'],
                 coneAngleDeg=radar_info['angle_input'],
-                maxTargetCount=radar_info['max_targets'],
+                maxFollowedCount=radar_info['max_targets'],
+                #maxTargetCount=radar_info['max_targets'],
             )
             self._radarController.addRadar(radar)
+
         launchers_data = db.load_launchers()
+        self._dispatcher.register(Modules.LauncherMain)
         for launcher_id, launcher_info in launchers_data.items():
             launcher = Launcher(
                 ctrl=self._launcherController,
@@ -56,17 +63,20 @@ class ControlCenter:
         while not message_queue.empty():
             messages.append(message_queue.get())
         for priority, message in messages:
-
             if isinstance(message, RadarControllerObjects):
-
-                self._targets = message.detected_objects
+                #Это словарь, а не список
+                self._targets = list(message.detected_objects.values())
                 self._update_priority_targets()
                 self._process_targets()
 
             elif isinstance(message, LaunchertoCCMissileLaunched):
-                self._missile_controller.process_new_missile(message.missile)
-
-        self._dispatcher.send_message(CCToSkyEnv(Modules.SE, Priorities.STANDARD, self._get_missiles()) )
+                self._missileController.process_new_missile(message.missile)
+        self._radarController.update(self.currentStep)
+        self._launcherController.update()
+        t = self._get_missiles()
+        if len(t)!=0:
+            self._dispatcher.send_message(CCToSkyEnv(Modules.SE, Priorities.LOW,t) )
+        self.currentStep+=1
 
 
     def get_position(self):
@@ -96,7 +106,6 @@ class ControlCenter:
 
     """-------------private---------------"""
 
-
     def _get_missiles(self):
         """Возвращает список всех ракет (одноразово)."""
         return self._missileController.pop_missiles()
@@ -104,26 +113,32 @@ class ControlCenter:
 
     def _process_targets(self):
         """Обрабатывает цель."""
-
         for target in self._targets:
-
-            if target.status != TargetStatus.DESTROYED: # неуничтоженная цель
-                active_missiles_count = sum(1 for missile in target.attachedMissiles if missile.status == MissileStatus.ACTIVE)
-                if target.status == TargetStatus.FOLLOWED and active_missiles_count == 0:
-                    self._dispatcher.send_messege( CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target) )
+            if target.status == TargetStatus.DESTROYED:
+                break
+            active_missiles = [m for m in target.attachedMissiles.values() if m.status == MissileStatus.ACTIVE]
+            if not active_missiles and target.status == TargetStatus.FOLLOWED:
+                self._dispatcher.send_message(
+                CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target)
+            )
             self._missileController.process_missiles_of_target(target)
+
         self._missileController.process_unuseful_missiles()
 
 
     def _update_priority_targets(self):
         """Обновляет приоритетность целям на данной итерации"""
         list_pr_targets = self._find_priority_targets()
-
         priority = 1
         for target in list_pr_targets:
-            self._dispatcher.send_messege( CCToRadarNewStatus(Modules.RadarMain, Priorities.STANDARD, (target.targetId, priority)) )
+            p = to_integer()
+            data = (int(target.targetId), priority)
+            self._dispatcher.send_message(CCToRadarNewStatus(
+                recipient_id=Modules.RadarMain,
+                priority = Priorities.STANDARD,
+                priority_s=p,
+                new_target_status =  data))
             priority += 1
-
 
     def _find_priority_targets(self):
         """Находит приоритетные цели на данной итерации"""
@@ -135,25 +150,27 @@ class ControlCenter:
 
             direction = self._direction(target)
             launcher_pr_list = []
+
             for launcher in self.get_launchers():
-                if launcher.countMissiles == 0: # бесполезный ПУ
+                if launcher.available_missiles() == 0: # бесполезный ПУ
                     continue
     
                 distance = np.array(launcher.coord) - np.array(target.currentCoords)
-
                 projection = np.dot(distance, direction)
                 signReverse = -1 if projection >= 0 else 1
 
-                active_missiles_count = sum(1 for missile in target.attachedMissiles if missile.status == MissileStatus.ACTIVE)
+                active_missiles_count = sum(1 for missile in target.attachedMissiles.values() if missile.status == MissileStatus.ACTIVE)
                 launcher_pr_list.append( (active_missiles_count, signReverse, abs(projection), target) )
 
-            launcher_pr_list.sort( key=lambda x: (x[0], x[1], x[2]) )
-            pr_list.append( launcher_pr_list[0] )
+            if launcher_pr_list:
+                launcher_pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
+                pr_list.append(launcher_pr_list[0])
 
 
         pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
 
         return [item[3] for item in pr_list]
+
 
 
     def _direction(self, target):

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple
 from missile.Missile import Missile
 
 
@@ -12,6 +12,7 @@ class TargetStatus(Enum):
 
 class Target:
     """Базовый класс для всех объектов, обнаруживаемых радаром."""
+
     def __init__(
         self,
         targetId: str,
@@ -22,6 +23,7 @@ class Target:
         self.currentCoords: Tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.currentSpeedVector: Tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.attachedMissiles: Dict[str, Missile] = {}
+        self.priority: int = 0
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]) -> None:
         """Обновить текущие координаты."""
@@ -37,28 +39,9 @@ class Target:
 
     def attachMissile(self, missile: Missile) -> None:
         """Добавляет ракету к списку привязанных."""
-        self.attachedMissiles[missile.missileId] = missile
+        self.attachedMissiles[missile.missileID] = missile
 
     def detachMissile(self, missileId: str) -> None:
         """Удаляет ракету из списка привязанных."""
         if missileId in self.attachedMissiles:
             self.attachedMissiles.pop(missileId)
-
-class TargetEnv:
-    """Класс для хранения реальных координат цели, полученных от SkyEnv."""
-
-    def __init__(self, targetId: str, clearCoords: List[Tuple[float, float, float]]) -> None:
-        self.targetId: str = targetId
-        self.clearCoords: List[Tuple[float, float, float]] = clearCoords
-
-    def getCurrentCoords(self, step: int) -> Tuple[float, float, float]:
-        """Возвращает текущие координаты цели на указанном шаге."""
-        return self.clearCoords[step]
-
-    def getCurrentSpeedVec(self, step: int) -> Tuple[float, float, float]:
-        """Возвращает текущий вектор скорости цели."""
-        return (
-            self.clearCoords[step + 1][0] - self.clearCoords[step][0],
-            self.clearCoords[step + 1][1] - self.clearCoords[step][1],
-            self.clearCoords[step + 1][2] - self.clearCoords[step][2],
-        )
