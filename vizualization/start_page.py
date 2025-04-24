@@ -8,7 +8,7 @@ from dispatcher.messages import SEKilled,SEAddRocket,SEStarting, ToGuiRocketInac
 from dispatcher.dispatcher import Dispatcher
 from vizualization.data_collector_for_visual import  SimulationDataCollector
 from vizualization.parametr_window import ParametersWindow
-from PyQt5.QtWidgets import QApplication,QProgressBar, QDialog, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox,QHBoxLayout
+from PyQt5.QtWidgets import QApplication,QProgressBar, QDialog,QSpinBox, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox,QHBoxLayout
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QIntValidator
 from vizualization.map_class import MapWindow
@@ -16,7 +16,7 @@ from vizualization.map_class import MapWindow
 class StartPage(QWidget):
     def __init__(self, dispatcher, app, simulation):
         super().__init__()
-        self.steps=300
+        self.steps=None
         self.dispatcher=dispatcher
         self.map_window=None
         self.simulation = simulation
@@ -33,6 +33,17 @@ class StartPage(QWidget):
         for label in text_labels:
             text = QLabel(label)
             layout.addWidget(text)
+        self.steps_label = QLabel ('Введите количество шагов моделирования:')
+        layout.addWidget(self.steps_label)
+        self.steps_input=QLineEdit()
+        layout.addWidget(self.steps_input)
+
+        #Загрузка БД по названию
+        self.db_name = QLabel ('Введите название базы данных для загрузки:')
+        layout.addWidget(self.db_name)
+        self.db_name_input=QLineEdit()
+        layout.addWidget(self.db_name_input)
+
         self.button_radar = QPushButton('Модуль радиолокатора', self)
         self.button_pbu = QPushButton('Модуль ПБУ', self)
         self.button_pu = QPushButton('Модуль ПУ', self)
@@ -41,11 +52,7 @@ class StartPage(QWidget):
         layout.addWidget(self.button_pbu)
         layout.addWidget(self.button_pu)
         layout.addWidget(self.button_vo)
-        steps_label = QLabel ('Введите количество шагов моделирования:')
-        layout.addWidget(steps_label)
-        self.steps_input=QLineEdit(str(self.steps))
-        self.steps_input.setValidator(QIntValidator(1,1000))
-        layout.addWidget(self.steps_input)
+
         self.saved_params_label = QLabel("Введенные параметры:")
         layout.addWidget(self.saved_params_label)
         self.params_display = QTextEdit()
@@ -80,13 +87,27 @@ class StartPage(QWidget):
         if expect_modules:
             self.expect_modules=set(expect_modules)
 
-    def open_map_window(self):
+    def get_step(self):
         try:
             self.steps = int(self.steps_input.text())
+            print("STEPS", self.steps)
         except ValueError:
-            #QMessageBox.warning(self, "Ошибка", "Некорректное количество шагов")
             print("Некорректное количество шагов")
-            return
+        return self.steps
+
+    def get_db_name(self):
+        self.name_db = (self.db_name_input.text())
+        print("DB", self.name_db )
+        return self.name_db
+
+    def open_map_window(self):
+        #try:
+        #    self.steps = int(self.steps_input.text())
+        #    print("STEPS", self.steps)
+        #except ValueError:
+        #    #QMessageBox.warning(self, "Ошибка", "Некорректное количество шагов")
+        #    print("Некорректное количество шагов")
+        #    return
         self.data_collector = SimulationDataCollector(self.dispatcher)
         self.data_collector.dispatcher.register(Modules.GUI)
         self.simulation.data_colector = self.data_collector
@@ -167,8 +188,11 @@ class StartPage(QWidget):
     def set_session_params(self, db):
        for module_name, params in self.module_params.items():
             if module_name == 'Радиолокатор':
-                radar_id = len(db.load_radars()) + 1
-                db.add_radar(radar_id, params['position'], params['max_targets'], params['angle_of_view'], params['range'])
+                       for i, radar_data in enumerate(params['radars'], 1):
+                               position = radar_data['position']
+                               if isinstance(position, str):
+                                   position = tuple(map(float, position.split(',')))
+                               db.add_radar(i, position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
             elif module_name == 'ПУ':
                 launcher_id = len(db.load_launchers()) + 1
                 db.add_launcher(launcher_id, params['position'], params['missile_count'], params['range'], params['velocity'])
@@ -188,3 +212,8 @@ class StartPage(QWidget):
                         raise ValueError("Координаты должны содержать 3 значения (x,y,z)")
                     db.add_plane(plane_id, start_pos, end_pos)
 
+       #return self.steps
+    '''
+    def gui_step()
+        return self.steps()
+    '''

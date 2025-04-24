@@ -18,15 +18,15 @@ class ControlCenter:
 
     """-------------public---------------"""
 
-    def __init__(self, dispatcher:Dispatcher, position:Tuple[float, float, float]):
+    def __init__(self, dispatcher:Dispatcher, position:Tuple[float, float, float], steps):
         self._radarController: RadarController = RadarController(dispatcher)
         self._launcherController: LaunchController = LaunchController(dispatcher)
         self._missileController: MissileController = MissileController()
         self._dispatcher: Dispatcher = dispatcher
         self._position: Tuple[float, float, float] = position
         self._targets: List[Target] = [] # все цели на данной итерации
-        self.steps = 250
-        self.currentStep = 0 
+        self.steps = steps
+        self.currentStep = 0
 
     def start(self,db):
         self._dispatcher.register(Modules.ControlCenter)
@@ -68,7 +68,6 @@ class ControlCenter:
                 self._targets = list(message.detected_objects.values())
                 self._update_priority_targets()
                 self._process_targets()
-
             elif isinstance(message, LaunchertoCCMissileLaunched):
                 self._missileController.process_new_missile(message.missile)
         self._radarController.update(self.currentStep)
@@ -122,7 +121,8 @@ class ControlCenter:
                 CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target)
             )
             self._missileController.process_missiles_of_target(target)
-            self._missileController.process_unuseful_missiles()
+
+        self._missileController.process_unuseful_missiles()
 
     def _update_priority_targets(self):
         """Обновляет приоритетность целям на данной итерации"""
@@ -155,10 +155,11 @@ class ControlCenter:
     
                 distance = np.array(launcher.coord) - np.array(target.currentCoords)
                 projection = np.dot(distance, direction)
+                time = projection / np.linalg.norm( np.array(target.currentSpeedVector) )
                 signReverse = -1 if projection >= 0 else 1
 
                 active_missiles_count = sum(1 for missile in target.attachedMissiles.values() if missile.status == MissileStatus.ACTIVE)
-                launcher_pr_list.append( (active_missiles_count, signReverse, abs(projection), target) )
+                launcher_pr_list.append( (active_missiles_count, signReverse, abs(time), target) )
 
             if launcher_pr_list:
                 launcher_pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
@@ -166,8 +167,9 @@ class ControlCenter:
 
 
         pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
+
         return [item[3] for item in pr_list]
-    
+
 
 
     def _direction(self, target):

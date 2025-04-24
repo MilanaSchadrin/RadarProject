@@ -152,10 +152,10 @@ class SkyEnv:
             v=None
             if len(coords)==2:
                 if v == None:
-                    plane = Plane(current_id, plane_info['start'],plane_info['end'])
+                    plane = Plane(current_id, plane_info['start'],plane_info['end'],self.timeSteps)
                     self.planes.append(plane)
                 else:
-                    plane = Plane(current_id, plane_info['start'],plane_info['end'], v)
+                    plane = Plane(current_id, plane_info['start'],plane_info['end'],self.timeSteps, v)
                     self.planes.append(plane)
             else:
                 pass
@@ -180,7 +180,7 @@ class SkyEnv:
             if isinstance(message,LaunchertoSEMissileLaunched):
                 targetId = message.targetId
                 miss = message.missile
-                rocket = Rocket(miss.missileID,miss.currentCoords,miss.velocity,self.currentTime,self.timeSteps, miss.damageRadius, miss.currLifeTime)
+                rocket = Rocket(miss.missileID,miss.currentCoords,miss.velocity,self.currentTime, self.timeSteps, miss.damageRadius, miss.currLifeTime)
                 self.add_rocket(rocket,miss,targetId)
 
             elif isinstance(message,CCToSkyEnv):

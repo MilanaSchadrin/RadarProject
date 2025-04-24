@@ -199,7 +199,28 @@ class MapView(QFrame):
         painter.drawText(w - self.axis_offset + 10, x_axis_y - 5, "X")  # Подпись X
         painter.drawText(y_axis_x - 15, self.axis_offset + 15, "Y")     # Подпись Y
         painter.restore()
+    def update_radar_targets(self, targets):
+        radar_center = QPoint(self.radar.x_pos + self.radar.width()//2,self.radar.y_pos + self.radar.height()//2)
+        for target_id, (x, y) in targets.items():
+            if target_id not in self.trails:
+                self.trails[target_id] = []
+            self.trails[target_id].append(QPoint(x, y))
+            if len(self.trails[target_id]) > 50:
+                self.trails[target_id] = self.trails[target_id][-50:]
+            dx = x - radar_center.x()
+            dy = radar_center.y() - y
+            azimuth = math.degrees(math.atan2(dy, dx)) % 360
+            distance = math.sqrt(dx*dx + dy*dy)
+            if target_id not in self.tracked_targets:
+                self.tracked_targets[target_id] = {'azimuth': azimuth, 'distance': distance}
+            else:
+                if isinstance(self.tracked_targets[target_id], (int, float)):
+                    self.tracked_targets[target_id] = {'azimuth': self.tracked_targets[target_id],'distance': distance}
+                else:
+                    self.tracked_targets[target_id]['azimuth'] = azimuth
+                    self.tracked_targets[target_id]['distance'] = distance
 
+        self.update()
     def draw_radar_sector(self, painter):
         radar_center = QPoint(self.radar.x_pos + self.radar.width() // 2, self.radar.y_pos + self.radar.height() // 2)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -219,7 +240,8 @@ class MapView(QFrame):
                 azimuth = np.degrees(np.arctan2(dy, dx)) % 360
                 self.tracked_targets[target_id] = azimuth
                 distance = np.sqrt(dx*dx + dy*dy)
-                ray_length = min(self.rls_radius, distance * 0.9)
+                #ray_length = min(self.rls_radius, distance * 0.9)
+                ray_length =  distance * 0.9
                 end_x = radar_center.x() + ray_length * np.cos(np.radians(azimuth))
                 end_y = radar_center.y() - ray_length * np.sin(np.radians(azimuth))
                 painter.setPen(dash_pen)
