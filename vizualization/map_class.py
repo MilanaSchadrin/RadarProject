@@ -21,7 +21,7 @@ class MapWindow(QMainWindow):
         self.setWindowTitle("Моделирование ЗРС")
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
         screen_geometry = QApplication.desktop().screenGeometry()
-        self.resize(int(screen_geometry.width()*0.6), int(screen_geometry.height()*0.6))
+        self.resize(int(screen_geometry.width()*0.7), int(screen_geometry.height()*0.7))
         self.move(int(screen_geometry.width()*0.1), int(screen_geometry.height()*0.1))
 
         self.central_widget = QWidget()
@@ -42,7 +42,7 @@ class MapWindow(QMainWindow):
 
         self.rockets = {}
         self.planes = {}
-        self.rls_data = {}
+        self.tracked_targets = set()
 
         self.simulation_events = []  # List of events to be visualized
         self.playback_timer = QTimer(self)
@@ -122,17 +122,29 @@ class MapWindow(QMainWindow):
             self.update_visualization(instant_update=True)
 
     def update_visualization(self, instant_update=False):
-           step_data = self.simulation_steps[self.current_step]
-           #print("CURRENT STEP", step_data )
-           self.process_step(step_data)
-           self.text_output.append(f"\nШаг {self.current_step + 1}/{self.max_step + 1}")
-           self.update_planes(instant_update)
-           self.update_zur_positions(instant_update)
-           self.map_view.update()
+          step_data = self.simulation_steps[self.current_step]
+          self.process_step(step_data)
+          self.text_output.append(f"\nШаг {self.current_step + 1}/{self.max_step + 1}")
+          self.update_planes(instant_update)
+          self.update_zur_positions(instant_update)
+          self.update_radar_targets(self.tracked_targets)
+           #self.map_view.update_radar_targets(self.tracked_targets)
+          self.map_view.update()
 
+    def update_radar_targets(self, target_ids = None):
+          targets = {}
+          if target_ids is not None:
+                for target_id in target_ids:
+                    if target_id in self.planes:
+                        plane_data = self.planes[target_id]
+                        coords = plane_data['coords']
+                        idx = min(self.current_step, len(coords) - 1)
+                        x, y = coords[idx]
+                        targets[target_id] = (x, y)
+          self.map_view.update_radar_targets(targets)
 
     def update_planes(self, instant_update=False):
-           for plane_id, plane_data in self.planes.items():
+          for plane_id, plane_data in self.planes.items():
                 coords = plane_data['coords']
                 target_idx = min(self.current_step, len(coords) - 1)
                 target_x, target_y = coords[target_idx]
@@ -145,7 +157,7 @@ class MapWindow(QMainWindow):
                 plane_data['last_pos'] = (target_x, target_y)
 
     def update_zur_positions(self, instant_update=False):
-           for zur_id, zur_data in self.rockets.items():
+          for zur_id, zur_data in self.rockets.items():
                 if 'first_appearance_step' not in zur_data:
                     continue
                 if self.current_step >= zur_data['first_appearance_step']:
@@ -158,13 +170,13 @@ class MapWindow(QMainWindow):
                         zur_data['icon'].move(target_x - 10, target_y - 10)
                         zur_data['last_pos'] = (target_x, target_y)
                         if self.current_step >zur_data.get('last_processed_step', -1):
-                            self.map_view.add_to_trail(zur_id, QPoint(target_x, target_y))
+                            self.map_view.add_to_trail(zur_id, QPointF(target_x, target_y))
                     else:
                         if self.is_playing:
                             self.animate_movement(zur_data, target_x, target_y,zur_id)
                         else:
                             zur_data['icon'].move(target_x -10, target_y -10)
-                            self.map_view.add_to_trail(zur_id, QPoint(target_x, target_y))
+                            self.map_view.add_to_trail(zur_id, QPointF(target_x, target_y))
                     self.update_rocket_rotation(zur_data, coord_idx, coords)
                     zur_data['last_pos'] = (target_x, target_y )
                     zur_data['last_processed_step'] = self.current_step
@@ -190,26 +202,21 @@ class MapWindow(QMainWindow):
            rocket_data['icon'].rotate_to(((angle_deg + 90) % 360))
 
     def animate_movement(self, obj_data, target_x, target_y, obj_id, is_rocket=False):
-                        #if not self.is_playing:
-                        #     return
-
-                        self.animation_in_progress = True
-                        icon = obj_data['icon']
-                        start_x, start_y = obj_data['last_pos']
-                        steps = self.animation_steps * (3 if is_rocket else 1)
-                        duration = self.rocket_animation_duration if is_rocket else self.plane_animation_duration
-                        anim = QPropertyAnimation(icon, b"pos")
-                        anim.setDuration(duration)
-                        anim.setStartValue(QPoint(start_x - 10, start_y - 10))
-                        anim.setEndValue(QPoint(target_x - 10, target_y - 10))
-
-                        def animation_finished():
-                            self.animation_in_progress = False
-                            if self.is_playing:
-                                self.playback_timer.start(self.playback_speed)
-
-                        anim.finished.connect(animation_finished)
-                        anim.start(QAbstractAnimation.DeleteWhenStopped)
+           self.animation_in_progress = True
+           icon = obj_data['icon']
+           start_x, start_y = obj_data['last_pos']
+           steps = self.animation_steps * (3 if is_rocket else 1)
+           duration = self.rocket_animation_duration if is_rocket else self.plane_animation_duration
+           anim = QPropertyAnimation(icon, b"pos")
+           anim.setDuration(duration)
+           anim.setStartValue(QPoint(start_x - 10, start_y - 10))
+           anim.setEndValue(QPoint(target_x - 10, target_y - 10))
+           def animation_finished():
+                self.animation_in_progress = False
+                if self.is_playing:
+                    self.playback_timer.start(self.playback_speed)
+           anim.finished.connect(animation_finished)
+           anim.start(QAbstractAnimation.DeleteWhenStopped)
 
     def update_plane_rotation(self, plane_data, target_idx, coords):
            if len(coords) <= 1:
@@ -232,12 +239,6 @@ class MapWindow(QMainWindow):
                 correct_angle = current_angle + max_angle_step * (1 if angle_diff > 0 else -1)
            plane_data['icon'].rotate_to(correct_angle)
            plane_data['current_angle'] = correct_angle
-           '''
-            elif dy < 0.1:
-                correct_angle = -90
-           '''
-           #plane_data['icon'].rotate_to(correct_angle)
-
 
     def animate_plane_movement(self, plane_data, target_x, target_y, id):
            if not self.is_playing:
@@ -281,7 +282,7 @@ class MapWindow(QMainWindow):
                 return
            flat_coords = [(int(x), int(y)) for x, y in coords[:, :2]]
            if zur_id not in self.rockets:
-                #print("ZUR START", self.current_step)
+                print("ZUR START", self.current_step)
                 icon = RocketIcon("./vizualization/pictures/rocket.png", self)
                 icon.setToolTip(f"ID ракеты: {zur_id}")
                 self.rockets[zur_id] = {'icon': icon, 'coords': flat_coords, 'index': 0, 'last_pos': flat_coords[0], 'current_angle': 0, 'first_appearance_step': self.current_step, 'last_processed_step': -1}
@@ -319,20 +320,23 @@ class MapWindow(QMainWindow):
                     rocket_data=msg['data']
                     self.visualize_zur_track(rocket_data.rocket_id, rocket_data.rocket_coords)
                 elif msg['type'] == 'radar_tracking':
-                    #пример; msg['data']. target_id
-                    self.map_view.handle_target_detection(603, msg['data'].sector_size)
+                    #print("RADAR", msg['data'].target_id)
+                    self.map_view.handle_target_detection(msg['data'].target_id, msg['data'].sector_size)
                     self.text_output.append(f"Обнаружена цель{msg['data'].target_id}")
+                    self.tracked_targets.add(msg['data'].target_id)
                 elif msg['type'] == 'explosion':
-                    print(msg['data'].collision_step, 'Коллизия')
+                    print('Коллизия', msg['data'].collision_step, 'РАКЕТА',msg['data'].plane_id  )
                     print(msg['data'])
                     explosion_data = {'collision_step': msg['data'].collision_step, 'rocket_id': msg['data'].rocket_id, 'rocket_coords': msg['data'].rocket_coords,
                                                                     'plane_id': msg['data'].plane_id, 'plane_coords': msg['data'].plane_coords,
                                                                     'collateral_damage': [(damage[0], damage[1]) for damage in msg['data'].collateral_damage] if hasattr(msg['data'], 'collateral_damage') else []}
+                    self.tracked_targets.remove(msg['data'].plane_id)
+                    del self.map_view .trails[msg['data'].plane_id]
                     #self.log_explosion(self, rocket_id: int, plane_id: int, collateral_damage: List[Tuple[int, np.ndarray]])
                     self.handle_explosion_event(explosion_data)
                 elif msg['type'] == 'rocket_inactivate':
                     rocket_id = msg['data'].rocketId
-                    self.hide_rocket(rocket_id)
+                    self.remove_object(rocket_id)
                     self.text_output.append(f'<span style="color: gray;">• Ракета с ID {rocket_id} деактивирована</span>')
            except Exception as e:
                 print(f"Ошибка при обработке сообщения: {e}")

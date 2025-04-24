@@ -188,8 +188,11 @@ class StartPage(QWidget):
     def set_session_params(self, db):
        for module_name, params in self.module_params.items():
             if module_name == 'Радиолокатор':
-                radar_id = len(db.load_radars()) + 1
-                db.add_radar(radar_id, params['position'], params['max_targets'], params['angle_of_view'], params['range'])
+                       for i, radar_data in enumerate(params['radars'], 1):
+                               position = radar_data['position']
+                               if isinstance(position, str):
+                                   position = tuple(map(float, position.split(',')))
+                               db.add_radar(i, position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
             elif module_name == 'ПУ':
                 launcher_id = len(db.load_launchers()) + 1
                 db.add_launcher(launcher_id, params['position'], params['missile_count'], params['range'], params['velocity'])
@@ -209,7 +212,7 @@ class StartPage(QWidget):
                         raise ValueError("Координаты должны содержать 3 значения (x,y,z)")
                     db.add_plane(plane_id, start_pos, end_pos)
 
-       return self.steps
+       #return self.steps
     '''
     def gui_step()
         return self.steps()

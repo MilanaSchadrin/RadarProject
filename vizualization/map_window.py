@@ -155,7 +155,6 @@ class MapView(QFrame):
                 core_color = QColor(255, 165, 0, exp['alpha'])
                 painter.setPen(QPen(core_color, 4))
                 painter.setBrush(QBrush(core_color, Qt.SolidPattern))
-                exp['current_radius'] = 30
                 painter.drawEllipse(exp['center'], exp['current_radius'], exp['current_radius'])
                 if steps_passed < exp['duration'] * 0.7:
                     wave_alpha = int(exp['alpha'] * 0.7)
@@ -200,7 +199,28 @@ class MapView(QFrame):
         painter.drawText(w - self.axis_offset + 10, x_axis_y - 5, "X")  # Подпись X
         painter.drawText(y_axis_x - 15, self.axis_offset + 15, "Y")     # Подпись Y
         painter.restore()
+    def update_radar_targets(self, targets):
+        radar_center = QPoint(self.radar.x_pos + self.radar.width()//2,self.radar.y_pos + self.radar.height()//2)
+        for target_id, (x, y) in targets.items():
+            if target_id not in self.trails:
+                self.trails[target_id] = []
+            self.trails[target_id].append(QPoint(x, y))
+            if len(self.trails[target_id]) > 50:
+                self.trails[target_id] = self.trails[target_id][-50:]
+            dx = x - radar_center.x()
+            dy = radar_center.y() - y
+            azimuth = math.degrees(math.atan2(dy, dx)) % 360
+            distance = math.sqrt(dx*dx + dy*dy)
+            if target_id not in self.tracked_targets:
+                self.tracked_targets[target_id] = {'azimuth': azimuth, 'distance': distance}
+            else:
+                if isinstance(self.tracked_targets[target_id], (int, float)):
+                    self.tracked_targets[target_id] = {'azimuth': self.tracked_targets[target_id],'distance': distance}
+                else:
+                    self.tracked_targets[target_id]['azimuth'] = azimuth
+                    self.tracked_targets[target_id]['distance'] = distance
 
+        self.update()
     def draw_radar_sector(self, painter):
         radar_center = QPoint(self.radar.x_pos + self.radar.width() // 2, self.radar.y_pos + self.radar.height() // 2)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -214,19 +234,14 @@ class MapView(QFrame):
         dash_pen.setDashPattern([4, 4])
         for target_id in list(self.tracked_targets.keys()):
             if target_id in self.trails and self.trails[target_id]:
-                print('CHECK DRAW RADAR')
-                print(target_id)
                 target_point = self.trails[target_id][-1]
                 dx = target_point.x() - radar_center.x()
-                print(target_point.x(), 'TARGET X')
-                print( radar_center.x(), 'RADAR X')
                 dy = radar_center.y() - target_point.y()
-                print(target_point.y(), 'TARGET Y')
-                print( radar_center.y(), 'RADAR Y')
                 azimuth = np.degrees(np.arctan2(dy, dx)) % 360
                 self.tracked_targets[target_id] = azimuth
                 distance = np.sqrt(dx*dx + dy*dy)
-                ray_length = min(self.rls_radius, distance * 0.9)
+                #ray_length = min(self.rls_radius, distance * 0.9)
+                ray_length =  distance * 0.9
                 end_x = radar_center.x() + ray_length * np.cos(np.radians(azimuth))
                 end_y = radar_center.y() - ray_length * np.sin(np.radians(azimuth))
                 painter.setPen(dash_pen)
