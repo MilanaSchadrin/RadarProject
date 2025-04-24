@@ -21,7 +21,7 @@ class Radar:
         self.followedTargets: Dict[str, Target] = {}
         self.noiseLevel: float = random.uniform(0.1, 1)
 
-    def isTargetInRange(self, target, currentStep) -> bool:
+    def isTargetInRange(self, target:Target, currentStep:int) -> bool:
         """Проверяет, находится ли цель в зоне действия радара."""
         targetPosition = target.getCurrentCoords(currentStep)
         if targetPosition[2] < 0:
@@ -118,7 +118,6 @@ class Radar:
         #dict not list
         self.followedTargets.clear() 
         self.currentTargetCount = 0
-
         # Обработка целей
         for target_id, target_env in self.radarController.allTargets.items():
             if self.isTargetInRange(target_env, currentStep):

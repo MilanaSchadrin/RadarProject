@@ -9,7 +9,7 @@ def distance(a,b):
     return np.linalg.norm(dist)
 
 class SkyObject:
-    def __init__(self, obj_id: int, start: Tuple[float, float, float], finish:Tuple[float, float, float], speed:float = 500, timeSteps: int =250):
+    def __init__(self, obj_id: int, start: Tuple[float, float, float], finish:Tuple[float, float, float],timeSteps: int =250, speed:float = 500):
         self.id = obj_id
         self.currentPos = start
         self.start = start
@@ -47,8 +47,8 @@ class SkyObject:
         
 
 class Plane(SkyObject):
-    def __init__(self,obj_id, start, finish, speed:float = 500, timeSteps:int =250, status:bool = True):
-        super().__init__( obj_id, start, finish, speed, timeSteps)
+    def __init__(self,obj_id, start, finish,timeSteps, speed:float = 500, status:bool = True):
+        super().__init__( obj_id, start, finish,timeSteps, speed)
         self.status = status
         self.trajectory = np.zeros((self.timeSteps, 3))
         self.points=[]
@@ -94,37 +94,37 @@ class Plane(SkyObject):
         self.status=False
 
 class Rocket(SkyObject):
-    def __init__(self, obj_id, start, velocity, startTime, timeSteps:int=250,radius:int=20, life_period:int=250):
-        self.velocity = velocity
+    def __init__(self, obj_id, start, velocity, startTime, timeSteps, radius:int=20, life_period:int=400):
+        self.velocity = np.array(velocity)  # Ensure velocity is numpy array
         self.radius = radius
         self.lifePeriod = life_period
         self.killed = False
         self.timeSteps = timeSteps
         self.startTime = startTime
         self.dragcoeff = 0
-        self.tarjectory = None
         self.gravity = -9.8
-        super().__init__( obj_id, start, timeSteps)
+        # Initialize with proper parameters
+        super().__init__(obj_id, start, start, timeSteps)  # Using start as both start and finish
         self.calculate_trajectory()
 
     def calculate_trajectory(self):
-        times = np.linspace(self.startTime, self.startTime + self.lifePeriod, num = self.timeSteps, dtype=np.float64)
-        timeReal = times - self.startTime
-        self.tarjectory =  np.zeros((self.timeSteps, 3))
-        self.trajectory[0] = self.start
+        times = np.linspace(0, self.lifePeriod, num=self.timeSteps, dtype=np.float64)
+        self.trajectory = np.zeros((self.timeSteps, 3))
+
         if self.dragcoeff > 0:
-            pass
-            """
-            drag_factor = np.exp(-self.dragcoeff * timeReal)
-            self.trajectory[:,:2] = self.startPoint[:2] + self.velocity[:2] * (1 - drag_factor)/self.dragcoeff
-            """
+            drag_factor = np.exp(-self.dragcoeff * times)
+            self.trajectory[:, :2] = self.start[:2] + self.velocity[:2] * (1 - drag_factor)/self.dragcoeff
         else:
-            self.trajectory[:,:2] = self.start[:2] + self.velocity[:2] * timeReal[:, np.newaxis]
-        #z
+            self.trajectory[:, :2] = self.start[:2] + self.velocity[:2] * times[:, np.newaxis]
+        
         if self.gravity != 0:
-            self.trajectory[:,2] = (self.start[2] +self.velocity[2] * timeReal + 0.5 * self.gravity * timeReal**2)
+            self.trajectory[:, 2] = (self.start[2] + 
+                                    self.velocity[2] * times + 
+                                    0.5 * self.gravity * times**2)
         else:
-            self.trajectory[:,2] = self.start[2] + self.velocity[2] * timeReal
+            self.trajectory[:, 2] = self.start[2] + self.velocity[2] * times
+        
+        self.trajectory[:, 2] = np.maximum(self.trajectory[:, 2], 0)
 
     def get_radius(self):
         return self.radius

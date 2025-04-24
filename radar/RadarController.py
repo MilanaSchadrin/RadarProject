@@ -127,6 +127,7 @@ class RadarController:
         """Получает начальные данные о целях в небе."""
         for targetId, targetCoords in message.planes.items():
             self.allTargets[targetId] = TargetEnv(targetId, targetCoords)
+            print(len(targetCoords))
 
     def addRocket(self, message: SEAddRocketToRadar) -> None:
         """Добавляет новую ракету в список всех ракет."""
@@ -135,6 +136,7 @@ class RadarController:
             message.planeId,
             message.rocket_coords
         )
+        print(len(message.rocket_coords))
         self.allMissiles[message.missile.missileID] = missileEnv
 
     def sendCurrentTarget(
