@@ -20,6 +20,7 @@ class SimulationDataCollector:
         message_queue = self.dispatcher.get_message(Modules.GUI)
         while not message_queue.empty():
             priority, message = message_queue.get()
+            print(message)
             self._add_message(message, priority)
 
     def _add_message(self, message, priority):

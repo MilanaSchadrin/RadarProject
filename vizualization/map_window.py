@@ -1,4 +1,5 @@
 import math
+import time
 import numpy as np
 from typing import List, Tuple
 from typing import Dict
@@ -38,12 +39,12 @@ class Icon(QLabel):
 
 class RocketIcon(Icon):
     def __init__(self, image_path, parent=None):
-        super().__init__(image_path, size=(60, 60), parent=parent)
+        super().__init__(image_path, size=(30, 30), parent=parent)
 
 
 class PlaneImageIcon(Icon):
     def __init__(self, image_path, parent=None):
-        super().__init__(image_path, size=(40, 40), parent=parent)
+        super().__init__(image_path, size=(20, 20), parent=parent)
 
 
 class RadarIcon(QLabel):
@@ -52,44 +53,45 @@ class RadarIcon(QLabel):
         self.radar_image = QPixmap(image_path)
         self.setPixmap(self.radar_image)
         self.setScaledContents(True)
-        self.setFixedSize(70, 70)
-        self.move(x, y)
+        self.setFixedSize(30, 30)
+        self.move(int(x),int(y))
         self.x_pos = x
         self.y_pos = y
         self.radius = radius
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-class PUIcon(QLabel):
-    def __init__(self, pu_path, x, y, radius=200, parent=None):
+class PIcon(QLabel):
+    def __init__(self, pu_path, x, y, size_x, size_y,parent=None):
         super().__init__(parent)
         self.pu_image = QPixmap(pu_path)
         self.setPixmap(self.pu_image)
         self.setScaledContents(True)
-        self.setFixedSize(70, 70)
+        self.setFixedSize(size_x, size_y)
         self.move(x, y)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
 
 class MapView(QFrame):
-    def __init__(self):
+    def __init__(self, db_manager):
         super().__init__()
         self.setStyleSheet("background-color: white;")
         self.trails = {}  # {id: [points]}
-        self.background_image = QPixmap('./vizualization/pictures/background.png')
-        #положения рлс, пу -  считать значения из бд;
-        self.radar = RadarIcon('./vizualization/pictures/radar.png', 250, 450, parent=self)
-        self.pu_image = PUIcon('./vizualization/pictures/pu.png', 650, 450, parent=self)
+        #self.background_image = QPixmap('./vizualization/pictures/background.png')
+        #self.pu_image = PUIcon('./vizualization/pictures/pu.png', 650, 450, parent=self)
+        self.pu_image = []
+        self.cc_icon = None
         #обработка коллизий
         self.explosions = {}
         self.damage_markers = {}
         self.explosion_clouds = {}
         self.visible_objects={}
         #РЛС
+        self.radars = {} #{radar_id:{'icon': RadarIcon, 'radius': int, 'view_angle':int}}
         self.target_smoothing={}
         self.smoothing_steps=10
         self.rls_radius = 300
         self.view_angle = 45
-        self.tracked_targets = {}
+        self.tracked_targets = {} #{target_id: {'radar_id':int, 'azimuth': float}
         self.scan_angle = 0
         self.scan_speed =2
         self.scan_width = 45
@@ -104,6 +106,32 @@ class MapView(QFrame):
         self.font = QFont('Arial', 8)
         self.axis_color = Qt.black
         self.grid_color = QColor(220, 220, 220,150)
+        self.db_manager = db_manager
+        self.load_radars_from_db()
+        self.load_and_draw_launchers()
+        self.load_and_draw_cc()
+
+    def load_radars_from_db(self):
+        if self.db_manager:
+            radars_data = self.db_manager.load_radars()
+            for radar_id, radar in radars_data.items():
+                self.add_radar(radar_id, x=radar['position'][0], y=radar['position'][1], radius=radar['range_input'],view_angle=radar['angle_input'])
+
+    def add_radar(self, radar_id, x, y, radius, view_angle):
+        self.radars[radar_id] = {'icon': RadarIcon('./vizualization/pictures/radar.png', x, y, radius, self), 'radius': radius, 'view_angle': view_angle, 'scan_angle': 0}
+
+    def load_and_draw_launchers(self):
+        launchers = self.db_manager.load_launchers()
+        for launcher_id, launcher_data in launchers.items():
+            x, y = launcher_data['position'][0], launcher_data['position'][1]
+            pu_icon = PIcon('./vizualization/pictures/pu.png', int(x), int(y),70,70, parent = self)
+            self.pu_image.append(pu_icon)
+    def load_and_draw_cc(self):
+        cc_data = self.db_manager.load_cc()
+        if cc_data:
+            first_cc = next(iter(cc_data.values()))
+            x, y = first_cc['position'][0],  first_cc['position'][1]
+            self.cc_icon = PIcon('./vizualization/pictures/pbu.png',  int(x), int(y), 40, 40, parent=self)
 
     def set_simulation_data(self, simulation_data):
         self.simulation_data = simulation_data
@@ -196,65 +224,81 @@ class MapView(QFrame):
         for y in range(0, h, self.grid_step):
             if self.axis_offset <= y <= h - self.axis_offset:
                 painter.drawText(y_axis_x + 5, y + 5, f"{y}")
-        painter.drawText(w - self.axis_offset + 10, x_axis_y - 5, "X")  # Подпись X
-        painter.drawText(y_axis_x - 15, self.axis_offset + 15, "Y")     # Подпись Y
+        painter.drawText(w - self.axis_offset + 10, x_axis_y - 5, "X")
+        painter.drawText(y_axis_x - 15, self.axis_offset + 15, "Y")
         painter.restore()
-    def update_radar_targets(self, targets):
-        radar_center = QPoint(self.radar.x_pos + self.radar.width()//2,self.radar.y_pos + self.radar.height()//2)
-        for target_id, (x, y) in targets.items():
-            if target_id not in self.trails:
-                self.trails[target_id] = []
-            self.trails[target_id].append(QPoint(x, y))
-            if len(self.trails[target_id]) > 50:
-                self.trails[target_id] = self.trails[target_id][-50:]
-            dx = x - radar_center.x()
-            dy = radar_center.y() - y
-            azimuth = math.degrees(math.atan2(dy, dx)) % 360
-            distance = math.sqrt(dx*dx + dy*dy)
-            if target_id not in self.tracked_targets:
-                self.tracked_targets[target_id] = {'azimuth': azimuth, 'distance': distance}
-            else:
-                if isinstance(self.tracked_targets[target_id], (int, float)):
-                    self.tracked_targets[target_id] = {'azimuth': self.tracked_targets[target_id],'distance': distance}
-                else:
-                    self.tracked_targets[target_id]['azimuth'] = azimuth
-                    self.tracked_targets[target_id]['distance'] = distance
 
-        self.update()
+    def update_radar_targets(self, targets):
+        for target_id, radar_data in targets.items():
+            for radar_id, (x, y) in radar_data.items():
+                radar = self.radars[radar_id]
+                radar_center = QPoint(radar.x_pos + radar.width()//2, radar.y_pos + radar.height()//2)
+                trail_key = (radar_id, target_id)
+                if trail_key not in self.trails:
+                    self.trails[trail_key] = []
+                self.trails[trail_key].append(QPoint(x, y))
+                '''
+                if len(self.trails[trail_key]) > 50:
+                        self.trails[trail_key] = self.trails[trail_key][-50:]
+                '''
+                dx = x - radar_center.x()
+                dy = radar_center.y() - y
+                azimuth = math.degrees(math.atan2(dy, dx)) % 360
+                distance = math.sqrt(dx*dx + dy*dy)
+                if target_id not in self.tracked_targets:
+                    self.tracked_targets[target_id] = {}
+                self.tracked_targets[target_id][radar_id] = {'azimuth': azimuth,'distance': distance }
+
     def draw_radar_sector(self, painter):
-        radar_center = QPoint(self.radar.x_pos + self.radar.width() // 2, self.radar.y_pos + self.radar.height() // 2)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QBrush(QColor(0, 255, 0, 30)))
-        painter.setPen(QPen(QColor(0, 180, 0), 2))
-        scan_rect = QRectF(radar_center.x() - self.rls_radius, radar_center.y() - self.rls_radius, self.rls_radius * 2, self.rls_radius * 2)
-        start_angle = -(self.scan_angle - self.view_angle/2) * 16
-        span_angle = -self.view_angle * 16
-        painter.drawPie(scan_rect, int(start_angle), int(span_angle))
-        dash_pen = QPen(QColor(255, 0, 0), 2, Qt.DashLine)
-        dash_pen.setDashPattern([4, 4])
-        for target_id in list(self.tracked_targets.keys()):
-            if target_id in self.trails and self.trails[target_id]:
+        current_time = time.time()
+        for radar_id, radar_data in self.radars.items():
+            radar_icon = radar_data['icon']
+            radar_center = QPointF(
+                radar_icon.x_pos + radar_icon.width() // 2,
+                radar_icon.y_pos + radar_icon.height() // 2
+            )
+            if 'last_scan_update' not in radar_data:
+                radar_data['last_scan_update'] = current_time
+                radar_data['scan_angle'] = 0
+            scan_speed = 45
+            time_diff = current_time - radar_data['last_scan_update']
+            radar_data['scan_angle'] = (radar_data['scan_angle'] + time_diff * scan_speed) % 360
+            radar_data['last_scan_update'] = current_time
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setBrush(QBrush(QColor(0, 255, 0, 30)))
+            painter.setPen(QPen(QColor(0, 180, 0), 2))
+            scan_rect = QRectF(
+                radar_center.x() - radar_data['radius'],
+                radar_center.y() - radar_data['radius'],
+                radar_data['radius'] * 2,
+                radar_data['radius'] * 2
+            )
+            start_angle = -(radar_data['scan_angle'] - radar_data['view_angle'] / 2) * 16
+            span_angle = -radar_data['view_angle'] * 16
+            painter.drawPie(scan_rect, int(start_angle), int(span_angle))
+            dash_pen = QPen(QColor(255, 0, 0), 2, Qt.DashLine)
+            dash_pen.setDashPattern([4, 4])
+            for target_id, target_data in self.tracked_targets.items():
+                if target_id not in self.trails or not self.trails[target_id]:
+                    continue
                 target_point = self.trails[target_id][-1]
                 dx = target_point.x() - radar_center.x()
                 dy = radar_center.y() - target_point.y()
                 azimuth = np.degrees(np.arctan2(dy, dx)) % 360
-                self.tracked_targets[target_id] = azimuth
-                distance = np.sqrt(dx*dx + dy*dy)
-                #ray_length = min(self.rls_radius, distance * 0.9)
-                ray_length =  distance * 0.9
+                distance = np.sqrt(dx**2 + dy**2)
+                if distance > radar_data['radius']:
+                    continue
+                painter.setPen(dash_pen)
+                ray_length = distance * 0.95
                 end_x = radar_center.x() + ray_length * np.cos(np.radians(azimuth))
                 end_y = radar_center.y() - ray_length * np.sin(np.radians(azimuth))
-                painter.setPen(dash_pen)
                 painter.drawLine(radar_center, QPointF(end_x, end_y))
                 painter.setBrush(QBrush(Qt.red))
-                painter.drawEllipse(QPointF(end_x, end_y), 4, 4)
+                painter.drawEllipse(QPointF(end_x, end_y), 3, 3)
 
-    def visualize_rls(self, target_id, sector_size):
-        self.detection_effects.append({'angle': 45, 'distance': 1500, 'target_id':target_id, 'alpha':255, 'steps_left': 30})
-        if target_id not in self.tracked_targets:
-            self.tracked_targets[target_id]=45 #angle
-            self.target_smoothing[target_id]={'current':sector_size, 'target': sector_size, 'step':0}
-            self.update()
+    def update_radar_scan(self):
+        for radar_data in self.radars.values():
+            radar_data['scan_angle'] = (radar_data['scan_angle'] + self.scan_speed) % 360
 
     def update_step(self,step):
         self.current_step=step
@@ -269,21 +313,25 @@ class MapView(QFrame):
             for event in step_data['radar_tracking']:
                 self.handle_target_detection(event['target_id'])
 
-    def handle_target_detection(self, target_id,size):
+    def handle_target_detection(self, radar_id, target_id,size):
         if target_id not in self.tracked_targets:
-            self.tracked_targets[target_id] = size
+            self.tracked_targets[target_id] = {'radar_id' : radar_id, 'size': size}
             self.update()
 
     def update_target_azimuths(self):
-        radar_center = QPoint(self.radar.x_pos + self.radar.width()//2,self.radar.y_pos + self.radar.height()//2)
         updated = False
-        for target_id in list(self.tracked_targets.keys()):
+        for target_id, target_data in self.tracked_targets.items():
             if target_id in self.trails and self.trails[target_id]:
-                target_point = self.trails[target_id][-1]
-                dx = target_point.x() - radar_center.x()
-                dy = radar_center.y() - target_point.y()
-                self.tracked_targets[target_id] = (np.degrees(np.arctan2(dy, dx)) + 360) % 360
-                updated = True
+                radar_id = target_data['radar_id']
+                if radar_id in self.radars:
+                    radar_icon = self.radars[radar_id]['icon']
+                    radar_center = QPoint(radar_icon.x_pos + radar_icon.width()//2,
+                                                 radar_icon.y_pos + radar_icon.height()//2)
+                    target_point = self.trails[target_id][-1]
+                    dx = target_point.x() - radar_center.x()
+                    dy = radar_center.y() - target_point.y()
+                    self.tracked_targets[target_id]['azimuth'] = (np.degrees(np.arctan2(dy, dx))) % 360
+                    updated = True
         if updated:
             self.update()
 

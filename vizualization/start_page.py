@@ -23,6 +23,7 @@ class StartPage(QWidget):
         self.module_params = {}
         self.on_params_save_callback = None
         self.expect_modules=set()
+        self.data_colector = SimulationDataCollector(self.dispatcher)
         self.init_ui()
 
     def init_ui(self):
@@ -90,27 +91,18 @@ class StartPage(QWidget):
     def get_step(self):
         try:
             self.steps = int(self.steps_input.text())
-            print("STEPS", self.steps)
+            #print("STEPS", self.steps)
         except ValueError:
             print("Некорректное количество шагов")
         return self.steps
 
     def get_db_name(self):
         self.name_db = (self.db_name_input.text())
-        print("DB", self.name_db )
-        return self.name_db
+        self.simulation.db.add_name(self.name_db)
+        #print("DB", self.name_db )
 
     def open_map_window(self):
-        #try:
-        #    self.steps = int(self.steps_input.text())
-        #    print("STEPS", self.steps)
-        #except ValueError:
-        #    #QMessageBox.warning(self, "Ошибка", "Некорректное количество шагов")
-        #    print("Некорректное количество шагов")
-        #    return
-        self.data_collector = SimulationDataCollector(self.dispatcher)
-        self.data_collector.dispatcher.register(Modules.GUI)
-        self.simulation.data_colector = self.data_collector
+        self.data_colector.dispatcher.register(Modules.GUI)
         loading_window = QDialog(self)
         loading_window.setWindowTitle("Моделирование работы ЗРС")
         loading_window.setFixedSize(400, 200)
@@ -161,10 +153,10 @@ class StartPage(QWidget):
         self.show_results()
 
     def show_results(self):
-        self.map_window = MapWindow()
-        self.map_window.set_simulation_data(self.data_collector.steps_data)
+        self.map_window = MapWindow(self.simulation.db)
+        self.map_window.set_simulation_data(self.data_colector.steps_data)
         self.map_window.show()
-        for i, step in enumerate(self.data_collector.steps_data):
+        for i, step in enumerate(self.data_colector.steps_data):
             msg_count = len(step['messages'])
             if msg_count > 0:
                 #print(f"Шаг {i}: {msg_count} сообщений")
@@ -194,8 +186,18 @@ class StartPage(QWidget):
                                    position = tuple(map(float, position.split(',')))
                                db.add_radar(i, position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
             elif module_name == 'ПУ':
-                launcher_id = len(db.load_launchers()) + 1
-                db.add_launcher(launcher_id, params['position'], params['missile_count'], params['range'], params['velocity'])
+                                       for i, launcher_data in enumerate(params['launchers'], 1):
+                                           position = launcher_data['position']
+                                           if isinstance(position, str):
+                                               position = tuple(map(float, position.split(',')))
+                                           db.add_launcher(
+                                               i,
+                                               position,
+                                               int(launcher_data['missile_count']),
+                                               float(launcher_data['range']),
+                                               float(launcher_data['velocity'])
+                                           )
+
             elif module_name == 'ПБУ':
                 cc_id = len(db.load_cc()) + 1
                 db.add_cc(cc_id, params['position'])
@@ -211,9 +213,3 @@ class StartPage(QWidget):
                     if len(start_pos) != 3 or len(end_pos) != 3:
                         raise ValueError("Координаты должны содержать 3 значения (x,y,z)")
                     db.add_plane(plane_id, start_pos, end_pos)
-
-       #return self.steps
-    '''
-    def gui_step()
-        return self.steps()
-    '''
