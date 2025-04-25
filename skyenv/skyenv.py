@@ -190,6 +190,7 @@ class SkyEnv:
                     if missile.currLifeTime <=0 and missile.missileID in self.rockets: 
                         self.rockets[missile.missileID].boom()
                         message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
+                        self.dispatcher.send_message(message)
                         print('rocket inactivated')
                         self.to_remove.add(('rocket', missile.missileID))
                 """for rocket_id, rocket in list(self.rockets.items()):
