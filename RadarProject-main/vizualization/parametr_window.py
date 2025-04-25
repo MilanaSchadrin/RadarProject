@@ -26,24 +26,17 @@ class ParametersWindow(QWidget):
                 layout.addLayout(self.radar_container)
 
         elif self.module_name == 'ПУ':
-             layout.addWidget(QLabel("Координаты (x, y, z):"))
-             self.pos_pu = QLineEdit()
-             layout.addWidget(self.pos_pu)
+                            layout.addWidget(QLabel("Количество пусковых установок:"))
+                            self.module_count = QLineEdit("1")
+                            self.module_count.setValidator(QIntValidator(1, 100))
+                            layout.addWidget(self.module_count)
 
-             layout.addWidget(QLabel("Количество ракет:"))
-             self.cout_zur = QLineEdit()
-             layout.addWidget(self.cout_zur)
+                            self.apply_button = QPushButton("Настроить ПУ")
+                            self.apply_button.clicked.connect(self.create_launcher_data)
+                            layout.addWidget(self.apply_button)
 
-             layout.addWidget(QLabel("Дальность действия (км):"))
-             self.dist_zur = QLineEdit()
-             layout.addWidget(self.dist_zur)
-
-             layout.addWidget(QLabel("Скорость (м/с):"))
-             self.vel_zur = QLineEdit()
-             layout.addWidget(self.vel_zur)
-
-             self.parameters_display = QLabel("")
-             layout.addWidget(self.parameters_display)
+                            self.launcher_container = QVBoxLayout()
+                            layout.addLayout(self.launcher_container)
 
         elif self.module_name == 'ПБУ':
             layout.addWidget(QLabel("Положение (x, y, z):"))
@@ -117,7 +110,46 @@ class ParametersWindow(QWidget):
             group_box.setLayout(group_layout)
             self.vo_container.addWidget(group_box)
             self.vo_fields.append({ 'start': start_input, 'end': end_input,})
+    def create_launcher_data(self):
+                    for i in reversed(range(self.launcher_container.count())):
+                        widget = self.launcher_container.itemAt(i).widget()
+                        if widget is not None:
+                            widget.setParent(None)
 
+                    count = int(self.module_count.text()) if self.module_count.text() else 1
+                    self.launcher_fields = []
+
+                    for i in range(1, count + 1):
+                        group_box = QGroupBox(f"Пусковая установка {i}")
+                        group_layout = QVBoxLayout()
+
+                        group_layout.addWidget(QLabel("Координаты (x,y,z):"))
+                        pos_input = QLineEdit("")
+                        group_layout.addWidget(pos_input)
+
+                        group_layout.addWidget(QLabel("Количество ракет:"))
+                        count_input = QLineEdit("")
+                        count_input.setValidator(QIntValidator(1, 100))
+                        group_layout.addWidget(count_input)
+
+                        group_layout.addWidget(QLabel("Дальность действия (км):"))
+                        range_input = QLineEdit("")
+                        range_input.setValidator(QIntValidator(1, 1000))
+                        group_layout.addWidget(range_input)
+
+                        group_layout.addWidget(QLabel("Скорость (м/с):"))
+                        velocity_input = QLineEdit("1000")
+                        velocity_input.setValidator(QIntValidator(100, 5000))
+                        group_layout.addWidget(velocity_input)
+
+                        group_box.setLayout(group_layout)
+                        self.launcher_container.addWidget(group_box)
+                        self.launcher_fields.append({
+                            'position': pos_input,
+                            'missile_count': count_input,
+                            'range': range_input,
+                            'velocity': velocity_input
+                        })
     def save_parameters(self):
         params = {}
         if self.module_name == 'ВО':
@@ -141,9 +173,27 @@ class ParametersWindow(QWidget):
                         params_dict['radars'].append(radar_params)
 
                     params = params_dict
-
         elif self.module_name == 'ПУ':
-            params = { 'position': tuple(map(float, self.pos_pu.text().split(','))), 'missile_count': int(self.cout_zur.text()), 'range': int(self.dist_zur.text()),'velocity': int(self.vel_zur.text())}
-        elif self.module_name == 'ПБУ': params = {'position': tuple(map(float, self.pos_control.text().split(',')))}
+
+                                count = int(self.module_count.text()) if self.module_count.text() else 1
+                                params_dict = {'count': count, 'launchers': []}
+
+                                for fields in self.launcher_fields:
+                                    launcher_params = {
+                                        'position': tuple(map(float, fields['position'].text().split(','))),
+                                        'missile_count': int(fields['missile_count'].text()),
+                                        'range': int(fields['range'].text()),
+                                        'velocity': int(fields['velocity'].text())
+                                    }
+                                    params_dict['launchers'].append(launcher_params)
+
+                                params = params_dict
+
+        elif self.module_name == 'ПБУ':
+            params = {'position': tuple(map(float, self.pos_control.text().split(',')))}
         self.on_save(self.module_name, params)
         self.close()
+        '''
+        elif self.module_name == 'ПУ':
+            params = { 'position': tuple(map(float, self.pos_pu.text().split(','))), 'missile_count': int(self.cout_zur.text()), 'range': int(self.dist_zur.text()),'velocity': int(self.vel_zur.text())}
+        '''

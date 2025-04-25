@@ -12,7 +12,6 @@ class Simulation:
         self.gui = None
         self.skyEnv = None
         self.CC = None
-        self.data_colector=None
         self.db = DatabaseManager()
         self.steps = 250
         self.app = QApplication(sys.argv)
@@ -52,11 +51,10 @@ class Simulation:
     def modulate(self,progress_callback):
         print('Начало моделирования')
         for i in range(self.steps):
-            #print('Шаг моделирования', i)
-            self.data_colector.begin_step(i)
+            self.gui.data_colector.begin_step(i)
             self.skyEnv.update()
             self.CC.update()
-            self.data_colector.collect_messages()
+            self.gui.data_colector.collect_messages()
             self.gui.update()
             if progress_callback:
                 progress_callback(i+1)
