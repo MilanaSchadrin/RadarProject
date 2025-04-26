@@ -31,8 +31,8 @@ class Missile:
         self.missileType: MissileType = missileType
         self.currentCoords: Tuple[float, float, float] = currentCoords
         self.velocity: Tuple[float, float, float] = velocity
-        self.currLifeTime: int = config["currLifeTime"]
-        self.damageRadius: float = config["damageRadius"]
+        self.currLifeTime: int = currLifeTime
+        self.damageRadius: float = damageRadius
         self.status: MissileStatus = status
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]):

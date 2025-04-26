@@ -26,7 +26,7 @@ class DatabaseManager:
     #add speed
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS planes (
-                plane_id INTEGER PRIMARY KEY,
+                plane_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 start_x REAL NOT NULL,
                 start_y REAL NOT NULL,
                 start_z REAL NOT NULL,
@@ -50,7 +50,7 @@ class DatabaseManager:
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS launchers (
-                launcher_id INTEGER PRIMARY KEY,
+                launcher_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL,
@@ -64,7 +64,7 @@ class DatabaseManager:
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS CC (
-                cc_id INTEGER PRIMARY KEY,
+                cc_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL
