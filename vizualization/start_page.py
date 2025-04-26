@@ -187,6 +187,7 @@ class StartPage(QWidget):
                                db.add_radar(i, position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
             elif module_name == 'ПУ':
                                        for i, launcher_data in enumerate(params['launchers'], 1):
+                                           #here
                                            position = launcher_data['position']
                                            if isinstance(position, str):
                                                position = tuple(map(float, position.split(',')))
@@ -194,8 +195,10 @@ class StartPage(QWidget):
                                                i,
                                                position,
                                                int(launcher_data['missile_count']),
-                                               float(launcher_data['range']),
-                                               float(launcher_data['velocity'])
+                                               float(launcher_data['range1']),
+                                               float(launcher_data['velocity1']),
+                                               float(launcher_data['range2']),
+                                               float(launcher_data['velocity2'])
                                            )
 
             elif module_name == 'ПБУ':

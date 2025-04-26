@@ -10,14 +10,10 @@ class MissileType(Enum):
 
 MISSILE_TYPE_CONFIG = {
     MissileType.TYPE_1: {
-        "speed": 200, # абсолютная величина скорости
         "currLifeTime": 30,
-        "damageRadius": 20
     },
     MissileType.TYPE_2: {
-        "speed": 150,
         "currLifeTime": 20,
-        "damageRadius": 25
     }
 }
 
@@ -28,15 +24,15 @@ class MissileStatus(Enum):
 
 
 class Missile:
-    def __init__(self, missileID: str, missileType: MissileType, currentCoords: Tuple[float, float, float], velocity: Tuple[float, float, float], status=MissileStatus.ACTIVE):
+    def __init__(self, missileID: str, missileType: MissileType, currentCoords: Tuple[float, float, float], velocity: Tuple[float, float, float], currLifeTime: int, damageRadius:int, status=MissileStatus.ACTIVE):
         config = MISSILE_TYPE_CONFIG[missileType]
 
         self.missileID: str = missileID
         self.missileType: MissileType = missileType
         self.currentCoords: Tuple[float, float, float] = currentCoords
         self.velocity: Tuple[float, float, float] = velocity
-        self.currLifeTime: int = config["currLifeTime"]
-        self.damageRadius: float = config["damageRadius"]
+        self.currLifeTime: int = currLifeTime
+        self.damageRadius: float = damageRadius
         self.status: MissileStatus = status
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]):

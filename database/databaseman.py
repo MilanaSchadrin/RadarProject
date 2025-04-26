@@ -26,7 +26,7 @@ class DatabaseManager:
     #add speed
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS planes (
-                plane_id INTEGER PRIMARY KEY,
+                plane_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 start_x REAL NOT NULL,
                 start_y REAL NOT NULL,
                 start_z REAL NOT NULL,
@@ -50,19 +50,21 @@ class DatabaseManager:
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS launchers (
-                launcher_id INTEGER PRIMARY KEY,
+                launcher_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL,
                 cout_zur INTEGER NOT NULL,
-                dist_zur INTEGER NOT NULL,
-                vel_zur  INTEGER NOT NULL 
+                dist_zur1 INTEGER NOT NULL,
+                vel_zur1  INTEGER NOT NULL,
+                dist_zur2 INTEGER NOT NULL,
+                vel_zur2 INTEGER NOT NULL
             )
         """)
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS CC (
-                cc_id INTEGER PRIMARY KEY,
+                cc_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL
@@ -99,13 +101,15 @@ class DatabaseManager:
                     launcher_id: int,
                     position: Tuple[float, float, float],
                     cout_zur : int,
-                    dist_zur:int,
-                    vel_zur:int) -> None:
+                    dist_zur1:int,
+                    vel_zur1:int,
+                    dist_zur2:int,
+                    vel_zur2:int) -> None:
         self.cursor.execute(
             """INSERT INTO launchers 
-            (launcher_id, pos_x, pos_y, pos_z, cout_zur, dist_zur, vel_zur)
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (launcher_id, *position, cout_zur,dist_zur,vel_zur))
+            (launcher_id, pos_x, pos_y, pos_z, cout_zur, dist_zur1, vel_zur1, dist_zur2, vel_zur2)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (launcher_id, *position, cout_zur,dist_zur1,vel_zur1,dist_zur2,vel_zur2))
         self.conn.commit()
 
     def add_cc(self,
@@ -147,12 +151,14 @@ class DatabaseManager:
         self.cursor.execute("SELECT * FROM launchers")
         launchers = {}
         for row in self.cursor.fetchall():
-            launcher_id, px, py, pz, count, dist_zur, vel_zur  = row
+            launcher_id, px, py, pz, count, dist_zur1, vel_zur1, dist_zur2, vel_zur2  = row
             launchers[launcher_id] = {
                 'position': (px, py, pz),
                 'cout_zur': count,
-                'dist_zur': dist_zur,
-                'velocity_zur': vel_zur }
+                'dist_zur1': dist_zur1,
+                'vel_zur1': vel_zur1,
+                'dist_zur2': dist_zur2,
+                'vel_zur2': vel_zur2}
         return launchers
     
     def load_cc(self) -> Dict[int, Dict[str, np.ndarray]]:

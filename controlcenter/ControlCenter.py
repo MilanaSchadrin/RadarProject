@@ -53,19 +53,22 @@ class ControlCenter:
                 id=launcher_id,
                 coord=launcher_info['position'],
                 silos=launcher_info['cout_zur'],
+                missile_speed1= launcher_info['vel_zur1'],
+                damage_radius1 = launcher_info['dist_zur1'],
+                missile_speed2= launcher_info['vel_zur2'],
+                damage_radius2 = launcher_info['dist_zur2']
             )
             self._launcherController.add_launcher(launcher)
 
     def update(self):
-        """Метод вызывается на каждой итерации, получает и обрабатывает сообщения."""
         message_queue = self._dispatcher.get_message(Modules.ControlCenter)
         messages = []
         while not message_queue.empty():
             messages.append(message_queue.get())
         for priority, message in messages:
             if isinstance(message, RadarControllerObjects):
-                #Это словарь, а не список
                 self._targets = list(message.detected_objects.values())
+                #self._targets = message.detected_objects
                 self._update_priority_targets()
                 self._process_targets()
             elif isinstance(message, LaunchertoCCMissileLaunched):

@@ -17,12 +17,16 @@ def renormalize(ovect, length):
     return (ovect[0] * scale, ovect[1] * scale, ovect[2] * scale)
 
 class Launcher:
-    def __init__(self, ctrl, id, coord, silos):
+    def __init__(self, ctrl, id, coord, silos, missile_speed1, damage_radius1, missile_speed2, damage_radius2):
         self.ctrl=ctrl
         self.id=id
         self.coord: Tuple[float, float, float] =coord
         self.silo_num=silos
         self._silos=[1]*silos
+        self.missile_speed_first = missile_speed1
+        self.damage_radius_first = damage_radius1
+        self.missile_speed_second = missile_speed2
+        self.damage_radius_second = damage_radius2
 
     def launch(self, target):
         available_silo = None
@@ -37,15 +41,22 @@ class Launcher:
 
         if available_silo<=self.silo_num//2:
             type=MissileType.TYPE_1
+            speed = self.missile_speed_second
+            radius = self.damage_radius_second
         else:
             type=MissileType.TYPE_2
+            speed = self.missile_speed_first
+            radius = self.damage_radius_first
         missile_id = self.ctrl.generate_missile_id()
-        velocity = renormalize(dir(self.coord, target.currentCoords), MISSILE_TYPE_CONFIG[type]["speed"])
+        velocity = renormalize(dir(self.coord, target.currentCoords), speed)
+        time = MISSILE_TYPE_CONFIG[type]["currLifeTime"]
         M = Missile(
-        missileID= missile_id,
+        missileID= missile_id, 
         missileType=type,
         currentCoords=start_coords,
-        velocity=velocity)
+        velocity=velocity,
+        currLifeTime = time ,
+        damageRadius = radius)
         self.ctrl.acknowledge(target.targetId, M)
         target.attachMissile(M)
 
