@@ -17,7 +17,7 @@
 
 ![Архитектура](https://github.com/user-attachments/assets/2efd7701-1923-4253-93a7-a8e660c45b87)
 
->Диаграммы классов и процессов  - https://drive.google.com/file/d/1NRzsn4hVriHqQKuGoWiO6pbLNernI-Td/view?usp=sharing
+>Диаграммы классов и процессов  - [UML диаграммы](https://drive.google.com/file/d/1NRzsn4hVriHqQKuGoWiO6pbLNernI-Td/view?usp=sharing)
 
 ## Документация
 [Документация по проекту](https://github.com/MilanaSchadrin/RadarProject/blob/main/radar_project_doc.pdf)
