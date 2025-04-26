@@ -132,7 +132,9 @@ class ParametersWindow(QWidget):
                         count_input.setValidator(QIntValidator(1, 100))
                         group_layout.addWidget(count_input)
 
-                        group_layout.addWidget(QLabel("Дальность действия (км):"))
+                        group_layout.addWidget(QLabel("Первый тип ракет"))
+
+                        group_layout.addWidget(QLabel("Радиус взрыва (км):"))
                         range_input = QLineEdit("")
                         range_input.setValidator(QIntValidator(1, 1000))
                         group_layout.addWidget(range_input)
@@ -141,14 +143,28 @@ class ParametersWindow(QWidget):
                         velocity_input = QLineEdit("1000")
                         velocity_input.setValidator(QIntValidator(100, 5000))
                         group_layout.addWidget(velocity_input)
-                        #here
+
+                        group_layout.addWidget(QLabel("Второй тип ракет"))
+
+                        group_layout.addWidget(QLabel("Радиус взрыва (км):"))
+                        range_input2 = QLineEdit("")
+                        range_input2.setValidator(QIntValidator(1, 1000))
+                        group_layout.addWidget(range_input2)
+
+                        group_layout.addWidget(QLabel("Скорость (м/с):"))
+                        velocity_input2 = QLineEdit("1000")
+                        velocity_input2.setValidator(QIntValidator(100, 5000))
+                        group_layout.addWidget(velocity_input2)
+
                         group_box.setLayout(group_layout)
                         self.launcher_container.addWidget(group_box)
                         self.launcher_fields.append({
                             'position': pos_input,
                             'missile_count': count_input,
-                            'range': range_input,
-                            'velocity': velocity_input
+                            'range1': range_input,
+                            'velocity1': velocity_input,
+                            'range2': range_input2,
+                            'velocity2': velocity_input2
                         })
     def save_parameters(self):
         params = {}
@@ -174,7 +190,6 @@ class ParametersWindow(QWidget):
 
                     params = params_dict
         elif self.module_name == 'ПУ':
-                                #here
                                 count = int(self.module_count.text()) if self.module_count.text() else 1
                                 params_dict = {'count': count, 'launchers': []}
 
@@ -182,8 +197,10 @@ class ParametersWindow(QWidget):
                                     launcher_params = {
                                         'position': tuple(map(float, fields['position'].text().split(','))),
                                         'missile_count': int(fields['missile_count'].text()),
-                                        'range': int(fields['range'].text()),
-                                        'velocity': int(fields['velocity'].text())
+                                        'range1': int(fields['range1'].text()),
+                                        'velocity1': int(fields['velocity1'].text()),
+                                        'range2': int(fields['range2'].text()),
+                                        'velocity2': int(fields['velocity2'].text()),
                                     }
                                     params_dict['launchers'].append(launcher_params)
 

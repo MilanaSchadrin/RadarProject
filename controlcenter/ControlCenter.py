@@ -53,10 +53,10 @@ class ControlCenter:
                 id=launcher_id,
                 coord=launcher_info['position'],
                 silos=launcher_info['cout_zur'],
-                missile_speed_first = launcher_info['vel_zur1'],
-                damage_radius_first = launcher_info['dist_zur1'],
-                missile_speed_second = launcher_info['vel_zur2'],
-                damage_radius_second = launcher_info['dist_zur2']
+                missile_speed1= launcher_info['vel_zur1'],
+                damage_radius1 = launcher_info['dist_zur1'],
+                missile_speed2= launcher_info['vel_zur2'],
+                damage_radius2 = launcher_info['dist_zur2']
             )
             self._launcherController.add_launcher(launcher)
 

@@ -195,8 +195,10 @@ class StartPage(QWidget):
                                                i,
                                                position,
                                                int(launcher_data['missile_count']),
-                                               float(launcher_data['range']),
-                                               float(launcher_data['velocity'])
+                                               float(launcher_data['range1']),
+                                               float(launcher_data['velocity1']),
+                                               float(launcher_data['range2']),
+                                               float(launcher_data['velocity2'])
                                            )
 
             elif module_name == 'ПБУ':

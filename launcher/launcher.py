@@ -17,7 +17,7 @@ def renormalize(ovect, length):
     return (ovect[0] * scale, ovect[1] * scale, ovect[2] * scale)
 
 class Launcher:
-    def __init__(self, ctrl, id, coord, silos, missile_speed1, damage_radius1,missile_speed2, damage_radius2):
+    def __init__(self, ctrl, id, coord, silos, missile_speed1, damage_radius1, missile_speed2, damage_radius2):
         self.ctrl=ctrl
         self.id=id
         self.coord: Tuple[float, float, float] =coord
