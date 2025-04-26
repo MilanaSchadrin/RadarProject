@@ -20,7 +20,7 @@
 >Диаграммы классов и процессов  - https://drive.google.com/file/d/1NRzsn4hVriHqQKuGoWiO6pbLNernI-Td/view?usp=sharing
 
 ## Документация
-Здесь она когда-нибудь будет
+[Документация по проекту](https://github.com/MilanaSchadrin/RadarProject/blob/main/radar_project_doc.pdf)
 
 >**Используемые Ресурсы**
 >
