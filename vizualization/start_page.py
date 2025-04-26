@@ -187,6 +187,7 @@ class StartPage(QWidget):
                                db.add_radar(i, position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
             elif module_name == 'ПУ':
                                        for i, launcher_data in enumerate(params['launchers'], 1):
+                                           #here
                                            position = launcher_data['position']
                                            if isinstance(position, str):
                                                position = tuple(map(float, position.split(',')))

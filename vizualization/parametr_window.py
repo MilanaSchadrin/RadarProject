@@ -141,7 +141,7 @@ class ParametersWindow(QWidget):
                         velocity_input = QLineEdit("1000")
                         velocity_input.setValidator(QIntValidator(100, 5000))
                         group_layout.addWidget(velocity_input)
-
+                        #here
                         group_box.setLayout(group_layout)
                         self.launcher_container.addWidget(group_box)
                         self.launcher_fields.append({
@@ -174,7 +174,7 @@ class ParametersWindow(QWidget):
 
                     params = params_dict
         elif self.module_name == 'ПУ':
-
+                                #here
                                 count = int(self.module_count.text()) if self.module_count.text() else 1
                                 params_dict = {'count': count, 'launchers': []}
 
