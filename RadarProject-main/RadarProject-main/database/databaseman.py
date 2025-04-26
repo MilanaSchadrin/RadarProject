@@ -26,7 +26,7 @@ class DatabaseManager:
     #add speed
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS planes (
-                plane_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                plane_id INTEGER PRIMARY KEY,
                 start_x REAL NOT NULL,
                 start_y REAL NOT NULL,
                 start_z REAL NOT NULL,
@@ -38,7 +38,7 @@ class DatabaseManager:
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS radars (
-                radar_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                radar_id INTEGER PRIMARY KEY,
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL,
@@ -50,21 +50,19 @@ class DatabaseManager:
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS launchers (
-                launcher_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                launcher_id INTEGER PRIMARY KEY,
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL,
                 cout_zur INTEGER NOT NULL,
-                dist_zur1 INTEGER NOT NULL,
-                vel_zur1  INTEGER NOT NULL,
-                dist_zur2 INTEGER NOT NULL,
-                vel_zur2 INTEGER NOT NULL
+                dist_zur INTEGER NOT NULL,
+                vel_zur  INTEGER NOT NULL 
             )
         """)
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS CC (
-                cc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cc_id INTEGER PRIMARY KEY,
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL
@@ -74,48 +72,50 @@ class DatabaseManager:
         self.conn.commit()
 
     def add_plane(self, 
+                 plane_id: int, 
                  start: Tuple[float, float, float], 
                  end: Tuple[float, float, float]) -> None:
         self.cursor.execute(
             """INSERT INTO planes 
-            ( start_x, start_y, start_z, end_x, end_y, end_z)
-            VALUES (?, ?, ?, ?, ?, ?)""",
-            ( *start, *end))
+            (plane_id, start_x, start_y, start_z, end_x, end_y, end_z)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (plane_id, *start, *end))
         self.conn.commit()
 
     def add_radar(self,
+                 radar_id: int,
                  position: Tuple[float, float, float],
                  max_targets: int,
                  angle_input : float,
                  range_input: float) -> None:
         self.cursor.execute(
             """INSERT INTO radars 
-            ( pos_x, pos_y, pos_z, max_targets, angle_input, range_input)
-            VALUES (?, ?, ?, ?, ?, ?)""",
-            ( *position, max_targets, angle_input, range_input))
+            (radar_id, pos_x, pos_y, pos_z, max_targets, angle_input, range_input)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (radar_id, *position, max_targets, angle_input, range_input))
         self.conn.commit()
 
     def add_launcher(self,
+                    launcher_id: int,
                     position: Tuple[float, float, float],
                     cout_zur : int,
-                    dist_zur1:int,
-                    vel_zur1:int,
-                    dist_zur2:int,
-                    vel_zur2:int) -> None:
+                    dist_zur:int,
+                    vel_zur:int) -> None:
         self.cursor.execute(
             """INSERT INTO launchers 
-            ( pos_x, pos_y, pos_z, cout_zur, dist_zur1, vel_zur1, dist_zur2, vel_zur2)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            ( *position, cout_zur,dist_zur1,vel_zur1,dist_zur2,vel_zur2))
+            (launcher_id, pos_x, pos_y, pos_z, cout_zur, dist_zur, vel_zur)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (launcher_id, *position, cout_zur,dist_zur,vel_zur))
         self.conn.commit()
 
     def add_cc(self,
+              cc_id: int,
               position: Tuple[float, float, float]) -> None:
         self.cursor.execute(
             """INSERT INTO CC 
-            ( pos_x, pos_y, pos_z)
-            VALUES (?, ?, ?)""",
-            ( position[0], position[1], position[2]))
+            (cc_id, pos_x, pos_y, pos_z)
+            VALUES (?, ?, ?, ?)""",
+            (cc_id, *position))
         self.conn.commit()
 
     def load_planes(self) -> Dict[int, Dict[str, np.ndarray]]:
@@ -147,14 +147,12 @@ class DatabaseManager:
         self.cursor.execute("SELECT * FROM launchers")
         launchers = {}
         for row in self.cursor.fetchall():
-            launcher_id, px, py, pz, count, dist_zur1, vel_zur1, dist_zur2, vel_zur2  = row
+            launcher_id, px, py, pz, count, dist_zur, vel_zur  = row
             launchers[launcher_id] = {
                 'position': (px, py, pz),
                 'cout_zur': count,
-                'dist_zur1': dist_zur1,
-                'vel_zur1': vel_zur1,
-                'dist_zur2': dist_zur2,
-                'vel_zur2': vel_zur2}
+                'dist_zur': dist_zur,
+                'velocity_zur': vel_zur }
         return launchers
     
     def load_cc(self) -> Dict[int, Dict[str, np.ndarray]]:

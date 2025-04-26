@@ -128,63 +128,34 @@ class MapWindow(QMainWindow):
             #self.check_explosion_undo()
             self.update_visualization(instant_update=True, is_backward  = True)
             self.map_view.update_step(self.current_step)
+
     def update_visualization(self, instant_update=False, is_backward=False):
-                step_data = self.simulation_steps[self.current_step]
-                self.process_step(step_data)
-                self.text_output.append(f"\nШаг {self.current_step + 1}/{self.max_step + 1}")
+          step_data = self.simulation_steps[self.current_step]
+          self.process_step(step_data)
+          self.text_output.append(f"\nШаг {self.current_step + 1}/{self.max_step + 1}")
 
-                self.update_planes(instant_update)
-                self.update_zur_positions(instant_update)
+          self.update_planes(instant_update)
+          self.update_zur_positions(instant_update)
 
-                targets = self._get_current_targets()
-                #print("TARGETS", targets)
-                self.map_view.update_radar_targets(targets, is_backward=is_backward)
-                self.map_view.update()
+          targets = self._get_current_targets()
+          self.map_view.update_radar_targets(targets, is_backward=is_backward)
+          self.map_view.update()
+
     def _get_current_targets(self):
-                    targets = {}
-                    for radar_id, target_ids in self.radar_targets.items():
-                        if int(radar_id) not in self.map_view.radars:
-                            continue
-
-                        for target_id in target_ids:
-                            if target_id in self.planes:
-                                plane_data = self.planes[target_id]
-                                coords = plane_data['coords']
-                                idx = min(self.current_step, len(coords) - 1)
-                                x, y = coords[idx]
-
-                                if target_id not in targets:
-                                    targets[target_id] = {}
-                                targets[target_id][radar_id] = (x, y)
-                    return targets
-    def update_radar_targets(self, radar_targets=None):
-              pass
-              '''
-              targets = {}
-              if radar_targets is not None:
-                  for radar_id, target_ids in radar_targets.items():
-                      # Проверяем существует ли радар
-                      if int(radar_id) not in self.map_view.radars:
-                          print(f"Предупреждение: радар с id {radar_id} не найден")
-                          continue
-
-                      for target_id in target_ids:
-                          if target_id in self.planes:
-                              plane_data = self.planes[target_id]
-                              coords = plane_data['coords']
-                              idx = min(self.current_step, len(coords) - 1)
-                              x, y = coords[idx]
-
-                              # Организуем данные по целям с информацией о радарах
-                              if target_id not in targets:
-                                  targets[target_id] = {}
-
-                              targets[target_id][radar_id] = (x, y)
-
-              if targets:  # Отправляем только если есть цели
-                  self.map_view.update_radar_targets(targets)
-
-                  '''
+          targets = {}
+          for radar_id, target_ids in self.radar_targets.items():
+                if int(radar_id) not in self.map_view.radars:
+                    continue
+                for target_id in target_ids:
+                    if target_id in self.planes:
+                        plane_data = self.planes[target_id]
+                        coords = plane_data['coords']
+                        idx = min(self.current_step, len(coords) - 1)
+                        x, y = coords[idx]
+                        if target_id not in targets:
+                            targets[target_id] = {}
+                        targets[target_id][radar_id] = (x, y)
+          return targets
 
     def update_planes(self, instant_update=False):
           for plane_id, plane_data in self.planes.items():
@@ -227,39 +198,39 @@ class MapWindow(QMainWindow):
                     zur_data['icon'].hide()
 
     def update_rocket_rotation(self, rocket_data, target_idx, coords):
-           if len(coords) <= 1:
+          if len(coords) <= 1:
                 return
-           if target_idx == 0:
+          if target_idx == 0:
                 prev_x, prev_y = coords[0]
                 next_x, next_y = coords[1]
-           elif target_idx == len(coords) - 1:
+          elif target_idx == len(coords) - 1:
                 prev_x, prev_y = coords[target_idx - 1]
                 next_x, next_y = coords[target_idx]
-           else:
+          else:
                 prev_x, prev_y = coords[target_idx - 1]
                 next_x, next_y = coords[target_idx + 1]
-           dx = next_x - prev_x
-           dy = next_y - prev_y
-           angle_rad = math.atan2(dy, dx)
-           angle_deg = math.degrees(angle_rad)
-           rocket_data['icon'].rotate_to(((angle_deg + 90) % 360))
+          dx = next_x - prev_x
+          dy = next_y - prev_y
+          angle_rad = math.atan2(dy, dx)
+          angle_deg = math.degrees(angle_rad)
+          rocket_data['icon'].rotate_to(((angle_deg + 90) % 360))
 
     def animate_movement(self, obj_data, target_x, target_y, obj_id, is_rocket=False):
-           self.animation_in_progress = True
-           icon = obj_data['icon']
-           start_x, start_y = obj_data['last_pos']
-           steps = self.animation_steps * (3 if is_rocket else 1)
-           duration = self.rocket_animation_duration if is_rocket else self.plane_animation_duration
-           anim = QPropertyAnimation(icon, b"pos")
-           anim.setDuration(duration)
-           anim.setStartValue(QPoint(start_x - 10, start_y - 10))
-           anim.setEndValue(QPoint(target_x - 10, target_y - 10))
-           def animation_finished():
+          self.animation_in_progress = True
+          icon = obj_data['icon']
+          start_x, start_y = obj_data['last_pos']
+          steps = self.animation_steps * (3 if is_rocket else 1)
+          duration = self.rocket_animation_duration if is_rocket else self.plane_animation_duration
+          anim = QPropertyAnimation(icon, b"pos")
+          anim.setDuration(duration)
+          anim.setStartValue(QPoint(start_x - 10, start_y - 10))
+          anim.setEndValue(QPoint(target_x - 10, target_y - 10))
+          def animation_finished():
                 self.animation_in_progress = False
                 if self.is_playing:
                     self.playback_timer.start(self.playback_speed)
-           anim.finished.connect(animation_finished)
-           anim.start(QAbstractAnimation.DeleteWhenStopped)
+          anim.finished.connect(animation_finished)
+          anim.start(QAbstractAnimation.DeleteWhenStopped)
 
     def update_plane_rotation(self, plane_data, target_idx, coords):
            if len(coords) <= 1:
@@ -373,7 +344,7 @@ class MapWindow(QMainWindow):
 
                 elif msg['type'] == 'explosion':
                     self.planes[msg['data'].plane_id]['icon'].show()
-                    print('Коллизия', msg['data'].collision_step, 'САМОЛЕТ',msg['data'].plane_id  )
+                    #print('Коллизия', msg['data'].collision_step, 'САМОЛЕТ',msg['data'].plane_id  )
                     explosion_data = {'collision_step': msg['data'].collision_step, 'rocket_id': msg['data'].rocket_id, 'rocket_coords': msg['data'].rocket_coords,
                                                                     'plane_id': msg['data'].plane_id, 'plane_coords': msg['data'].plane_coords,
                                                                     'collateral_damage': [(damage[0], damage[1]) for damage in msg['data'].collateral_damage] if hasattr(msg['data'], 'collateral_damage') else []}
@@ -382,6 +353,7 @@ class MapWindow(QMainWindow):
 
                     #self.log_explosion(self, msg['data'].rocket_id, msg['data'].plane_id, [(damage[0], damage[1]) for damage in msg['data'].collateral_damage] if hasattr(msg['data'], 'collateral_damage') )
                     self.handle_explosion_event(explosion_data)
+
                 elif msg['type'] == 'rocket_inactivate':
                         rocket_id = msg['data'].rocketId
                         self.text_output.append(f'<span style="color: black;">• Ракета с ID {rocket_id} деактивирована</span>')
@@ -405,179 +377,103 @@ class MapWindow(QMainWindow):
                             del self.rockets[rocket_id]
                             self.inactive_rockets[rocket_id] = cross_label
                             QTimer.singleShot(self.cross_visible_time, lambda rid=rocket_id: self.remove_cross(rid))
+
            except Exception as e:
                 print("Ошибка при обработке сообщения:")
                 traceback.print_exc()
 
-    def visualize_explosion(self, rocket_id: int, rocket_coords: np.ndarray,
-                                       plane_id: int, plane_coords: np.ndarray,
-                                       collateral_damage: List[Tuple[int, np.ndarray]],
-                                       collision_step: int):
-                    center_x = (rocket_coords[0] + plane_coords[0]) / 2
-                    center_y = (rocket_coords[1] + plane_coords[1]) / 2
-                    center = QPoint(int(center_x), int(center_y))
-                    all_points = [center]
-                    for _, coords in collateral_damage:
-                        all_points.append(QPoint(int(coords[0]), int(coords[1])))
-                    blast_radius = self.calculate_blast_radius(center, all_points)
-                    explosion_id = f"explosion_{rocket_id}_{plane_id}_{collision_step}"
-                    self.map_view.explosions[explosion_id] = {
-                        'center': center,
-                        'max_radius': blast_radius,
-                        'current_radius': 10,
-                        'alpha': 220,
-                        'start_step': collision_step,
-                        'duration': 10,
-                        'damage_points': [(damage_id, QPoint(int(coords[0]), int(coords[1])))
-                                        for damage_id, coords in collateral_damage]
-                    }
-
-                    for damage_id, point in self.map_view.explosions[explosion_id]['damage_points']:
-                        damage_marker_id = f"damage_{damage_id}_{collision_step}"
-                        self.map_view.damage_markers[damage_marker_id] = {
-                            'position': point,
-                            'alpha': 200,
-                            'start_step': collision_step,
-                            'duration': 10
-                        }
+    def visualize_explosion(self, rocket_id: int, rocket_coords: np.ndarray, plane_id: int, plane_coords: np.ndarray, collateral_damage: List[Tuple[int, np.ndarray]], collision_step: int):
+         center_x = (rocket_coords[0] + plane_coords[0]) / 2
+         center_y = (rocket_coords[1] + plane_coords[1]) / 2
+         center = QPoint(int(center_x), int(center_y))
+         all_points = [center]
+         for _, coords in collateral_damage:
+            all_points.append(QPoint(int(coords[0]), int(coords[1])))
+         blast_radius = self.calculate_blast_radius(center, all_points)
+         explosion_id = f"explosion_{rocket_id}_{plane_id}_{collision_step}"
+         self.map_view.explosions[explosion_id] = {'center': center, 'max_radius': blast_radius, 'current_radius': 10, 'alpha': 220, 'start_step': collision_step, 'duration': 10,
+                        'damage_points': [(damage_id, QPoint(int(coords[0]), int(coords[1])))for damage_id, coords in collateral_damage]}
+         for damage_id, point in self.map_view.explosions[explosion_id]['damage_points']:
+            damage_marker_id = f"damage_{damage_id}_{collision_step}"
+            self.map_view.damage_markers[damage_marker_id] = {'position': point, 'alpha': 200, 'start_step': collision_step, 'duration': 10}
 
     def calculate_blast_radius(self, center: QPoint, all_points: List[QPoint]) -> int:
-                    if not all_points:
-                        return 50
-                    max_distance = 0
-                    for point in all_points:
-                        dx = point.x() - center.x()
-                        dy = point.y() - center.y()
-                        distance = math.sqrt(dx*dx + dy*dy)
-                        if distance > max_distance:
-                            max_distance = distance
-                    base_radius = 100
-                    scale_factor = 1.5
-                    radius = int(max(base_radius, max_distance * scale_factor))
-                    return radius
+         if not all_points:
+            return 50
+         max_distance = 0
+         for point in all_points:
+            dx = point.x() - center.x()
+            dy = point.y() - center.y()
+            distance = math.sqrt(dx*dx + dy*dy)
+            if distance > max_distance:
+                max_distance = distance
+         base_radius = 100
+         scale_factor = 1.5
+         radius = int(max(base_radius, max_distance * scale_factor))
+         return radius
+
     def remove_cross(self, rocket_id):
-                                    if rocket_id in self.inactive_rockets:
-                                        cross_label = self.inactive_rockets[rocket_id]
-                                        cross_label.hide()
-                                        cross_label.deleteLater()
-                                        del self.inactive_rockets[rocket_id]
-
+         if rocket_id in self.inactive_rockets:
+            cross_label = self.inactive_rockets[rocket_id]
+            cross_label.hide()
+            cross_label.deleteLater()
+            del self.inactive_rockets[rocket_id]
 
     def handle_explosion_event(self, explosion_msg: dict):
-                plane_id = explosion_msg['plane_id']
-                if plane_id in self.planes:
-                    plane_data = self.planes[plane_id]
-                    if 'animation' in plane_data:
-                        plane_data['animation'].stop()
-                        del plane_data['animation']
-                    current_pos = plane_data['icon'].pos()
-                    plane_data['last_pos'] = (current_pos.x(), current_pos.y())
-                    cross_label = QLabel(self.map_view)
-                    cross_label.setAttribute(Qt.WA_TranslucentBackground)
-                    icon_size = plane_data['icon'].size()
-                    cross_pixmap = QPixmap(icon_size)
-                    cross_pixmap.fill(Qt.transparent)
-                    painter = QPainter(cross_pixmap)
-                    painter.setRenderHint(QPainter.Antialiasing)
-                    pen = QPen(QColor(255, 0, 0), 3)
-                    painter.setPen(pen)
-                    margin = 5
-                    painter.drawLine(margin, margin,
-                                   icon_size.width()-margin, icon_size.height()-margin)
-                    painter.drawLine(icon_size.width()-margin, margin,
-                                   margin, icon_size.height()-margin)
-                    painter.end()
+         plane_id = explosion_msg['plane_id']
+         if plane_id in self.planes:
+            plane_data = self.planes[plane_id]
+            if 'animation' in plane_data:
+                plane_data['animation'].stop()
+                del plane_data['animation']
+            current_pos = plane_data['icon'].pos()
+            plane_data['last_pos'] = (current_pos.x(), current_pos.y())
+            cross_label = QLabel(self.map_view)
+            cross_label.setAttribute(Qt.WA_TranslucentBackground)
+            icon_size = plane_data['icon'].size()
+            cross_pixmap = QPixmap(icon_size)
+            cross_pixmap.fill(Qt.transparent)
+            painter = QPainter(cross_pixmap)
+            painter.setRenderHint(QPainter.Antialiasing)
+            pen = QPen(QColor(255, 0, 0), 3)
+            painter.setPen(pen)
+            margin = 5
+            painter.drawLine(margin, margin,icon_size.width()-margin, icon_size.height()-margin)
+            painter.drawLine(icon_size.width()-margin, margin, margin, icon_size.height()-margin)
+            painter.end()
+            cross_label.setPixmap(cross_pixmap)
+            cross_label.setGeometry(QRect(current_pos, icon_size))
+            cross_label.show()
+            QTimer.singleShot(1000, lambda: self.process_plane_destruction(plane_id,cross_label,explosion_msg['collision_step']))
+         self.visualize_explosion(rocket_id=explosion_msg['rocket_id'], rocket_coords=explosion_msg['rocket_coords'],
+                    plane_id=explosion_msg['plane_id'], plane_coords=explosion_msg['plane_coords'],
+                    collateral_damage=explosion_msg['collateral_damage'],collision_step=explosion_msg['collision_step'])
+         self.map_view.set_current_step(explosion_msg['collision_step'])
+         self.update()
 
-                    cross_label.setPixmap(cross_pixmap)
-                    cross_label.setGeometry(QRect(current_pos, icon_size))
-                    cross_label.show()
-                    QTimer.singleShot(1000, lambda: self.process_plane_destruction(
-                        plane_id,
-                        cross_label,
-                        explosion_msg['collision_step']
-                    ))
-                self.visualize_explosion(
-                    rocket_id=explosion_msg['rocket_id'],
-                    rocket_coords=explosion_msg['rocket_coords'],
-                    plane_id=explosion_msg['plane_id'],
-                    plane_coords=explosion_msg['plane_coords'],
-                    collateral_damage=explosion_msg['collateral_damage'],
-                    collision_step=explosion_msg['collision_step']
-                )
-
-                self.map_view.set_current_step(explosion_msg['collision_step'])
-                self.update()
-    '''
-    def handle_explosion_event(self, explosion_msg: dict):
-            plane_id = explosion_msg['plane_id']
-            if plane_id in self.planes:
-                # Сохраняем состояние перед взрывом
-                self.pre_explosion_states[plane_id] = {
-                    'coords': self.planes[plane_id]['coords'].copy(),
-                    'last_pos': self.planes[plane_id].get('last_pos'),
-                    'animation': self.planes[plane_id].get('animation'),
-                    'trail': self.map_view.trails.get(plane_id, []).copy()
-                }
-
-                # Останавливаем анимацию
-                if 'animation' in self.planes[plane_id]:
-                    self.planes[plane_id]['animation'].stop()
-                    del self.planes[plane_id]['animation']
-
-                # Создаем крестик
-                self.create_destruction_cross(plane_id)
-
-                # Визуализируем взрыв
-                self.visualize_explosion(
-                    rocket_id=explosion_msg['rocket_id'],
-                    rocket_coords=explosion_msg['rocket_coords'],
-                    plane_id=plane_id,
-                    plane_coords=explosion_msg['plane_coords'],
-                    collateral_damage=explosion_msg['collateral_damage'],
-                    collision_step=explosion_msg['collision_step']
-                )
-
-                self.map_view.set_current_step(explosion_msg['collision_step'])
-                self.update()
-    '''
     def create_destruction_cross(self, plane_id):
-                        if plane_id in self.planes:
-                            plane_data = self.planes[plane_id]
-                            current_pos = plane_data['icon'].pos()
+         if plane_id in self.planes:
+            plane_data = self.planes[plane_id]
+            current_pos = plane_data['icon'].pos()
+            cross_label = QLabel(self.map_view)
+            cross_label.setAttribute(Qt.WA_TranslucentBackground)
+            icon_size = plane_data['icon'].size()
+            cross_pixmap = QPixmap(icon_size)
+            cross_pixmap.fill(Qt.transparent)
+            painter = QPainter(cross_pixmap)
+            painter.setRenderHint(QPainter.Antialiasing)
+            pen = QPen(QColor(255, 0, 0), 3)
+            painter.setPen(pen)
+            margin = 5
+            painter.drawLine(margin, margin,icon_size.width()-margin, icon_size.height()-margin)
+            painter.drawLine(icon_size.width()-margin, margin,margin, icon_size.height()-margin)
+            painter.end()
+            cross_label.setPixmap(cross_pixmap)
+            cross_label.setGeometry(QRect(current_pos, icon_size))
+            cross_label.show()
+            self.destroyed_planes[plane_id] = {'cross_label': cross_label,'position': current_pos}
+            plane_data['icon'].hide()
 
-                            # Создаем QLabel с крестиком
-                            cross_label = QLabel(self.map_view)
-                            cross_label.setAttribute(Qt.WA_TranslucentBackground)
-
-                            # Размеры как у иконки самолёта
-                            icon_size = plane_data['icon'].size()
-                            cross_pixmap = QPixmap(icon_size)
-                            cross_pixmap.fill(Qt.transparent)
-
-                            # Рисуем красный крестик
-                            painter = QPainter(cross_pixmap)
-                            painter.setRenderHint(QPainter.Antialiasing)
-                            pen = QPen(QColor(255, 0, 0), 3)  # Красный цвет, толщина 3px
-                            painter.setPen(pen)
-                            margin = 5  # Отступ от краёв
-                            painter.drawLine(margin, margin,
-                                           icon_size.width()-margin, icon_size.height()-margin)
-                            painter.drawLine(icon_size.width()-margin, margin,
-                                           margin, icon_size.height()-margin)
-                            painter.end()
-
-                            cross_label.setPixmap(cross_pixmap)
-                            cross_label.setGeometry(QRect(current_pos, icon_size))
-                            cross_label.show()
-
-                            # Сохраняем крестик
-                            self.destroyed_planes[plane_id] = {
-                                'cross_label': cross_label,
-                                'position': current_pos
-                            }
-
-                            # Скрываем оригинальную иконку
-                            plane_data['icon'].hide()
     def remove_object(self, obj_id: int):
            if obj_id in self.rockets:
                 self.rockets[obj_id]['icon'].hide()
@@ -593,68 +489,45 @@ class MapWindow(QMainWindow):
             self.text_output.append(f'<span style="color: orange;">⚠️ Вторичные повреждения: {damaged_objects}</span>')
     '''
     def check_explosion_undo(self):
-        # Проверяем, был ли на этом шаге взрыв
-        current_step_data = self.simulation_steps[self.current_step]
-        for msg in current_step_data.get('messages', []):
-            if msg['type'] == 'explosion':
-                plane_id = msg['data'].plane_id
-                if plane_id in self.pre_explosion_states:
-                    # Восстанавливаем самолет
-                    self.undo_explosion_for_plane(plane_id)
-
+           current_step_data = self.simulation_steps[self.current_step]
+           for msg in current_step_data.get('messages', []):
+                if msg['type'] == 'explosion':
+                    plane_id = msg['data'].plane_id
+                    if plane_id in self.pre_explosion_states:
+                        self.undo_explosion_for_plane(plane_id)
+    '''
     def undo_explosion_for_plane(self, plane_id):
-                        print("ОТМЕНА ВЗРЫВА ДЛЯ САМОЛЕТА", plane_id)
-                        if plane_id in self.pre_explosion_states and plane_id in self.planes:
-                            # Удаляем крестик, если он существует
-                            if plane_id in self.destroyed_planes:
-                                cross_data = self.destroyed_planes[plane_id]
-                                cross_data['cross_label'].hide()
-                                cross_data['cross_label'].deleteLater()
-                                del self.destroyed_planes[plane_id]
-
-                            # Восстанавливаем самолет
-                            plane_data = self.planes[plane_id]
-                            pre_state = self.pre_explosion_states[plane_id]
-
-                            # 1. Восстанавливаем видимость и позицию
-                            plane_data['icon'].show()
-                            if pre_state['last_pos']:
-                                plane_data['icon'].move(pre_state['last_pos'][0], pre_state['last_pos'][1])
-
-                            # 2. Восстанавливаем координаты и состояние
-                            plane_data['coords'] = pre_state['coords'].copy()
-                            plane_data['last_pos'] = pre_state['last_pos']
-
-                            # 3. Восстанавливаем анимацию, если она была
-                            if pre_state['animation']:
-                                plane_data['animation'] = pre_state['animation']
-                                plane_data['animation'].start()
-
-                            # 4. Восстанавливаем трек на карте
-                            if plane_id in self.map_view.trails:
-                                self.map_view.trails[plane_id] = pre_state['trail'].copy()
-
-                            # 5. Удаляем из истории взрывов
-                            del self.pre_explosion_states[plane_id]
-
-                            print(f"Самолет {plane_id} восстановлен. Позиция: {pre_state['last_pos']}")
-
-                            # Принудительно обновляем отображение
-                            self.update_visualization(instant_update=True)
-                            self.map_view.update()
+                        #print("ОТМЕНА ВЗРЫВА ДЛЯ САМОЛЕТА", plane_id)
+           if plane_id in self.pre_explosion_states and plane_id in self.planes:
+                if plane_id in self.destroyed_planes:
+                    cross_data = self.destroyed_planes[plane_id]
+                    cross_data['cross_label'].hide()
+                    cross_data['cross_label'].deleteLater()
+                    del self.destroyed_planes[plane_id]
+                plane_data = self.planes[plane_id]
+                pre_state = self.pre_explosion_states[plane_id]
+                plane_data['icon'].show()
+                if pre_state['last_pos']:
+                    plane_data['icon'].move(pre_state['last_pos'][0], pre_state['last_pos'][1])
+                plane_data['coords'] = pre_state['coords'].copy()
+                plane_data['last_pos'] = pre_state['last_pos']
+                if pre_state['animation']:
+                    plane_data['animation'] = pre_state['animation']
+                    plane_data['animation'].start()
+                if plane_id in self.map_view.trails:
+                    self.map_view.trails[plane_id] = pre_state['trail'].copy()
+                del self.pre_explosion_states[plane_id]
+                print(f"Самолет {plane_id} восстановлен. Позиция: {pre_state['last_pos']}")
+                self.update_visualization(instant_update=True)
+                self.map_view.update()
+    '''
     def process_plane_destruction(self, plane_id: int, cross_label: QLabel, collision_step: int):
         if plane_id in self.planes:
             self.planes[plane_id]['icon'].hide()
             #del self.planes[plane_id]
         damage_id = f"plane_{plane_id}"
         pos = cross_label.pos()
-        self.map_view.damage_markers[damage_id] = {
-            'position': QPoint(pos.x() + cross_label.width()//2,
-                              pos.y() + cross_label.height()//2),
-            'alpha': 200,
-            'start_step': collision_step,
-            'duration': 30
-        }
+        self.map_view.damage_markers[damage_id] = {'position': QPoint(pos.x() + cross_label.width()//2, pos.y() + cross_label.height()//2),'alpha': 200,'start_step': collision_step,'duration': 30}
         QTimer.singleShot(3000, lambda: self.remove_cross_marker(cross_label, damage_id))
         for radar_id in self.radar_targets:
                 if plane_id in self.radar_targets[radar_id]:
@@ -666,69 +539,25 @@ class MapWindow(QMainWindow):
         cross_label.deleteLater()
         if damage_id in self.map_view.damage_markers:
             del self.map_view.damage_markers[damage_id]
-
-    def undo_explosion(self):
-                    if not self.pre_explosion_states:
-                        return
-
-                    # Находим последний взрыв (можно модифицировать для конкретного самолета)
-                    plane_id, pre_state = next(reversed(self.pre_explosion_states.items()))
-
-                    if plane_id in self.planes and plane_id in self.destroyed_planes:
-                        # Удаляем крестик
-                        cross_data = self.destroyed_planes[plane_id]
-                        cross_data['cross_label'].hide()
-                        cross_data['cross_label'].deleteLater()
-                        del self.destroyed_planes[plane_id]
-
-                        # Восстанавливаем самолет
-                        plane_data = self.planes[plane_id]
-                        plane_data['icon'].show()
-
-                        # Восстанавливаем состояние
-                        plane_data['coords'] = pre_state['coords'].copy()
-                        plane_data['last_pos'] = pre_state['last_pos']
-
-                        if pre_state['animation']:
-                            plane_data['animation'] = pre_state['animation']
-                            plane_data['animation'].start()
-
-                        # Восстанавливаем трек
-                        self.map_view.trails[plane_id] = pre_state['trail'].copy()
-
-                        # Удаляем из истории
-                        del self.pre_explosion_states[plane_id]
-
-                        # Обновляем отображение
-                        self.update_visualization(instant_update=True, is_backward=True)
-                        self.update()
     '''
-    def update_planes(self, instant_update=False):
-                            # Обновляем обычные самолеты
-                            for plane_id, plane_data in self.planes.items():
-                                if plane_id in self.destroyed_planes:
-                                    # Для уничтоженных самолетов обновляем позицию крестика
-                                    cross_data = self.destroyed_planes[plane_id]
-                                    if instant_update:
-                                        cross_data['cross_label'].move(cross_data['position'])
-                                    else:
-                                        self.animate_cross_movement(plane_id, cross_data)
-                                else:
-                                    # Обычное обновление для не уничтоженных самолетов
-                                    coords = plane_data['coords']
-                                    target_idx = min(self.current_step, len(coords) - 1)
-                                    target_x, target_y = coords[target_idx]
-
-                                    if instant_update or plane_data.get('last_pos') is None:
-                                        plane_data['icon'].move(target_x - 10, target_y - 10)
-                                        plane_data['last_pos'] = (target_x, target_y)
-                                    else:
-                                        self.animate_plane_movement(plane_data, target_x, target_y, plane_id)
-
-                                    self.update_plane_rotation(plane_data, target_idx, coords)
-                                    plane_data['last_pos'] = (target_x, target_y)
-
-    def animate_cross_movement(self, plane_id, cross_data):
-                                        # Анимация перемещения крестика аналогично самолету
-                                        pass
+    def undo_explosion(self):
+        if not self.pre_explosion_states:
+            return
+        plane_id, pre_state = next(reversed(self.pre_explosion_states.items()))
+        if plane_id in self.planes and plane_id in self.destroyed_planes:
+            cross_data = self.destroyed_planes[plane_id]
+            cross_data['cross_label'].hide()
+            cross_data['cross_label'].deleteLater()
+            del self.destroyed_planes[plane_id]
+            plane_data = self.planes[plane_id]
+            plane_data['icon'].show()
+            plane_data['coords'] = pre_state['coords'].copy()
+            plane_data['last_pos'] = pre_state['last_pos']
+            if pre_state['animation']:
+                plane_data['animation'] = pre_state['animation']
+                plane_data['animation'].start()
+            self.map_view.trails[plane_id] = pre_state['trail'].copy()
+            del self.pre_explosion_states[plane_id]
+            self.update_visualization(instant_update=True, is_backward=True)
+            self.update()
     '''
