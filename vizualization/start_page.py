@@ -9,8 +9,8 @@ from dispatcher.dispatcher import Dispatcher
 from vizualization.data_collector_for_visual import  SimulationDataCollector
 from vizualization.parametr_window import ParametersWindow
 from PyQt5.QtWidgets import QApplication,QProgressBar, QDialog,QSpinBox, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox,QHBoxLayout
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QIntValidator
+from PyQt5.QtCore import QTimer, Qt, QSize
+from PyQt5.QtGui import QIntValidator,QMovie
 from vizualization.map_class import MapWindow
 
 class StartPage(QWidget):
@@ -101,23 +101,33 @@ class StartPage(QWidget):
         self.simulation.db.add_name(self.name_db)
         #print("DB", self.name_db )
 
+    #HERE I ADD GIF
     def open_map_window(self):
         self.data_colector.dispatcher.register(Modules.GUI)
+        
         loading_window = QDialog(self)
         loading_window.setWindowTitle("Моделирование работы ЗРС")
-        loading_window.setFixedSize(400, 200)
+        loading_window.setFixedSize(700, 400)
         loading_window.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint)
+        
+        """main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)"""
+
         loading_layout = QVBoxLayout()
         loading_layout.setContentsMargins(30, 30, 30, 30)
         loading_layout.setSpacing(20)
+
         title_label = QLabel("Пожалуйста, подождите")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #333;")
         loading_layout.addWidget(title_label)
+        
         status_label = QLabel("Загрузка результатов моделирования...")
         status_label.setAlignment(Qt.AlignCenter)
         status_label.setStyleSheet("font-size: 14px; color: #666;")
         loading_layout.addWidget(status_label)
+        
         progress = QProgressBar()
         progress.setMaximum(self.steps)
         progress.setTextVisible(False)
@@ -130,9 +140,19 @@ class StartPage(QWidget):
         percent_label.setAlignment(Qt.AlignCenter)
         percent_label.setStyleSheet("font-size: 14px; color: #4facfe; font-weight: bold;")
         loading_layout.addWidget(percent_label)
+        gif_label = QLabel()
+        gif_label.setAlignment(Qt.AlignCenter)
+        movie = QMovie("vizualization/pictures/loading.gif")  # путь к твоему GIF
+        movie.setScaledSize(QSize(600, 370))
+        gif_label.setFixedSize(600, 370)
+        gif_label.setMovie(movie)
+        movie.start()
+        gif_label.setStyleSheet("background: transparent;")
+        loading_layout.addWidget(gif_label)
         loading_window.setLayout(loading_layout)
         self.dot_animation = QTimer(loading_window)
         self.dot_count = 0
+
         def animate_dots():
             dots = "." * (self.dot_count % 4)
             title_label.setText(f"Процесс моделирования...{dots}")
@@ -184,18 +204,16 @@ class StartPage(QWidget):
                                position = radar_data['position']
                                if isinstance(position, str):
                                    position = tuple(map(float, position.split(',')))
-                               db.add_radar(i, position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
+                               db.add_radar(position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
             elif module_name == 'ПУ':
                                        for i, launcher_data in enumerate(params['launchers'], 1):
-                                           #here
                                            position = launcher_data['position']
                                            if isinstance(position, str):
                                                position = tuple(map(float, position.split(',')))
                                            db.add_launcher(
-                                               i,
                                                position,
                                                int(launcher_data['missile_count']),
-                                               float(launcher_data['range1']),
+                                               float(launcher_data['range']),
                                                float(launcher_data['velocity1']),
                                                float(launcher_data['range2']),
                                                float(launcher_data['velocity2'])
@@ -203,10 +221,9 @@ class StartPage(QWidget):
 
             elif module_name == 'ПБУ':
                 cc_id = len(db.load_cc()) + 1
-                db.add_cc(cc_id, params['position'])
+                db.add_cc(params['position'])
             elif module_name == 'ВО':
                 for i, element in enumerate(params['elements'], 1):
-                    plane_id = len(db.load_planes()) + 1
                     start_pos = element['start_pos']
                     end_pos = element['end_pos']
                     if isinstance(start_pos, str):
@@ -215,4 +232,4 @@ class StartPage(QWidget):
                         end_pos = tuple(map(float, end_pos.split(',')))
                     if len(start_pos) != 3 or len(end_pos) != 3:
                         raise ValueError("Координаты должны содержать 3 значения (x,y,z)")
-                    db.add_plane(plane_id, start_pos, end_pos)
+                    db.add_plane( start_pos, end_pos)

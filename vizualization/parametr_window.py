@@ -1,5 +1,5 @@
 # This Python file uses the following encoding: utf-8
-from PyQt5.QtWidgets import QApplication, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout,QScrollArea
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QIntValidator
 
@@ -62,10 +62,26 @@ class ParametersWindow(QWidget):
         self.setLayout(layout)
 
     def create_radar_data(self):
-        for i in reversed(range(self.radar_container.count())):
-            self.radar_container.itemAt(i).widget().setParent(None)
+        #for i in reversed(range(self.radar_container.count())):
+            #self.radar_container.itemAt(i).widget().setParent(None)
+        if hasattr(self, 'radar_scroll_content'):
+            for i in reversed(range(self.radar_scroll_layout.count())):
+                  item = self.radar_scroll_layout.itemAt(i)
+                  widget = item.widget()
+                  if widget:
+                        widget.setParent(None)
+        else:
+              self.radar_scroll_area = QScrollArea()
+              self.radar_scroll_area.setWidgetResizable(True)
+
+              self.radar_scroll_content = QWidget()
+              self.radar_scroll_layout = QVBoxLayout(self.radar_scroll_content)
+
+              self.radar_scroll_area.setWidget(self.radar_scroll_content)
+              self.radar_container.addWidget(self.radar_scroll_area)
         count = int(self.module_count.text()) if self.module_count.text() else 1
         self.radar_fields = []
+        
         for i in range(1, count + 1):
             group_box = QGroupBox(f"Радиолокатор {i}")
             group_layout = QVBoxLayout()
@@ -89,76 +105,118 @@ class ParametersWindow(QWidget):
             group_layout.addWidget(range_label)
             group_layout.addWidget(range_input)
             group_box.setLayout(group_layout)
-            self.radar_container.addWidget(group_box)
+            self.radar_scroll_layout.addWidget(group_box)
+            #self.radar_container.addWidget(group_box)
             self.radar_fields.append({ 'position': pos_input, 'max_targets': targets_input, 'angle': angle_input,'range': range_input})
+
     def create_vo_data(self):
-        for i in reversed(range(self.vo_container.count())):
-            self.vo_container.itemAt(i).widget().setParent(None)
+        #for i in reversed(range(self.vo_container.count())):
+            #self.vo_container.itemAt(i).widget().setParent(None)
+        if hasattr(self, 'vo_scroll_content'):
+            for i in reversed(range(self.vo_scroll_layout.count())):
+                  item = self.vo_scroll_layout.itemAt(i)
+                  widget = item.widget()
+                  if widget:
+                        widget.setParent(None)
+        else:
+              self.vo_scroll_area = QScrollArea()
+              self.vo_scroll_area.setWidgetResizable(True)
+
+              self.vo_scroll_content = QWidget()
+              self.vo_scroll_layout = QVBoxLayout(self.vo_scroll_content)
+
+              self.vo_scroll_area.setWidget(self.vo_scroll_content)
+              self.vo_container.addWidget(self.vo_scroll_area)
+
         count = int(self.module_count.text()) if self.module_count.text() else 0
         self.vo_fields = []
+
         for i in range(1, count + 1):
+
             group_box = QGroupBox(f"Самолет {i}")
             group_layout = QVBoxLayout()
+
             start_label = QLabel(f"Стартовая позиция (x,y,z):")
             start_input = QLineEdit()
             group_layout.addWidget(start_label)
             group_layout.addWidget(start_input)
+
             end_label = QLabel(f"Конечная позиция (x,y,z):")
             end_input = QLineEdit()
             group_layout.addWidget(end_label)
             group_layout.addWidget(end_input)
+
             group_box.setLayout(group_layout)
-            self.vo_container.addWidget(group_box)
+            #self.vo_container.addWidget(group_box)
+            self.vo_scroll_layout.addWidget(group_box)
             self.vo_fields.append({ 'start': start_input, 'end': end_input,})
+
+
     def create_launcher_data(self):
-                    for i in reversed(range(self.launcher_container.count())):
-                        widget = self.launcher_container.itemAt(i).widget()
-                        if widget is not None:
-                            widget.setParent(None)
+        #for i in reversed(range(self.launcher_container.count())):
+            #widget = self.launcher_container.itemAt(i).widget()
+            #if widget is not None:
+                #widget.setParent(None)
+        if hasattr(self, 'launcher_scroll_content'):
+            for i in reversed(range(self.launcher_scroll_layout.count())):
+                  item = self.launcher_scroll_layout.itemAt(i)
+                  widget = item.widget()
+                  if widget:
+                        widget.setParent(None)
+        else:
+             self.launcher_scroll_area = QScrollArea()
+             self.launcher_scroll_area.setWidgetResizable(True)
 
-                    count = int(self.module_count.text()) if self.module_count.text() else 1
-                    self.launcher_fields = []
+             self.launcher_scroll_content = QWidget()
+             self.launcher_scroll_layout = QVBoxLayout(self.launcher_scroll_content)
 
-                    for i in range(1, count + 1):
-                        group_box = QGroupBox(f"Пусковая установка {i}")
-                        group_layout = QVBoxLayout()
+             self.launcher_scroll_area.setWidget(self.launcher_scroll_content)
+             self.launcher_container.addWidget(self.launcher_scroll_area)
+                 
+        count = int(self.module_count.text()) if self.module_count.text() else 1
+        self.launcher_fields = []
 
-                        group_layout.addWidget(QLabel("Координаты (x,y,z):"))
-                        pos_input = QLineEdit("")
-                        group_layout.addWidget(pos_input)
+        for i in range(1, count + 1):
+            group_box = QGroupBox(f"Пусковая установка {i}")
+            group_layout = QVBoxLayout()
 
-                        group_layout.addWidget(QLabel("Количество ракет:"))
-                        count_input = QLineEdit("")
-                        count_input.setValidator(QIntValidator(1, 100))
-                        group_layout.addWidget(count_input)
+            group_layout.addWidget(QLabel("Координаты (x,y,z):"))
+            pos_input = QLineEdit("")
+            group_layout.addWidget(pos_input)
 
-                        group_layout.addWidget(QLabel("Первый тип ракет"))
+            group_layout.addWidget(QLabel("Количество ракет:"))
+            count_input = QLineEdit("")
+            count_input.setValidator(QIntValidator(1, 100))
+            group_layout.addWidget(count_input)
 
-                        group_layout.addWidget(QLabel("Радиус взрыва (км):"))
-                        range_input = QLineEdit("")
-                        range_input.setValidator(QIntValidator(1, 1000))
-                        group_layout.addWidget(range_input)
+            group_layout.addWidget(QLabel("Первый тип ракет"))
 
-                        group_layout.addWidget(QLabel("Скорость (м/с):"))
-                        velocity_input = QLineEdit("1000")
-                        velocity_input.setValidator(QIntValidator(100, 5000))
-                        group_layout.addWidget(velocity_input)
+            group_layout.addWidget(QLabel("Радиус взрыва (км):"))
+            range_input = QLineEdit("")
+            range_input.setValidator(QIntValidator(1, 1000))
+            group_layout.addWidget(range_input)
 
-                        group_layout.addWidget(QLabel("Второй тип ракет"))
+            group_layout.addWidget(QLabel("Скорость (м/с):"))
+            velocity_input = QLineEdit("1000")
+            velocity_input.setValidator(QIntValidator(100, 5000))
+            group_layout.addWidget(velocity_input)
 
-                        group_layout.addWidget(QLabel("Радиус взрыва (км):"))
-                        range_input2 = QLineEdit("")
-                        range_input2.setValidator(QIntValidator(1, 1000))
-                        group_layout.addWidget(range_input2)
+            group_layout.addWidget(QLabel("Второй тип ракет"))
 
-                        group_layout.addWidget(QLabel("Скорость (м/с):"))
-                        velocity_input2 = QLineEdit("1000")
-                        velocity_input2.setValidator(QIntValidator(100, 5000))
-                        group_layout.addWidget(velocity_input2)
+            group_layout.addWidget(QLabel("Радиус взрыва (км):"))
+            range_input2 = QLineEdit("")
+            range_input2.setValidator(QIntValidator(1, 1000))
+            group_layout.addWidget(range_input2)
 
-                        group_box.setLayout(group_layout)
-                        self.launcher_container.addWidget(group_box)
-                        self.launcher_fields.append({
+            group_layout.addWidget(QLabel("Скорость (м/с):"))
+            velocity_input2 = QLineEdit("1000")
+            velocity_input2.setValidator(QIntValidator(100, 5000))
+            group_layout.addWidget(velocity_input2)
+
+            group_box.setLayout(group_layout)
+            #self.launcher_container.addWidget(group_box)
+            self.launcher_scroll_layout.addWidget(group_box)
+            self.launcher_fields.append({
                             'position': pos_input,
                             'missile_count': count_input,
                             'range1': range_input,
@@ -166,6 +224,7 @@ class ParametersWindow(QWidget):
                             'range2': range_input2,
                             'velocity2': velocity_input2
                         })
+            
     def save_parameters(self):
         params = {}
         if self.module_name == 'ВО':
@@ -190,6 +249,7 @@ class ParametersWindow(QWidget):
 
                     params = params_dict
         elif self.module_name == 'ПУ':
+
                                 count = int(self.module_count.text()) if self.module_count.text() else 1
                                 params_dict = {'count': count, 'launchers': []}
 

@@ -76,6 +76,8 @@ class MapView(QFrame):
         super().__init__()
         self.setStyleSheet("background-color: white;")
         self.trails = {}  # {id: [points]}
+        self.scan_history = []
+        self.tracked_targets={}
         #self.background_image = QPixmap('./vizualization/pictures/background.png')
         #self.pu_image = PUIcon('./vizualization/pictures/pu.png', 650, 450, parent=self)
         self.pu_image = []
@@ -163,6 +165,23 @@ class MapView(QFrame):
                                                                                                 'step': step, 'radius': self.calculate_blast_radius(QPoint(int((explosion.rocket_coords[0] + explosion.plane_coords[0]) / 2),int((explosion.rocket_coords[1] + explosion.plane_coords[1]) / 2)),
                                                                                                 [QPoint(int(explosion.rocket_coords[0]), int(explosion.rocket_coords[1])),
                                                                                                 QPoint(int(explosion.plane_coords[0]), int(explosion.plane_coords[1]))]),'max_steps': 20}
+    def handle_backward_movement(self, targets):
+        current_time = time.time()
+        for target_id, radar_data in targets.items():
+            for radar_id, (x, y) in radar_data.items():
+                if radar_id not in self.radars:
+                    continue
+                trail_key = (radar_id, target_id)
+                if trail_key in self.trails and self.trails[trail_key]:
+                    for i, point in enumerate(self.trails[trail_key]):
+                        if abs(point.x() - x) < 1 and abs(point.y() - y) < 1:
+                            self.trails[trail_key] = self.trails[trail_key][:i+1]
+                            break
+                if target_id not in self.tracked_targets:
+                    self.tracked_targets[target_id] = {}
+                self.tracked_targets[target_id][radar_id] = {'x': x, 'y': y,  'timestamp': current_time}
+        self.update()
+
     def set_current_step(self, step):
         if 0 <= step <= self.max_step:
             self.current_step = step
@@ -177,27 +196,93 @@ class MapView(QFrame):
         #if not self.background_image.isNull():
             # painter.drawPixmap(0, 0, self.width(), self.height(), self.background_image)
         self.draw_radar_sector(painter)
-        for exp in self.explosions.values():
-            steps_passed = self.current_step - exp['start_step']
-            if 0 <= steps_passed < exp['duration']:
-                core_color = QColor(255, 165, 0, exp['alpha'])
-                painter.setPen(QPen(core_color, 4))
-                painter.setBrush(QBrush(core_color, Qt.SolidPattern))
-                painter.drawEllipse(exp['center'], exp['current_radius'], exp['current_radius'])
-                if steps_passed < exp['duration'] * 0.7:
-                    wave_alpha = int(exp['alpha'] * 0.7)
-                    wave_color = QColor(255, 100, 0, wave_alpha)
-                    painter.setPen(QPen(wave_color, 2))
-                    painter.setBrush(Qt.NoBrush)
-                    painter.drawEllipse(exp['center'], int(exp['current_radius'] * 1.3), int(exp['current_radius'] * 1.3))
-        for dmg in self.damage_markers.values():
-            steps_passed = self.current_step - dmg['start_step']
-            if 0 <= steps_passed < dmg['duration']:
-                size = 8 + int(10 * (1 - steps_passed / dmg['duration']))
-                dmg_color = QColor(255, 50, 0, dmg['alpha'])
-                painter.setPen(QPen(dmg_color, 2))
-                pos = dmg['position']
-                painter.drawLine(pos.x()-size, pos.y()-size, pos.x()+size, pos.y()+size)
+        for exp_id, explosion in self.explosions.items():
+                steps_passed = self.current_step - explosion['start_step']
+                if 0 <= steps_passed < explosion['duration']:
+                    progress = steps_passed / explosion['duration']
+                    current_radius = int(explosion['current_radius'] +(explosion['max_radius'] - explosion['current_radius']) * progress)
+                    alpha = int(explosion['alpha'] * (1 - progress * 0.7))
+                    core_color = QColor(255, 140, 0, alpha)
+                    painter.setPen(QPen(core_color, 2))
+                    painter.setBrush(QBrush(core_color))
+                    painter.drawEllipse(explosion['center'], current_radius, current_radius)
+                    if progress < 0.7:
+                        wave_alpha = int(alpha * 0.6)
+                        wave_color = QColor(255, 80, 0, wave_alpha)
+                        painter.setPen(QPen(wave_color, 1))
+                        painter.setBrush(Qt.NoBrush)
+                        wave_radius = int(current_radius * 1.3)
+                        painter.drawEllipse(explosion['center'], wave_radius, wave_radius)
+        for dmg_id, marker in self.damage_markers.items():
+                steps_passed = self.current_step - marker['start_step']
+                if 0 <= steps_passed < marker['duration']:
+                    progress = steps_passed / marker['duration']
+                    alpha = int(marker['alpha'] * (1 - progress))
+                    size = 8 + int(10 * (1 - progress))
+                    dmg_color = QColor(255, 50, 0, alpha)
+                    painter.setPen(QPen(dmg_color, 2))
+                    pos = marker['position']
+                    painter.drawLine(pos.x()-size, pos.y()-size, pos.x()+size, pos.y()+size)
+                    painter.drawLine(pos.x()+size, pos.y()-size, pos.x()-size, pos.y()+size)
+
+    def draw_radar_sector(self, painter):
+        scan_angle = (self.current_step * 5) % 360
+        for radar_id, radar_data in self.radars.items():
+            radar_icon = radar_data['icon']
+            radar_center = QPointF( radar_icon.x_pos + radar_icon.width() // 2, radar_icon.y_pos + radar_icon.height() // 2)
+            painter.setBrush(QBrush(QColor(0, 255, 0, 30)))
+            painter.setPen(QPen(QColor(0, 180, 0), 2))
+            scan_rect = QRectF(radar_center.x() - radar_data['radius'],  radar_center.y() - radar_data['radius'], radar_data['radius'] * 2, radar_data['radius'] * 2)
+            start_angle = -(scan_angle - radar_data['view_angle'] / 2) * 16
+            span_angle = -radar_data['view_angle'] * 16
+            painter.drawPie(scan_rect, int(start_angle), int(span_angle))
+            dash_pen = QPen(QColor(255, 0, 0), 2, Qt.DashLine)
+            dash_pen.setDashPattern([4, 4])
+            for target_id, target_data in self.tracked_targets.items():
+                if target_id not in self.trails or not self.trails[target_id]:
+                    continue
+                target_point = self.trails[target_id][-1]
+                dx = target_point.x() - radar_center.x()
+                dy = radar_center.y() - target_point.y()
+                azimuth = np.degrees(np.arctan2(dy, dx)) % 360
+                distance = np.sqrt(dx**2 + dy**2)
+                #print("DX, DY",distance)
+                if distance > radar_data['radius']:
+                    continue
+                painter.setPen(dash_pen)
+                ray_length = distance * 0.95
+                end_x = radar_center.x() + ray_length * np.cos(np.radians(azimuth))
+                end_y = radar_center.y() - ray_length * np.sin(np.radians(azimuth))
+                painter.drawLine(radar_center, QPointF(end_x, end_y))
+                painter.setBrush(QBrush(Qt.red))
+                painter.drawEllipse(QPointF(end_x, end_y), 3, 3)
+
+
+    def update_radar_targets(self, targets, is_backward=False):
+                for target_id, radar_data in targets.items():
+                    for radar_id, (x, y) in radar_data.items():
+                        if radar_id not in self.radars:
+                            continue
+                        radar = self.radars[radar_id]
+                        radar_center = QPoint(radar.x_pos + radar.width()//2, radar.y_pos + radar.height()//2)
+                        trail_key = target_id
+                        if is_backward:
+                            if trail_key in self.trails and self.trails[trail_key]:
+                                for i, point in enumerate(self.trails[trail_key]):
+                                    if point.x() == x and point.y() == y:
+                                        self.trails[trail_key] = self.trails[trail_key][:i+1]
+                                        break
+                        else:
+                            if trail_key not in self.trails:
+                                self.trails[trail_key] = []
+                                self.trails[trail_key].append(QPoint(x, y))
+                        dx = x - radar_center.x()
+                        dy = radar_center.y() - y
+                        azimuth = math.degrees(math.atan2(dy, dx)) % 360
+                        distance = math.sqrt(dx*dx + dy*dy)
+                        if target_id not in self.tracked_targets:
+                            self.tracked_targets[target_id] = {}
+                self.update()
 
     def draw_scale(self, painter):
         painter.save()
@@ -228,73 +313,6 @@ class MapView(QFrame):
         painter.drawText(y_axis_x - 15, self.axis_offset + 15, "Y")
         painter.restore()
 
-    def update_radar_targets(self, targets):
-        for target_id, radar_data in targets.items():
-            for radar_id, (x, y) in radar_data.items():
-                radar = self.radars[radar_id]
-                radar_center = QPoint(radar.x_pos + radar.width()//2, radar.y_pos + radar.height()//2)
-                trail_key = (radar_id, target_id)
-                if trail_key not in self.trails:
-                    self.trails[trail_key] = []
-                self.trails[trail_key].append(QPoint(x, y))
-                '''
-                if len(self.trails[trail_key]) > 50:
-                        self.trails[trail_key] = self.trails[trail_key][-50:]
-                '''
-                dx = x - radar_center.x()
-                dy = radar_center.y() - y
-                azimuth = math.degrees(math.atan2(dy, dx)) % 360
-                distance = math.sqrt(dx*dx + dy*dy)
-                if target_id not in self.tracked_targets:
-                    self.tracked_targets[target_id] = {}
-                self.tracked_targets[target_id][radar_id] = {'azimuth': azimuth,'distance': distance }
-
-    def draw_radar_sector(self, painter):
-        current_time = time.time()
-        for radar_id, radar_data in self.radars.items():
-            radar_icon = radar_data['icon']
-            radar_center = QPointF(
-                radar_icon.x_pos + radar_icon.width() // 2,
-                radar_icon.y_pos + radar_icon.height() // 2
-            )
-            if 'last_scan_update' not in radar_data:
-                radar_data['last_scan_update'] = current_time
-                radar_data['scan_angle'] = 0
-            scan_speed = 45
-            time_diff = current_time - radar_data['last_scan_update']
-            radar_data['scan_angle'] = (radar_data['scan_angle'] + time_diff * scan_speed) % 360
-            radar_data['last_scan_update'] = current_time
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.setBrush(QBrush(QColor(0, 255, 0, 30)))
-            painter.setPen(QPen(QColor(0, 180, 0), 2))
-            scan_rect = QRectF(
-                radar_center.x() - radar_data['radius'],
-                radar_center.y() - radar_data['radius'],
-                radar_data['radius'] * 2,
-                radar_data['radius'] * 2
-            )
-            start_angle = -(radar_data['scan_angle'] - radar_data['view_angle'] / 2) * 16
-            span_angle = -radar_data['view_angle'] * 16
-            painter.drawPie(scan_rect, int(start_angle), int(span_angle))
-            dash_pen = QPen(QColor(255, 0, 0), 2, Qt.DashLine)
-            dash_pen.setDashPattern([4, 4])
-            for target_id, target_data in self.tracked_targets.items():
-                if target_id not in self.trails or not self.trails[target_id]:
-                    continue
-                target_point = self.trails[target_id][-1]
-                dx = target_point.x() - radar_center.x()
-                dy = radar_center.y() - target_point.y()
-                azimuth = np.degrees(np.arctan2(dy, dx)) % 360
-                distance = np.sqrt(dx**2 + dy**2)
-                if distance > radar_data['radius']:
-                    continue
-                painter.setPen(dash_pen)
-                ray_length = distance * 0.95
-                end_x = radar_center.x() + ray_length * np.cos(np.radians(azimuth))
-                end_y = radar_center.y() - ray_length * np.sin(np.radians(azimuth))
-                painter.drawLine(radar_center, QPointF(end_x, end_y))
-                painter.setBrush(QBrush(Qt.red))
-                painter.drawEllipse(QPointF(end_x, end_y), 3, 3)
 
     def update_radar_scan(self):
         for radar_data in self.radars.values():
@@ -325,8 +343,7 @@ class MapView(QFrame):
                 radar_id = target_data['radar_id']
                 if radar_id in self.radars:
                     radar_icon = self.radars[radar_id]['icon']
-                    radar_center = QPoint(radar_icon.x_pos + radar_icon.width()//2,
-                                                 radar_icon.y_pos + radar_icon.height()//2)
+                    radar_center = QPoint(radar_icon.x_pos + radar_icon.width()//2,radar_icon.y_pos + radar_icon.height()//2)
                     target_point = self.trails[target_id][-1]
                     dx = target_point.x() - radar_center.x()
                     dy = radar_center.y() - target_point.y()
@@ -378,28 +395,6 @@ class MapView(QFrame):
             point = QPoint(int(coords[0]), int(coords[1]))
             self.damage_markers[f"damage_{obj_id}"] = {'position': point, 'alpha': 180, 'step': 0, 'max_steps': 40}
 
-    def update_effects(self):
-       to_remove = []
-       for exp_id, exp in self.explosions.items():
-            exp['step'] += 1
-            exp['current_radius'] = min(exp['max_radius'], exp['current_radius'] + exp['max_radius'] // 10)
-            if exp['step'] > exp['max_steps'] // 2:
-                exp['alpha'] = max(0, exp['alpha'] - 15)
-            if exp['step'] >= exp['max_steps']:
-                to_remove.append(exp_id)
-       for exp_id in to_remove:
-            del self.explosions[exp_id]
-       to_remove_dmg = []
-       for dmg_id, dmg in self.damage_markers.items():
-            dmg['step'] += 1
-            dmg['alpha'] = max(0, dmg['alpha'] - 5)
-            if dmg['step'] >= dmg['max_steps']:
-                to_remove_dmg.append(dmg_id)
-       for dmg_id in to_remove_dmg:
-            del self.damage_markers[dmg_id]
-       if to_remove or to_remove_dmg:
-            self.update()
-
     def add_to_trail(self, obj_id, point):
        if obj_id not in self.trails:
             self.trails[obj_id] = []
@@ -418,26 +413,18 @@ class MapView(QFrame):
             self.damage_markers[damage_id] = {'position': QPoint(int(coords[0]), int(coords[1])), 'alpha': 180, 'start_step': msg['collision_step'],'duration': 25  }
 
     def update_effects(self):
-        to_remove = []
-        for exp_id, exp in self.explosions.items():
-            steps_passed = self.current_step - exp['start_step']
-            if steps_passed < 0:
-                continue
-            if steps_passed >= exp['duration']:
-                to_remove.append(exp_id)
-                continue
-            progress = steps_passed / exp['duration']
-            exp['current_radius'] = int(exp['max_radius'] * min(1.0, progress * 1.5))
-            exp['alpha'] = int(180 * (1 - progress))
-        for exp_id in to_remove:
-            del self.explosions[exp_id]
-        to_remove_dmg = []
-        for dmg_id, dmg in self.damage_markers.items():
-            steps_passed = self.current_step - dmg['start_step']
-            if steps_passed >= dmg['duration']:
-                to_remove_dmg.append(dmg_id)
-                continue
-            dmg['alpha'] = int(180 * (1 - steps_passed / dmg['duration']))
-        for dmg_id in to_remove_dmg:
-            del self.damage_markers[dmg_id]
+                to_remove = []
+                for exp_id, explosion in self.explosions.items():
+                    if self.current_step - explosion['start_step'] >= explosion['duration']:
+                        to_remove.append(exp_id)
+                for exp_id in to_remove:
+                    del self.explosions[exp_id]
+                to_remove_dmg = []
+                for dmg_id, marker in self.damage_markers.items():
+                    if self.current_step - marker['start_step'] >= marker['duration']:
+                        to_remove_dmg.append(dmg_id)
+                for dmg_id in to_remove_dmg:
+                    del self.damage_markers[dmg_id]
+                if to_remove or to_remove_dmg:
+                    self.update()
 
