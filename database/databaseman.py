@@ -74,31 +74,28 @@ class DatabaseManager:
         self.conn.commit()
 
     def add_plane(self, 
-                 plane_id: int, 
                  start: Tuple[float, float, float], 
                  end: Tuple[float, float, float]) -> None:
         self.cursor.execute(
             """INSERT INTO planes 
-            (plane_id, start_x, start_y, start_z, end_x, end_y, end_z)
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (plane_id, *start, *end))
+            (start_x, start_y, start_z, end_x, end_y, end_z)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (*start, *end))
         self.conn.commit()
 
     def add_radar(self,
-                 radar_id: int,
                  position: Tuple[float, float, float],
                  max_targets: int,
                  angle_input : float,
                  range_input: float) -> None:
         self.cursor.execute(
             """INSERT INTO radars 
-            (radar_id, pos_x, pos_y, pos_z, max_targets, angle_input, range_input)
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (radar_id, *position, max_targets, angle_input, range_input))
+            (pos_x, pos_y, pos_z, max_targets, angle_input, range_input)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (*position, max_targets, angle_input, range_input))
         self.conn.commit()
 
     def add_launcher(self,
-                    launcher_id: int,
                     position: Tuple[float, float, float],
                     cout_zur : int,
                     dist_zur1:int,
@@ -107,19 +104,18 @@ class DatabaseManager:
                     vel_zur2:int) -> None:
         self.cursor.execute(
             """INSERT INTO launchers 
-            (launcher_id, pos_x, pos_y, pos_z, cout_zur, dist_zur1, vel_zur1, dist_zur2, vel_zur2)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (launcher_id, *position, cout_zur,dist_zur1,vel_zur1,dist_zur2,vel_zur2))
+            (pos_x, pos_y, pos_z, cout_zur, dist_zur1, vel_zur1, dist_zur2, vel_zur2)
+            VALUES ( ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (*position, cout_zur,dist_zur1,vel_zur1,dist_zur2,vel_zur2))
         self.conn.commit()
 
     def add_cc(self,
-              cc_id: int,
               position: Tuple[float, float, float]) -> None:
         self.cursor.execute(
             """INSERT INTO CC 
-            (cc_id, pos_x, pos_y, pos_z)
-            VALUES (?, ?, ?, ?)""",
-            (cc_id, *position))
+            (pos_x, pos_y, pos_z)
+            VALUES ( ?, ?, ?)""",
+            (position[0], position[1], position[2]))
         self.conn.commit()
 
     def load_planes(self) -> Dict[int, Dict[str, np.ndarray]]:
