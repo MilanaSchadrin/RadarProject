@@ -12,7 +12,7 @@ class Logger:
         numbers = []
 
         for log in existing_logs:
-            stem = log.stem  # например, log0
+            stem = log.stem 
             num_part = stem.replace("log", "")
             if num_part.isdigit():
                 numbers.append(int(num_part))
@@ -26,8 +26,8 @@ class Logger:
             f.write(log_entry + "\n")
 
     def _format_log_entry(self, message) -> str:
-        message_type = type(message).__name__  # Например SEAddRocket
-        message_dict = asdict(message)  # Превращаем dataclass в словарь
+        message_type = type(message).__name__  
+        message_dict = asdict(message) 
         lines = [f"Message Type: {message_type}"]
 
         for key, value in message_dict.items():

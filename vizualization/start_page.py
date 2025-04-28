@@ -101,13 +101,12 @@ class StartPage(QWidget):
         self.simulation.db.add_name(self.name_db)
         #print("DB", self.name_db )
 
-    #HERE I ADD GIF
     def open_map_window(self):
         self.data_colector.dispatcher.register(Modules.GUI)
         
         loading_window = QDialog(self)
         loading_window.setWindowTitle("Моделирование работы ЗРС")
-        loading_window.setFixedSize(700, 400)
+        loading_window.setFixedSize(600, 400)
         loading_window.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint)
         
         """main_layout = QVBoxLayout()
@@ -140,15 +139,21 @@ class StartPage(QWidget):
         percent_label.setAlignment(Qt.AlignCenter)
         percent_label.setStyleSheet("font-size: 14px; color: #4facfe; font-weight: bold;")
         loading_layout.addWidget(percent_label)
-        gif_label = QLabel()
-        gif_label.setAlignment(Qt.AlignCenter)
-        movie = QMovie("vizualization/pictures/loading.gif")  # путь к твоему GIF
-        movie.setScaledSize(QSize(600, 370))
-        gif_label.setFixedSize(600, 370)
-        gif_label.setMovie(movie)
-        movie.start()
-        gif_label.setStyleSheet("background: transparent;")
-        loading_layout.addWidget(gif_label)
+        #gif_label = QLabel()
+        #gif_label.setAlignment(Qt.AlignCenter)
+        #movie = QMovie("vizualization/pictures/loading.gif")  # путь к твоему GIF
+        #movie.setScaledSize(QSize(500, 200))
+        #gif_label.setFixedSize(600, 370)
+        #gif_label.setMovie(movie)
+        #movie.start()
+        #gif_label.setStyleSheet("background: transparent;")
+        #gif_container = QHBoxLayout()
+
+        #gif_container.setContentsMargins(0, 0, 0, 0)  # Убираем margins у контейнера
+        #gif_container.addWidget(gif_label)
+
+        #loading_layout.addLayout(gif_container)
+
         loading_window.setLayout(loading_layout)
         self.dot_animation = QTimer(loading_window)
         self.dot_count = 0
