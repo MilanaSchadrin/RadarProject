@@ -23,10 +23,12 @@ class SEKilled(Message):
     plane_id: int
     plane_coords: NDArray[np.float64]
     collateral_damage: List[Tuple[int, NDArray[np.float64]]]
+    
 @dataclass
 class RocketInactivated(Message):
     rocket_id:int
     timeStep:int
+
 @dataclass
 class SEAddRocket(Message):
     startTime: int
