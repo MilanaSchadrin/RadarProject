@@ -43,7 +43,6 @@ class SkyEnv:
             position = i_trajectory[time]
             distance = np.linalg.norm(position - explosionPos)
             if distance <=radius:
-                print('CollateralDamage')
                 collateralDamage.append((i_id,position))
                 i.killed()
                 self.to_remove.add(('plane', i_id))
@@ -84,7 +83,6 @@ class SkyEnv:
             positionRocket = rockettrajectory[trIndex]
             distance = np.linalg.norm(positionPlane-positionRocket)
             if distance <= rocket.get_radius():
-                print('Collision', t)
                 collisionStep = t
                 plane = self.pairs[rocket.get_id()]
                 #self.pairs.get(rocket.get_id()).killed()
@@ -191,7 +189,6 @@ class SkyEnv:
                         self.rockets[missile.missileID].boom()
                         message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
                         self.dispatcher.send_message(message)
-                        print('rocket inactivated')
                         self.to_remove.add(('rocket', missile.missileID))
                 """for rocket_id, rocket in list(self.rockets.items()):
                     if rocket.is_killed()==True:
