@@ -45,6 +45,53 @@
  * Facade (ControlCenter как единая точка входа)
    
 >Диаграммы классов и процессов  - [UML диаграммы](https://drive.google.com/file/d/1NRzsn4hVriHqQKuGoWiO6pbLNernI-Td/view?usp=sharing)
+### Структура репозитория
+```
+- docs/ документация
+- project_moduls/ проект
+  - common/ общие данные
+     - commin.py
+  - controlcenter/ модуль ПБУ
+     - ControlCenter.py
+  - database/ хранение и обработка бд
+     - databaseman.py
+     - skydb.db -
+  - dispatcher/ модуль Диспетчер
+     - dispatcher.py
+     - enums.py
+     - logger.py
+     - messages.py
+  - launcher/ модуль ПУ
+     - launcher.py
+  - logs/ хранение логов симуляций
+  - missile/ модуль ЗУР
+     - Missile.py
+     - MissileController.py
+  - radar/ модуль РЛС
+     - Radar.py
+     - RadarController.py
+     - Target.py
+  - skyenv/ модуль ВО
+     - skyenv.py
+     - skyobjects.py
+  - testing/ тесты
+     - modul_cc_ra_la.py
+     - modul_skyenv.py
+  - vizualization/ UI
+     - pictures/
+     - data_collector_for_visual.py
+     - map_class.py
+     - map_window.py
+     - parametr_window.py
+     - start_page.py
+  - main.py
+  - simulation.py
+```
+
+### Настройка окружения
+```
+pip install -r docs/requirements.txt
+```
 
 ## Документация
 [Документация по проекту](https://github.com/MilanaSchadrin/RadarProject/blob/main/radar_project_doc.pdf)
@@ -54,6 +101,3 @@
 >![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 >![Qt](https://img.shields.io/badge/Qt-%23217346.svg?style=for-the-badge&logo=Qt&logoColor=white)
 >![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
-
-
-
