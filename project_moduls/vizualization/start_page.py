@@ -218,7 +218,7 @@ class StartPage(QWidget):
                                            db.add_launcher(
                                                position,
                                                int(launcher_data['missile_count']),
-                                               float(launcher_data['range']),
+                                               float(launcher_data['range1']),
                                                float(launcher_data['velocity1']),
                                                float(launcher_data['range2']),
                                                float(launcher_data['velocity2'])

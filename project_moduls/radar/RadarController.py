@@ -20,17 +20,15 @@ class TargetEnv:
         self.clearCoords: List[Tuple[float, float, float]] = clearCoords
         self.isFollowed = False
 
-    def getCurrentCoords(self, step: int) -> Tuple[float, float, float]:
-        """Возвращает текущие координаты цели на указанном шаге."""
+    def getCurrentCoords(self, step):
+        if step >= len(self.clearCoords):
+            return self.clearCoords[-1]
         return self.clearCoords[step]
 
-    def getCurrentSpeedVec(self, step: int) -> Tuple[float, float, float]:
-        """Возвращает текущий вектор скорости цели."""
-        return (
-            self.clearCoords[step + 1][0] - self.clearCoords[step][0],
-            self.clearCoords[step + 1][1] - self.clearCoords[step][1],
-            self.clearCoords[step + 1][2] - self.clearCoords[step][2],
-        )
+    def getCurrentSpeedVec(self, step):
+        if step >= len(self.clearSpeedVecs):
+            return self.clearSpeedVecs[-1]
+        return self.clearSpeedVecs[step]
 
 
 class MissileEnv:

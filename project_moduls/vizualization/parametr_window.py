@@ -100,7 +100,7 @@ class ParametersWindow(QWidget):
             angle_input.setValidator(QIntValidator(1, 360))
             group_layout.addWidget(angle_label)
             group_layout.addWidget(angle_input)
-            range_label = QLabel("Дальность (км):")
+            range_label = QLabel("Дальность (м):")
             range_input = QLineEdit("")
             range_input.setValidator(QIntValidator(50, 700))
             group_layout.addWidget(range_label)

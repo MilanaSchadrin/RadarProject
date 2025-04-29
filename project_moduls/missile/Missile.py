@@ -10,10 +10,10 @@ class MissileType(Enum):
 
 MISSILE_TYPE_CONFIG = {
     MissileType.TYPE_1: {
-        "currLifeTime": 30,
+        "currLifeTime": 70,
     },
     MissileType.TYPE_2: {
-        "currLifeTime": 20,
+        "currLifeTime": 80,
     }
 }
 
