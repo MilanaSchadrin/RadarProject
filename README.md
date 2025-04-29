@@ -94,7 +94,7 @@ pip install -r docs/requirements.txt
 ```
 
 ## Документация
-[Документация по проекту](https://github.com/MilanaSchadrin/RadarProject/blob/main/radar_project_doc.pdf)
+[Документация по проекту](https://github.com/MilanaSchadrin/RadarProject/blob/main/docs/Docs.pdf)
 
 >**Используемые Ресурсы**
 >
