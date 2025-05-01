@@ -15,25 +15,35 @@ class MissileController:
 
     def __init__(self):
         self._missiles: List[Missile] = [] # ракеты на данной итерации
-        self._unusefulMissiles: List[Missile] = [] # ненужные ракеты на данной итерации
+        self._unusefulMissiles: List[Missile] = [] # ненужные ракеты на данной итерации (MissileStatus.INACTIVE)
 
 
-    def process_missiles_of_target(self, target):
-        """Обрабатывает список ракет у данной цели."""
-        for currMissile in target.attachedMissiles.values():
-            currMissile.currLifeTime -= TICKSPERCYCLERADAR
-            if target.status == TargetStatus.DESTROYED: # уничтоженная цель
-                currMissile.status = MissileStatus.INACTIVE
-                self._unusefulMissiles.append(currMissile)
+    """Инварианты:
+        1) ракета всегда достигает цели, если ей ничего не мешает
+        2) если у ракеты missile.status == MissileStatus.INACTIVE, то цель,
+         к которой прикреплена ракета, имеет статус target.status == TargetStatus.DESTROYED
+        3) (1) & (2) => у цели всегда одна прикрепленная ракета
+    """
 
-            elif self._collision(currMissile, target):
-                self._destroy_missile(currMissile)
 
-            elif self._will_explode(target, currMissile) == False:
-                currMissile.status = MissileStatus.INACTIVE
-                self._unusefulMissiles.append(currMissile)
+    def process_missile_of_target(self, target):
+        """Обрабатывает ракету у данной цели."""
+        missile = next(iter(target.attachedMissiles.values()), None)
 
-            self._missiles.append(currMissile)
+        if target.status == TargetStatus.DESTROYED: # уничтоженная цель
+            missile.status = MissileStatus.INACTIVE
+            self._unusefulMissiles.append(missile)
+
+        elif target.status == TargetStatus.UNDETECTED:
+            self._nullify_trajectory(missile)
+
+        elif self._collision(missile, target):
+            self._destroy_missile(missile)
+
+        else:
+            self._change_trajectory(target, missile)
+
+        self._missiles.append(missile)
 
 
     def process_unuseful_missiles(self):
@@ -48,12 +58,11 @@ class MissileController:
             if destroy:
                 self._destroy_missile(currMissile)
 
-        self._unusefulMissiles = []
+        self._unusefulMissiles.clear()
 
 
     def process_new_missile(self, new_missile):
         """Обрабатывает новую ракету"""
-        new_missile.currLifeTime -= TICKSPERCYCLELAUNCHER;
         self._missiles.append(new_missile)
 
 
@@ -62,6 +71,7 @@ class MissileController:
         missiles = self._missiles.copy()
         self._missiles.clear()
         return missiles
+
 
     """-------------private---------------"""
 
@@ -78,6 +88,21 @@ class MissileController:
         return distance < mainObject.damageRadius
 
 
+    def _change_trajectory(target, missile):
+        """Изменяет направление ракете."""
+        distance = np.array(target.currentCoords) - np.array(missile.currentCoords)
+        norm = np.linalg.norm(distance)
+        e = distance / norm
+
+        abs_velocity = np.linalg.norm(np.array(missile.velocity))
+        missile.velocity = tuple(e * abs_velocity)
+
+
+    def _nullify_trajectory(missile):
+        missile.velocity = (0.0, 0.0, 0.0)
+
+
+    # не используется в реализации
     def _will_explode(self, target, missile):
         """Проверяет, что target будет в радиусе взрыва ракеты missile."""
         r_pos = np.array(missile.currentCoords)
