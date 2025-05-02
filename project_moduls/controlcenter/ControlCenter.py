@@ -116,14 +116,16 @@ class ControlCenter:
     def _process_targets(self):
         """Обрабатывает цель."""
         for target in self._targets:
-            if target.status == TargetStatus.DESTROYED:
+            if target.status in [TargetStatus.DESTROYED, TargetStatus.UNDETECTED]:
                 break
-            active_missiles = [m for m in target.attachedMissiles.values() if m.status == MissileStatus.ACTIVE]
-            if not active_missiles and target.status == TargetStatus.FOLLOWED:
+            missile_count = sum(1 for missile in target.attachedMissiles.values())
+            if missile_count == 0:
+                if target.status == TargetStatus.FOLLOWED:
                 self._dispatcher.send_message(
                 CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target)
-            )
-            self._missileController.process_missiles_of_target(target)
+                )
+            else:
+                self._missileController.process_missile_of_target(target)
 
         self._missileController.process_unuseful_missiles()
 
@@ -146,7 +148,7 @@ class ControlCenter:
         pr_list = []
 
         for target in self._targets:
-            if target.status == TargetStatus.DESTROYED: # уничтоженная цель
+            if target.status in [TargetStatus.DESTROYED, TargetStatus.UNDETECTED]: # уничтоженная или необнаруженная цель
                 continue
 
             direction = self._direction(target)
@@ -161,8 +163,8 @@ class ControlCenter:
                 time = projection / np.linalg.norm( np.array(target.currentSpeedVector) )
                 signReverse = -1 if projection >= 0 else 1
 
-                active_missiles_count = sum(1 for missile in target.attachedMissiles.values() if missile.status == MissileStatus.ACTIVE)
-                launcher_pr_list.append( (active_missiles_count, signReverse, abs(time), target) )
+                missile_count = sum(1 for missile in target.attachedMissiles.values())
+                launcher_pr_list.append( (missile_count, signReverse, abs(time), target) )
 
             if launcher_pr_list:
                 launcher_pr_list.sort(key=lambda x: (x[0], x[1], x[2]))
