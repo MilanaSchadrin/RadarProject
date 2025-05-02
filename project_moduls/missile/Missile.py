@@ -9,14 +9,17 @@ class MissileType(Enum):
 
 
 MISSILE_TYPE_CONFIG = {
-    MissileType.TYPE_1: {
-        "currLifeTime": 70,
-    },
-    MissileType.TYPE_2: {
-        "currLifeTime": 80,
-    }
-}
-
+     MissileType.TYPE_1: {
+         "speed": 100, # абсолютная величина скорости
+         "currLifeTime": 30,
+         "damageRadius": 20
+     },
+     MissileType.TYPE_2: {
+         "speed": 150,
+         "currLifeTime": 20,
+         "damageRadius": 25
+     }
+ }
 
 class MissileStatus(Enum):
     ACTIVE = 1  # ракета ещё нужна

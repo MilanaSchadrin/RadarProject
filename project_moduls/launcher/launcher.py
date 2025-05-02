@@ -5,6 +5,7 @@ from dispatcher.dispatcher import Dispatcher
 from missile.Missile import Missile, MissileType,MISSILE_TYPE_CONFIG
 from radar.Target import Target
 from typing import Tuple
+
 def dir(A, B):
     return (B[0]-A[0], B[1]-A[1], B[2]-A[2])
 
@@ -41,12 +42,12 @@ class Launcher:
 
         if available_silo<=self.silo_num//2:
             type=MissileType.TYPE_1
-            speed = self.missile_speed_second
-            radius = self.damage_radius_second
         else:
             type=MissileType.TYPE_2
-            speed = self.missile_speed_first
-            radius = self.damage_radius_first
+
+        speed = MISSILE_TYPE_CONFIG[type]["speed"]
+        radius = MISSILE_TYPE_CONFIG[type]["damageRadius"]
+
         missile_id = self.ctrl.generate_missile_id()
         velocity = renormalize(dir(self.coord, target.currentCoords), speed)
         time = MISSILE_TYPE_CONFIG[type]["currLifeTime"]
@@ -116,4 +117,4 @@ class LaunchController:
 
     def status(self):
         for L in self._launchers:
-            print("Available missiles in launcher", L.id, ":", L.available_missiles())
+          print("Available missiles in launcher", L.id, ":", L.available_missiles())
