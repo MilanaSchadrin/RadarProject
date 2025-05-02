@@ -21,7 +21,6 @@ MISSILE_TYPE_CONFIG = {
      }
  }
 
-
 class MissileStatus(Enum):
     ACTIVE = 1  # ракета ещё нужна
     INACTIVE = 0  # ракета больше не нужна

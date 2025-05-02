@@ -117,4 +117,4 @@ class LaunchController:
 
     def status(self):
         for L in self._launchers:
-            print("Available missiles in launcher", L.id, ":", L.available_missiles())
+          print("Available missiles in launcher", L.id, ":", L.available_missiles())
