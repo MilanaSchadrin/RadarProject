@@ -17,7 +17,6 @@ class SEStarting(Message):
 
 @dataclass
 class SEKilled(Message):
-    collision_step: int
     rocket_id: int
     rocket_coords: NDArray[np.float64]
     plane_id: int
@@ -31,13 +30,11 @@ class RocketInactivated(Message):
 
 @dataclass
 class SEAddRocket(Message):
-    startTime: int
     rocket_id: int
     rocket_coords: NDArray[np.float64]
 
 @dataclass
 class SEAddRocketToRadar(Message):
-    startTime: int
     planeId: int
     missile: Missile
     rocket_coords: NDArray[np.float64]
@@ -45,7 +42,6 @@ class SEAddRocketToRadar(Message):
 @dataclass
 class CCLaunchMissile(Message):
     target: Target
-
 
 @dataclass(order=True) 
 class CCToRadarNewStatus(Message):
@@ -78,3 +74,8 @@ class LaunchertoCCMissileLaunched(Message):
 @dataclass
 class ToGuiRocketInactivated(Message):
     rocketId: int
+
+@dataclass
+class RocketUpdate(Message):
+    rocket_id:int
+    rocket_coords:NDArray[np.float64]

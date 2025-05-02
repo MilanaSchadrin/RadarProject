@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Dict
 from skyenv.skyobjects import SkyObject, Plane, Rocket
-from dispatcher.messages import SEKilled,SEAddRocket,SEAddRocketToRadar,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LaunchertoSEMissileLaunched
+from dispatcher.messages import SEKilled,SEAddRocket,SEAddRocketToRadar,RocketUpdate,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LaunchertoSEMissileLaunched
 from dispatcher.dispatcher import Dispatcher
 from dispatcher.enums import *
 from queue import PriorityQueue
@@ -156,7 +156,6 @@ class SkyEnv:
                 miss = message.missile
                 rocket = Rocket(miss.missileID,miss.currentCoords,miss.velocity,self.currentTime, self.timeSteps, miss.damageRadius, miss.currLifeTime)
                 self.add_rocket(rocket,miss,targetId)
-
             elif isinstance(message,CCToSkyEnv):
                 rocketsCC = message.missiles
                 for missile in rocketsCC:
@@ -165,8 +164,10 @@ class SkyEnv:
                         message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
                         self.dispatcher.send_message(message)
                         self.to_remove.add(('rocket', missile.missileID))
+                        #self.check_if_in_radius(self, self.rockets[missile.missileID].get_currentPos(),self.rockets[missile.missileID].get_radius())
                     self.rockets[missile.missileID].rocket_step(missile.velocity)
-                    #here message about rocket location                      
+                    message = RocketUpdate(Modules.GUI, Priorities.STANDARD, missile.missileID,self.rockets[missile.missileID].get_currentPos())
+                    message = RocketUpdate(Modules.RadarMain, Priorities.STANDARD, missile.missileID,self.rockets[missile.missileID].get_currentPos())                     
         for rocket_id, rocket in list(self.rockets.items()):
             self.check_collision(rocket)
         for rocket_id, rocket in list(self.rockets.items()):
