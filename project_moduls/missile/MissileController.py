@@ -27,8 +27,8 @@ class MissileController:
 
 
     def process_missile_of_target(self, target):
-        """Обрабатывает ракету у данной цели."""
-        missile = next(iter(target.attachedMissiles.values()), None)
+        """Обрабатывает ракету у данной цели (вызывается, если у цели есть ракета)."""
+        missile = target.attachedMissiles.values()[0]
 
         if target.status == TargetStatus.DESTROYED: # уничтоженная цель
             missile.status = MissileStatus.INACTIVE
@@ -40,7 +40,7 @@ class MissileController:
         elif self._collision(missile, target):
             self._destroy_missile(missile)
 
-        else:
+        elif missile.isDetected:
             self._change_trajectory(target, missile)
 
         self._missiles.append(missile)
