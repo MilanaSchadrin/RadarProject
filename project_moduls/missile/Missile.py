@@ -21,6 +21,7 @@ MISSILE_TYPE_CONFIG = {
      }
  }
 
+
 class MissileStatus(Enum):
     ACTIVE = 1  # ракета ещё нужна
     INACTIVE = 0  # ракета больше не нужна
@@ -37,6 +38,7 @@ class Missile:
         self.currLifeTime: int = currLifeTime
         self.damageRadius: float = damageRadius
         self.status: MissileStatus = status
+        self.isDetected = False
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]):
         self.currentCoords = newCoords
