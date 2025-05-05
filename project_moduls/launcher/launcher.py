@@ -12,6 +12,10 @@ def dir(A, B):
 def dist(A, B):
     return ((B[0]-A[0])**2+(B[1]-A[1])**2+(B[2]-A[2])**2)**0.5
 
+def plane_sep(vect, A, B):
+    D=dir(A, B)
+    return D[0]*vect[0]+D[1]*vect[1]+D[2]*vect[2]
+
 def renormalize(ovect, length):
     olength = dist((0, 0, 0), ovect)
     scale = length / olength
@@ -105,16 +109,25 @@ class LaunchController:
     def create(self, target):
         if not self._launchers:
             return
-        D=10**10
-        k=0
-        closest_launcher = min(
-            (l for l in self._launchers if l.available_missiles() > 0),
-            key=lambda l: dist(l.coord, target.currentCoords),
-            default=None
-        )
-        if closest_launcher:
-            closest_launcher.launch(target)
+        Dx = 10 ** 10
+        kx = -1
+        Di = 10 ** 10
+        ki = -1
+        for i in range(self.lchr_num):
+            if self._launchers[i].silo_num >= 0:
+                d = dist(self._launchers[i].coord, target.currentPosition)
+                x = plane_sep(target.currentSpeedVector, self._launchers[i].coord, target.currentPosition)
+                if (x>=0) and (d < Dx):
+                    Dx = d
+                    kx = i
+                elif (x<0) and (d < Di):
+                    Di = d
+                    ki = i
+        if (kx!=-1):
+            self._launchers[kx].launch(target)
+        else:
+            self._launchers[ki].launch(target)
 
     def status(self):
         for L in self._launchers:
-          print("Available missiles in launcher", L.id, ":", L.available_missiles())
+            print("Available missiles in launcher", L.id, ":", L.available_missiles())
