@@ -177,7 +177,6 @@ class RadarController:
                 target.currentCoords = (0, 0, 0)
 
         self.sendAllObjects()
-        return self.allTargets, self.allEnvTargets, self.allEnvMissiles
 
     def addDetectedTarget(self, target: Target) -> None:
         """Добавляет цель в список обнаруженных целей."""
