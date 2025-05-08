@@ -176,7 +176,7 @@ class RadarController:
                 target.status = TargetStatus.UNDETECTED
                 target.currentCoords = (0, 0, 0)
 
-        # self.sendAllObjects()
+        self.sendAllObjects()
         return self.allTargets, self.allEnvTargets, self.allEnvMissiles
 
     def addDetectedTarget(self, target: Target) -> None:
