@@ -2,99 +2,95 @@ import random
 import math
 
 from typing import Dict, Tuple, List
-from radar.Target import TargetStatus, Target
-from dispatcher.dispatcher import Dispatcher
+# from radar.Target import TargetStatus, Target
+from Target import TargetStatus, Target
+# from dispatcher.dispatcher import Dispatcher
 
 
 class Radar:
     """Класс радара"""
     
-    def __init__(self, radarController, dispatcher, radarId, position, maxRange, coneAngleDeg, maxFollowedCount) -> None:
+    def __init__(self, radarController, dispatcher, radarId, position, maxRange, maxFollowedCount) -> None:
         self.radarController = radarController
         self.dispatcher: Dispatcher = dispatcher
         self.radarId: str = radarId
         self.position: Tuple[float, float, float] = position
+
         self.maxRange: float = maxRange
-        self.coneAngleDeg: float = coneAngleDeg
-        self.maxFollowedCount: int = maxFollowedCount
-        self.currentTargetCount: int = 0
-        self.followedTargets: Dict[str, Target] = {}
         self.noiseLevel: float = random.uniform(0.1, 1)
 
-    def isTargetInRange(self, target, currentStep) -> bool:
-        """Проверяет, находится ли цель в зоне действия радара."""
-        targetPosition = target.getCurrentCoords(currentStep)
-        if targetPosition[2] < 0:
-            return False
+        self.maxFollowedCount: int = maxFollowedCount
+        self.followedTargets: Dict[str, Tuple[Tuple[float, float, float], Tuple[float, float, float], int]] = {}
+        self.detectedTargets: Dict[str, Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = {}
+        self.detectedMissiles: Dict[str, Tuple[float, float, float]] = {}
+        
 
-        dx = targetPosition[0] - self.position[0]
-        dy = targetPosition[1] - self.position[1]
-        dz = targetPosition[2] - self.position[2]
+    def isTargetInRange(self, current_coords):
+        """Проверяет, находится ли объект в зоне действия радара."""
+
+        dx = current_coords[0] - self.position[0]
+        dy = current_coords[1] - self.position[1]
+        dz = current_coords[2] - self.position[2]
         
         distance = math.sqrt(dx**2 + dy**2 + dz**2)
-        if distance > self.maxRange:
-            return False
 
-        if dz <= 0:
-            return False
+        if (distance <= self.maxRange):
+            return True, (dx, dy, dz)
+        else:
+            return False, (0, 0, 0)
 
-        horizontalDistance = math.sqrt(dx**2 + dy**2)
-        angleRad = math.atan(horizontalDistance / dz)
-        coneAngleRad = math.radians(self.coneAngleDeg) / 2
-        
-        return angleRad <= coneAngleRad
+    def _process_target(self, target_env, currentStep, followedTargetsNow):
+        """Обрабатывает цель"""
+        target = target_env
+        current_coords = target.getCurrentCoords(currentStep)
+        current_speed_vec = target.getCurrentSpeedVec(currentStep)
+        priority = target.priority
+        status = self.radarController.allTargets[target.targetId].status
 
-    def _process_target(self, target_id, target_env, currentStep):
-        """Обрабатывает обнаруженную цель"""
-        noise = self.noiseLevel
-        if target_id in self.radarController.detectedTargets:
-            target = self.radarController.detectedTargets[target_id]
-            if target.status == TargetStatus.FOLLOWED and target_env.isFollowed == False:
-                if self.currentTargetCount < self.maxFollowedCount:
-                    target_env.isFollowed = True
-                    self.currentTargetCount += 1
-                    self.followedTargets[target_id] = target
-                    self.radarController.sendCurrentTarget(self.radarId, target_id, self.coneAngleDeg)
+        isTargetInRange, local_coords = self.isTargetInRange(current_coords)
 
-                else:
-                    self.followedTargets[target_id] = target
-                    min_priority_target = max(self.followedTargets.values(), key=lambda x: x.priority)
-                    self.followedTargets.pop(min_priority_target.targetId)
-                    self.radarController.detectedTargets[min_priority_target.targetId].updateStatus(TargetStatus.DETECTED)
-                    self.radarController.allTargets[min_priority_target.targetId] = False
-                    if target_id in self.followedTargets:
-                        target_env.isFollowed = True
-                        self.radarController.sendCurrentTarget(self.radarId, target_id, self.coneAngleDeg)          
+        if isTargetInRange:
+            if status == TargetStatus.FOLLOWED and target.targetId not in followedTargetsNow:
+                noise_coords = self._add_noise_to_position(local_coords, self.noiseLevel * 0.1)
+                noise_speed_vec = self._add_noise_to_speed(current_speed_vec, self.noiseLevel * 0.1)
+                
+                self.followedTargets[target.targetId] = (noise_coords, noise_speed_vec, priority)
 
-                noise = 0.1 * self.noiseLevel
-        else: 
-            target = Target(target_id)
-            self.radarController.addDetectedTarget(target)
+            elif status != TargetStatus.DESTROYED:
+                noise_coords = self._add_noise_to_position(local_coords, self.noiseLevel)
+                noise_speed_vec = self._add_noise_to_speed(current_speed_vec, self.noiseLevel)
+                self.detectedTargets[target.targetId] = (noise_coords, noise_speed_vec)
 
-        currentPos = target_env.getCurrentCoords(currentStep)
-        noisyPos = self._add_noise_to_position(currentPos, noise)
+            if len(self.followedTargets) > self.maxFollowedCount:
+                sorted_list = sorted(self.followedTargets.items(), key=lambda x: x[1][2])
+                
+                targetId = sorted_list[self.maxFollowedCount][0]
 
-        speedVector = target_env.getCurrentSpeedVec(currentStep)
-        noisySpeedVector = self._add_noise_to_speed(speedVector, noise)
+                target = self.radarController.allEnvTargets[targetId]
+                current_coords = target.getCurrentCoords(currentStep)
+                current_speed_vec = target.getCurrentSpeedVec(currentStep)
 
-        target.updateCurrentCoords(noisyPos)
-        target.updateSpeedVector(noisySpeedVector)
-        return target
+                isTargetInRange, local_coords = self.isTargetInRange(current_coords)
+                
+                noise_coords = self._add_noise_to_position(local_coords, self.noiseLevel)
+                noise_speed_vec = self._add_noise_to_speed(current_speed_vec, self.noiseLevel)
+                self.detectedTargets[targetId] = (noise_coords, noise_speed_vec) 
 
-    def _process_missile(self, missile_id, missile_env, currentStep):
-        """Обрабатывает обнаруженную ракету"""
-        noise = self.noiseLevel
-        missile = self.radarController.detectedTargets[missile_env.targetId].attachedMissiles[missile_id]
+                sorted_list.pop(self.maxFollowedCount)
 
-        currentPos = missile_env.getCurrentCoords(currentStep)
-        noisyPos = self._add_noise_to_position(currentPos, noise)
+                self.followedTargets = dict(sorted_list)        
 
-        speedVector = missile_env.getCurrentSpeedVec(currentStep)
-        noisySpeedVector = self._add_noise_to_speed(speedVector, noise)
+    def _process_missile(self, missile_env):
+        """Обрабатывает ракету"""
 
-        missile.updateCurrentCoords(noisyPos)
-        missile.updateSpeedVector(noisySpeedVector)
-        return missile
+        missile = missile_env
+        current_coords = missile.getCurrentCoords()
+
+        isMissileInRange, local_coords = self.isTargetInRange(current_coords)
+
+        if isMissileInRange:
+            noise_coords = self._add_noise_to_position(local_coords, self.noiseLevel* 0.1)
+            self.detectedMissiles[missile.missileId] = noise_coords
 
     def _add_noise_to_position(self, position, noise):
         """Добавляет шум к координатам позиции"""
@@ -112,17 +108,19 @@ class Radar:
             speed[2] + noise
         )
 
-    def scan(self, currentStep: int) -> None:
+    def scan(self, currentStep: int, followedTargetsNow:List) -> None:
         """Основная функция сканирования"""
 
-        self.followedTargets = []
-        self.currentTargetCount = 0
+        self.followedTargets.clear() 
+        self.detectedTargets.clear()
+        self.detectedMissiles.clear()
 
         # Обработка целей
-        for target_id, target_env in self.radarController.allTargets.items():
-            if self.isTargetInRange(target_env, currentStep):
-                self._process_target(target_id, target_env, currentStep)
+        for target_env in self.radarController.allEnvTargets.values():
+            self._process_target(target_env, currentStep, followedTargetsNow)
+
         # Обработка ракет
-        for missile_id, missile_env in self.radarController.allMissiles.items():
-            if self.isTargetInRange(missile_env, currentStep):
-                self._process_missile(missile_id, missile_env, currentStep)  
+        for missile_env in self.radarController.allEnvMissiles.values():
+            self._process_missile(missile_env) 
+
+        return self.followedTargets, self.detectedTargets, self.detectedMissiles
