@@ -33,12 +33,13 @@ class SkyEnv:
 
     def check_if_in_radius(self, explosionPos, radius):
         collateralDamage = []
+        explosionPos = np.array(explosionPos)
         for i in self.planes:
             i_trajectory = i.get_trajectory()
             i_id = i.get_id()
             if i.get_status()  == False:
                 continue
-            position = i_trajectory[self.currentTime-1]
+            position = np.array(i_trajectory[self.currentTime-1])
             distance = np.linalg.norm(position - explosionPos)
             if distance <=radius:
                 collateralDamage.append((i_id, position))
@@ -47,7 +48,7 @@ class SkyEnv:
         for rocket_id, rocket in list(self.rockets.items()):
             if rocket.is_killed():
                 continue  
-            position = rocket.get_currentPos()
+            position = np.array(rocket.get_currentPos())
             distance = np.linalg.norm(position - explosionPos)
             if distance <= radius:
                 collateralDamage.append((rocket_id, position))
@@ -62,16 +63,18 @@ class SkyEnv:
         if plane.get_status() == False:  # Plane already lost
             return
         planetarjectory = get_plane_trajectory_from_rocket(self.pairs, rocket)
-        positionRocket = rocket.get_currentPos
-        positionPlane = planetarjectory[self.currentTime-1]
+        positionRocket = np.array(rocket.get_currentPos())* 1000
+        positionPlane = np.array(planetarjectory[self.currentTime-1])* 1000
         distance = np.linalg.norm(positionPlane-positionRocket)
         if distance <= rocket.get_radius():
+            print(rocket.get_radius())
             plane.killed
             rocket.boom()
+            print('I made boom')
             collateralDamage = self.check_if_in_radius(positionRocket, rocket.get_radius())
             message = SEKilled(Modules.GUI, Priorities.SUPERHIGH,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
             self.dispatcher.send_message(message)
-            message = SEKilled(Modules.RadarMain, Priorities.LOW,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
+            message = SEKilled(Modules.RadarMain, Priorities.HIGH,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
             self.dispatcher.send_message(message)
             self.to_remove.add(('plane', plane.get_id()))
             self.to_remove.add(('rocket', rocket.get_id()))
@@ -95,7 +98,7 @@ class SkyEnv:
         self.rockets[rocket.get_id()] = rocket
         message = SEAddRocket(Modules.GUI, Priorities.HIGH,rocket.get_id(),rocket.get_currentPos())
         self.dispatcher.send_message(message)
-        message = SEAddRocketToRadar(Modules.RadarMain,Priorities.HIGH,target_id, missile, rocket.get_currentPos())
+        message = SEAddRocketToRadar(Modules.RadarMain,Priorities.SUPERHIGH,target_id, missile, rocket.get_currentPos())
         self.dispatcher.send_message(message)
         self.add_pair(rocket.get_id(),target_id)
     
@@ -154,10 +157,20 @@ class SkyEnv:
             if isinstance(message,LaunchertoSEMissileLaunched):
                 targetId = message.targetId
                 miss = message.missile
-                rocket = Rocket(miss.missileID,miss.currentCoords,miss.velocity,self.currentTime, self.timeSteps, miss.damageRadius, miss.currLifeTime)
+                rocket = Rocket(
+    obj_id=miss.missileID,
+    start=miss.currentCoords,
+    velocity=miss.velocity,
+    startTime=self.currentTime,
+    radius=miss.damageRadius,
+    time_step=2,              
+    timeSteps=self.timeSteps   
+)
                 self.add_rocket(rocket,miss,targetId)
             elif isinstance(message,CCToSkyEnv):
                 rocketsCC = message.missiles
+                #print(rocketsCC)
+                #print(self.rockets)
                 for missile in rocketsCC:
                     if missile.currLifeTime <=0 and missile.missileID in self.rockets: 
                         self.rockets[missile.missileID].boom()
@@ -165,9 +178,10 @@ class SkyEnv:
                         self.dispatcher.send_message(message)
                         self.to_remove.add(('rocket', missile.missileID))
                         #self.check_if_in_radius(self, self.rockets[missile.missileID].get_currentPos(),self.rockets[missile.missileID].get_radius())
-                    self.rockets[missile.missileID].rocket_step(missile.velocity)
-                    message = RocketUpdate(Modules.GUI, Priorities.STANDARD, missile.missileID,self.rockets[missile.missileID].get_currentPos())
-                    message = RocketUpdate(Modules.RadarMain, Priorities.STANDARD, missile.missileID,self.rockets[missile.missileID].get_currentPos())                     
+                    if missile.missileID in self.rockets:
+                        self.rockets[missile.missileID].rocket_step(missile.velocity)
+                        message = RocketUpdate(Modules.GUI, Priorities.STANDARD, missile.missileID,self.rockets[missile.missileID].get_currentPos())
+                        message = RocketUpdate(Modules.RadarMain, Priorities.STANDARD, missile.missileID,self.rockets[missile.missileID].get_currentPos())                     
         for rocket_id, rocket in list(self.rockets.items()):
             self.check_collision(rocket)
         for rocket_id, rocket in list(self.rockets.items()):

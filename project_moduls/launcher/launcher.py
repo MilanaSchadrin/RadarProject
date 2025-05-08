@@ -99,8 +99,8 @@ class LaunchController:
         
     def acknowledge(self, targetID, missile):
         print('I made missile ',missile.missileID)
-        self._dispatcher.send_message(LaunchertoSEMissileLaunched(Modules.SE, Priorities.STANDARD, targetID, missile))
-        self._dispatcher.send_message(LaunchertoCCMissileLaunched(Modules.ControlCenter, Priorities.STANDARD, missile))
+        self._dispatcher.send_message(LaunchertoSEMissileLaunched(Modules.SE, Priorities.SUPERHIGH, targetID, missile))
+        self._dispatcher.send_message(LaunchertoCCMissileLaunched(Modules.ControlCenter, Priorities.SUPERHIGH, missile))
 
     def create(self, target):
         if not self._launchers:

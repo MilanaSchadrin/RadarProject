@@ -10,14 +10,14 @@ class MissileType(Enum):
 
 MISSILE_TYPE_CONFIG = {
      MissileType.TYPE_1: {
-         "speed": 100, # абсолютная величина скорости
-         "currLifeTime": 30,
-         "damageRadius": 20
+         "speed": 300, # абсолютная величина скорости
+         "currLifeTime": 1000,
+         "damageRadius": 500
      },
      MissileType.TYPE_2: {
-         "speed": 150,
-         "currLifeTime": 20,
-         "damageRadius": 25
+         "speed": 400,
+         "currLifeTime": 1000,
+         "damageRadius": 500
      }
  }
 
@@ -32,14 +32,14 @@ class Missile:
 
         self.missileID: str = missileID
         self.missileType: MissileType = missileType
-        self.currentCoords: Tuple[float, float, float] = currentCoords
-        self.velocity: Tuple[float, float, float] = velocity
+        self.currentCoords: Tuple[float, float, float] = tuple(currentCoords[:3]) if len(currentCoords) > 3 else tuple(currentCoords)
+        self.velocity: Tuple[float, float, float] = tuple(velocity[:3]) if len(velocity) > 3 else tuple(velocity)
         self.currLifeTime: int = currLifeTime
         self.damageRadius: float = damageRadius
         self.status: MissileStatus = status
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]):
-        self.currentCoords = newCoords
+        self.currentCoords = tuple(newCoords[:3]) if len(newCoords) > 3 else tuple(newCoords)
 
     def updateSpeedVector(self, newSpeedVector: Tuple[float, float, float]):
-        self.velocity = newSpeedVector
+        self.velocity = tuple(newSpeedVector[:3]) if len(newSpeedVector) > 3 else tuple(newSpeedVector)

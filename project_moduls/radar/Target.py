@@ -8,6 +8,7 @@ class TargetStatus(Enum):
     DESTROYED = 0
     DETECTED = 1
     FOLLOWED = 2
+    UNDETECTED = 3
 
 
 class Target:
@@ -16,7 +17,7 @@ class Target:
     def __init__(
         self,
         targetId: str,
-        status: TargetStatus = TargetStatus.DETECTED,
+        status: TargetStatus = TargetStatus.UNDETECTED,
     ) -> None:
         self.targetId: str = targetId
         self.status: TargetStatus = status
@@ -24,6 +25,7 @@ class Target:
         self.currentSpeedVector: Tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.attachedMissiles: Dict[str, Missile] = {}
         self.priority: int = 0
+        self.isDetected = False
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]) -> None:
         """Обновить текущие координаты."""

@@ -39,12 +39,12 @@ class ControlCenter:
                 radarId=str(radar_id),
                 position=radar_info['position'],
                 maxRange=radar_info['range_input'],
-                coneAngleDeg=radar_info['angle_input'],
+                #coneAngleDeg=radar_info['angle_input'],
                 maxFollowedCount=radar_info['max_targets'],
                 #maxTargetCount=radar_info['max_targets'],
             )
             self._radarController.addRadar(radar)
-
+            
         launchers_data = db.load_launchers()
         self._dispatcher.register(Modules.LauncherMain)
         for launcher_id, launcher_info in launchers_data.items():
@@ -77,7 +77,7 @@ class ControlCenter:
         self._launcherController.update()
         t = self._get_missiles()
         if len(t)!=0:
-            self._dispatcher.send_message(CCToSkyEnv(Modules.SE, Priorities.LOW,t) )
+            self._dispatcher.send_message(CCToSkyEnv(Modules.SE, Priorities.STANDARD,t) )
         self.currentStep+=1
 
 
@@ -121,9 +121,8 @@ class ControlCenter:
             missile_count = sum(1 for missile in target.attachedMissiles.values())
             if missile_count == 0:
                 if target.status == TargetStatus.FOLLOWED:
-                self._dispatcher.send_message(
-                CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target)
-                )
+                    self._dispatcher.send_message(
+                        CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target))
             else:
                 self._missileController.process_missile_of_target(target)
 

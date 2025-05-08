@@ -84,13 +84,13 @@ class MissileController:
 
     def _collision(self, mainObject, other_object):
         """Проверяет наличие object1 в радиусе mainObject."""
-        distance = np.linalg.norm( np.array(mainObject.currentCoords) - np.array(other_object.currentCoords))
+        distance = np.linalg.norm( np.array(mainObject.currentCoords)*1000 - np.array(other_object.currentCoords)*1000)
         return distance < mainObject.damageRadius
 
 
-    def _change_trajectory(target, missile):
+    def _change_trajectory(self, target, missile):
         """Изменяет направление ракете."""
-        distance = np.array(target.currentCoords) - np.array(missile.currentCoords)
+        distance = np.array(target.currentCoords)* 1000 - np.array(missile.currentCoords)* 1000
         norm = np.linalg.norm(distance)
         e = distance / norm
 
@@ -98,16 +98,16 @@ class MissileController:
         missile.velocity = tuple(e * abs_velocity)
 
 
-    def _nullify_trajectory(missile):
+    def _nullify_trajectory(self, missile):
         missile.velocity = (0.0, 0.0, 0.0)
 
 
     # не используется в реализации
     def _will_explode(self, target, missile):
         """Проверяет, что target будет в радиусе взрыва ракеты missile."""
-        r_pos = np.array(missile.currentCoords)
+        r_pos = np.array(missile.currentCoords)*1000
         r_vel = np.array(missile.velocity)
-        t_pos = np.array(target.currentCoords)
+        t_pos = np.array(target.currentCoords)*1000
         t_vel = np.array(target.currentSpeedVector)
 
         # Вычисляем относительные позицию и скорость

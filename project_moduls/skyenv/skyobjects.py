@@ -18,8 +18,7 @@ class SkyObject:
         self.trajectory = np.zeros((self.timeSteps, 3))
         self.currentTime = 0
         self.speed = speed
-        self.calculate_trajectory()
-    
+
     def calculate_trajectory(self):
         directionVector = vector(self.start, self.finish)
         distances = distance(directionVector)
@@ -46,50 +45,61 @@ class SkyObject:
         self.currentPos=self.trajectory[self.currentTime]
         
 
-class Plane(SkyObject): 
-    def __init__(self, obj_id, start, finish, speed: float = 500, time_step: float = 2, status: bool = True):
+class Plane(SkyObject):
+    def __init__(self, obj_id, start, finish, speed: float = 300, time_step: float = 2, max_steps: int = None, status: bool = True):
         self.start = np.array(start) * 1000
         self.finish = np.array(finish) * 1000
-        self.speed = speed * 1000 / 3600
+        self.speed = speed * 1000 / 3600  # m/s
         self.status = status
         self.time_step = time_step
-        direction = self.finish - self.start
-        horizontal_distance = np.linalg.norm(direction[:2])
-        total_time = horizontal_distance / self.speed
-        self.timeSteps = int(total_time // time_step) + 1
-        super().__init__(obj_id, start, finish, speed)
-        
-    def calculate_trajectory(self):
+
         direction = self.finish - self.start
         total_distance = np.linalg.norm(direction[:2])
         total_time = total_distance / self.speed
-        steps_needed = int(total_time // self.time_step) + 1
+        steps_needed = int(total_time // time_step) + 1
+
+        self.timeSteps = min(steps_needed, max_steps) if max_steps is not None else steps_needed
+        super().__init__(obj_id, start, finish, speed)
+        self.calculate_trajectory()
+
+    def calculate_trajectory(self):
+        direction = self.finish - self.start
+        total_distance = np.linalg.norm(direction[:2])*1000
+        #print(total_distance)
+        total_time = total_distance / self.speed
+        #print(total_time)
 
         flightHeight = np.clip((self.start[2] + self.finish[2]) / 2, 1000, 5000)
-        climb = 0.2
-        cruise = 0.6
-        descend = 0.2
+        climb_time = max(0.2 * total_time, 1e-6)
+        cruise_time = max(0.6 * total_time, 1e-6)
+        descend_time = max(0.2 * total_time, 1e-6)
+
+        climb_end = climb_time
+        cruise_end = climb_time + cruise_time
+        descend_end = total_time
+
+        self.trajectory = np.zeros((self.timeSteps, 3))
 
         for i in range(self.timeSteps):
-            progress = i / (self.timeSteps - 1)
-            if progress <= climb:
-                phase = progress / climb
-                z = self.start[2] + (flightHeight - self.start[2]) * phase
-                dist = progress * total_distance
-            elif progress <= climb + cruise:
-                phase = (progress - climb) / cruise
-                z = flightHeight
-                dist = climb * total_distance + phase * cruise * total_distance
-            else:
-                phase = (progress - (climb + cruise)) / descend
-                z = flightHeight + (self.finish[2] - flightHeight) * phase
-                dist = (climb + cruise) * total_distance + phase * descend * total_distance
-
+            t = i * self.time_step
+            dist = self.speed * t
             xy_progress = dist / total_distance if total_distance > 0 else 0
             x = self.start[0] + direction[0] * xy_progress
             y = self.start[1] + direction[1] * xy_progress
-            self.trajectory[i] = [x, y, z]
-        print(self.trajectory)
+
+            if t <= climb_end:
+                phase = t / climb_time
+                z = self.start[2] + (flightHeight - self.start[2]) * phase
+            elif t <= cruise_end:
+                z = flightHeight
+            elif t <= descend_end:
+                phase = (t - cruise_end) / descend_time
+                z = flightHeight + (self.finish[2] - flightHeight) * phase
+            else:
+                z = self.finish[2]
+
+            self.trajectory[i] = [x, y, z/1000]
+        #print(self.trajectory)
 
     def get_id(self):
         return super().get_id()
@@ -102,14 +112,14 @@ class Plane(SkyObject):
 
 class Rocket(SkyObject):
     def __init__(self, obj_id, start, velocity, startTime, radius=20, time_step=5,timeSteps: int =250):
-        self.velocity = np.array(velocity)
+        self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
         self.radius = radius
         self.killed = False
         self.startTime = startTime
         self.dragcoeff = 0
         self.gravity = -9.8
         self.time_step = time_step
-        self.currentPos = start
+        self.currentPos = np.array(start[:3]) if len(start) > 3 else np.array(start)
 
         super().__init__(obj_id, start, start, timeSteps)
         self.lifePeriod = self.timeSteps - self.startTime
@@ -151,4 +161,4 @@ class Rocket(SkyObject):
         return self.killed
     
     def get_currentPos(self):
-        return super().get_currentPos()
+        return tuple(self.currentPos[:3]) if len(self.currentPos) > 3 else tuple(self.currentPos)
