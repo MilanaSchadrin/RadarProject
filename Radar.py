@@ -2,9 +2,8 @@ import random
 import math
 
 from typing import Dict, Tuple, List
-# from radar.Target import TargetStatus, Target
-from Target import TargetStatus, Target
-# from dispatcher.dispatcher import Dispatcher
+from radar.Target import TargetStatus, Target
+from dispatcher.dispatcher import Dispatcher
 
 
 class Radar:
