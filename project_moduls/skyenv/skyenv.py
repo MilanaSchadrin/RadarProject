@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Dict
 from skyenv.skyobjects import SkyObject, Plane, Rocket
-from dispatcher.messages import SEKilled,SEAddRocket,SEAddRocketToRadar,RocketUpdate,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LaunchertoSEMissileLaunched
+from dispatcher.messages import SEKilled,SEKilledGUI,SEAddRocket,SEAddRocketToRadar,RocketUpdate,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LaunchertoSEMissileLaunched
 from dispatcher.dispatcher import Dispatcher
 from dispatcher.enums import *
 from queue import PriorityQueue
@@ -72,7 +72,7 @@ class SkyEnv:
             rocket.boom()
             print('I made boom')
             collateralDamage = self.check_if_in_radius(positionRocket, rocket.get_radius())
-            message = SEKilled(Modules.GUI, Priorities.SUPERHIGH,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
+            message = SEKilledGUI(Modules.GUI, Priorities.SUPERHIGH,rocket.get_id(),positionRocket,rocket.get_radius(),get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
             self.dispatcher.send_message(message)
             message = SEKilled(Modules.RadarMain, Priorities.HIGH,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
             self.dispatcher.send_message(message)

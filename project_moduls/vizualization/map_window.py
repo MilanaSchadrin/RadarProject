@@ -108,17 +108,33 @@ class MapView(QGraphicsView):
         self.load_and_draw_cc()
 
     def wheelEvent(self, event):
-        zoom_factor = 1.15
+        zoom_in_factor = 1.25
+        zoom_out_factor = 1 / zoom_in_factor
+        old_pos = self.mapToScene(event.pos())
         if event.angleDelta().y() > 0:
-            self.scale(zoom_factor, zoom_factor)
+            zoom_factor = zoom_in_factor
         else:
-            self.scale(1 / zoom_factor, 1 / zoom_factor)
+             zoom_factor = zoom_out_factor
+        current_scale = self.transform().m11()
+
+        new_scale = current_scale * zoom_factor
+        if new_scale < 0.1 or new_scale > 10:
+             return
+
+        old_pos = self.mapToScene(event.pos())
+
+        self.scale(zoom_factor, zoom_factor)
+
+        new_pos = self.mapToScene(event.pos())
+
+        delta = new_pos - old_pos
+        self.translate(delta.x(), delta.y())
 
     def load_radars_from_db(self):
-        if self.db_manager:
-            radars_data = self.db_manager.load_radars()
-            for radar_id, radar in radars_data.items():
-                self.add_radar(radar_id, x=radar['position'][0], y=radar['position'][1], radius=radar['range_input'],view_angle=radar['angle_input'])
+            if self.db_manager:
+                radars_data = self.db_manager.load_radars()
+                for radar_id, radar in radars_data.items():
+                    self.add_radar(radar_id, x=radar['position'][0], y=radar['position'][1], radius=radar['range_input'],view_angle=radar['angle_input'])
 
     def add_radar(self, radar_id, x, y, radius, view_angle):
         radar_pixmap = QPixmap('./vizualization/pictures/radar.png').scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -127,6 +143,8 @@ class MapView(QGraphicsView):
         radar_item.setPos(x,y)
         radar_item.setTransformationMode(Qt.SmoothTransformation)
         radar_item.setZValue(10)
+        radar_item.setToolTip(f"ID: {radar_id}\n"
+                               f"Дальность: {radius} км \n")
         self.scene.addItem(radar_item)
         self.radar[radar_id] = {
                         'item': radar_item,
@@ -138,28 +156,28 @@ class MapView(QGraphicsView):
                         'y': y
                     }
 
+
     def load_and_draw_launchers(self):
-        launchers = self.db_manager.load_launchers()
-        for launcher_id, launcher_data in launchers.items():
-            x, y = launcher_data['position'][0], launcher_data['position'][1]
-            pu_pixmap = QPixmap('./vizualization/pictures/pu.png').scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            pu_item = QGraphicsPixmapItem(pu_pixmap)
-            pu_item.setPos(x - pu_pixmap.width()/2, y - pu_pixmap.height()/2)
-            pu_item.setZValue(10)
-            self.scene.addItem(pu_item)
-            self.pu_image.append(pu_item)
+            launchers = self.db_manager.load_launchers()
+            for launcher_id, launcher_data in launchers.items():
+                x, y = launcher_data['position'][0], launcher_data['position'][1]
+                pu_pixmap = QPixmap('./vizualization/pictures/pu.png').scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pu_item = QGraphicsPixmapItem(pu_pixmap)
+                pu_item.setPos(x - pu_pixmap.width()/2, y - pu_pixmap.height()/2)
+                pu_item.setZValue(10)
+                self.scene.addItem(pu_item)
+                self.pu_image.append(pu_item)
 
     def load_and_draw_cc(self):
-        cc_data = self.db_manager.load_cc()
-        if cc_data:
-            first_cc = next(iter(cc_data.values()))
-            x, y = first_cc['position'][0],  first_cc['position'][1]
-            cc_pixmap = QPixmap('./vizualization/pictures/pbu.png').scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.cc_icon = QGraphicsPixmapItem(cc_pixmap)
-            self.cc_icon.setPos(x - cc_pixmap.width()/2, y - cc_pixmap.height()/2)
-            self.cc_icon.setZValue(10)
-            self.scene.addItem(self.cc_icon)
-
+            cc_data = self.db_manager.load_cc()
+            if cc_data:
+                first_cc = next(iter(cc_data.values()))
+                x, y = first_cc['position'][0],  first_cc['position'][1]
+                cc_pixmap = QPixmap('./vizualization/pictures/pbu.png').scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.cc_icon = QGraphicsPixmapItem(cc_pixmap)
+                self.cc_icon.setPos(x - cc_pixmap.width()/2, y - cc_pixmap.height()/2)
+                self.cc_icon.setZValue(10)
+                self.scene.addItem(self.cc_icon)
     def set_simulation_data(self, simulation_data):
         self.simulation_data = simulation_data
         self.max_step = len(simulation_data) - 1
@@ -238,50 +256,50 @@ class MapView(QGraphicsView):
                     painter.drawLine(pos.x()+size, pos.y()-size, pos.x()-size, pos.y()+size)
 
     def draw_scale(self, painter):
-        painter.save()
-        rect = self.mapToScene(self.viewport().rect()).boundingRect()
-        left = int(rect.left())
-        right = int(rect.right())
-        top = int(rect.top())
-        bottom = int(rect.bottom())
-        painter.setPen(QPen(self.grid_color, 1, Qt.DashLine))
-        start_x = (left // self.grid_step) * self.grid_step
-        start_y = (top // self.grid_step) * self.grid_step
-        for x in range(start_x, right, self.grid_step):
-            point = self.mapFromScene(QPointF(x, 0))
-            sx = point.x()
-            painter.drawLine(sx, 0, sx, self.height())
-        for y in range(start_y, bottom, self.grid_step):
-            point = self.mapFromScene(QPointF(0, y))
-            sy = point.y()
-            painter.drawLine(0, sy, self.width(), sy)
-        painter.setPen(QPen(self.axis_color, self.axis_width))
-        origin_screen = self.mapFromScene(QPointF(0, 0))
-        ox, oy = origin_screen.x(), origin_screen.y()
+                           painter.save()
+                           rect = self.mapToScene(self.viewport().rect()).boundingRect()
+                           left = int(rect.left())
+                           right = int(rect.right())
+                           top = int(rect.top())
+                           bottom = int(rect.bottom())
+                           painter.setPen(QPen(self.grid_color, 1, Qt.DashLine))
+                           start_x = (left // self.grid_step) * self.grid_step
+                           start_y = (top // self.grid_step) * self.grid_step
+                           for x in range(start_x, right, self.grid_step):
+                               point = self.mapFromScene(QPointF(x, 0))
+                               sx = point.x()
+                               painter.drawLine(sx, 0, sx, self.height())
+                           for y in range(start_y, bottom, self.grid_step):
+                               point = self.mapFromScene(QPointF(0, y))
+                               sy = point.y()
+                               painter.drawLine(0, sy, self.width(), sy)
+                           painter.setPen(QPen(self.axis_color, self.axis_width))
+                           origin_screen = self.mapFromScene(QPointF(0, 0))
+                           ox, oy = origin_screen.x(), origin_screen.y()
 
-        painter.drawLine(0, oy, self.width(), oy)  # X-axis
-        painter.drawLine(ox, 0, ox, self.height())  # Y-axis
+                           painter.drawLine(0, oy, self.width(), oy)  # X-axis
+                           painter.drawLine(ox, 0, ox, self.height())  # Y-axis
 
-        arrow_size = 10
-        painter.drawLine(self.width() - arrow_size, oy - arrow_size//2, self.width(), oy)
-        painter.drawLine(self.width() - arrow_size, oy + arrow_size//2, self.width(), oy)
+                           arrow_size = 10
+                           painter.drawLine(self.width() - arrow_size, oy - arrow_size//2, self.width(), oy)
+                           painter.drawLine(self.width() - arrow_size, oy + arrow_size//2, self.width(), oy)
 
-        painter.drawLine(ox - arrow_size//2, arrow_size, ox, 0)
-        painter.drawLine(ox + arrow_size//2, arrow_size, ox, 0)
+                           painter.drawLine(ox - arrow_size//2, arrow_size, ox, 0)
+                           painter.drawLine(ox + arrow_size//2, arrow_size, ox, 0)
 
-        painter.setFont(self.font)
-        for x in range(start_x, right, self.grid_step):
-            point = self.mapFromScene(QPointF(x, 0))
-            sx = point.x()
-            if 0 <= sx <= self.width():
-                painter.drawText(sx + 2, oy - 5, f"{x}")
+                           painter.setFont(self.font)
+                           for x in range(start_x, right, self.grid_step):
+                               point = self.mapFromScene(QPointF(x, 0))
+                               sx = point.x()
+                               if 0 <= sx <= self.width():
+                                   painter.drawText(sx + 2, oy - 5, f"{x}")
 
-        for y in range(start_y, bottom, self.grid_step):
-            point = self.mapFromScene(QPointF(0, y))
-            sy = point.y()
-            if 0 <= sy <= self.height():
-                painter.drawText(ox + 5, sy - 2, f"{y}")
-        painter.restore()
+                           for y in range(start_y, bottom, self.grid_step):
+                               point = self.mapFromScene(QPointF(0, y))
+                               sy = point.y()
+                               if 0 <= sy <= self.height():
+                                   painter.drawText(ox + 5, sy - 2, f"{y}")
+                           painter.restore()
 
     def update_radar_targets(self, targets):
         for radar_id, radar_data in self.radar.items():
@@ -319,26 +337,41 @@ class MapView(QGraphicsView):
     def draw_radar_sector(self, painter):
         scan_angle = (self.current_step * 10) % 360
         for radar_id, radar_data in self.radar.items():
+            transform = self.transform()
+            scale = transform.m11()
+            viewport_radius = radar_data['radius'] * scale
             radar_icon = radar_data['icon']
-            #self.map_view.scene.addItem(self.radar[radar_id]['icon'])
             center = radar_icon.scenePos()
             viewport_center = self.mapFromScene(center)
+            painter.setPen(QPen(QColor(0, 255, 0, 100), 1))
+            painter.setBrush(QBrush(QColor(0, 255, 0, 20)))
+            painter.drawEllipse(viewport_center, viewport_radius, viewport_radius)
+
+
+            #self.map_view.scene.addItem(self.radar[radar_id]['icon']
+
             scene_radius = radar_data['radius']
+
             top_left = self.mapFromScene(center + QPointF(-scene_radius, -scene_radius))
             bottom_right = self.mapFromScene(center + QPointF(scene_radius, scene_radius))
 
             scan_rect = QRectF(top_left, bottom_right)
-
             start_angle = -(scan_angle - radar_data['view_angle'] / 2) * 16
             span_angle = -radar_data['view_angle'] * 16
-            green =QColor(144,238, 144, 150)
-            painter.setBrush(QBrush(green))
-            painter.setPen(Qt.NoPen)
-            painter.drawPie(scan_rect, int(start_angle), int(span_angle))
+
+            #painter.setPen(QPen(QColor(0, 255, 0, 100), 1))
+            #painter.setBrush(QBrush(QColor(0, 255, 0, 20)))
+            #painter.drawEllipse(viewport_center, scene_radius, scene_radius)
+
+            #green =QColor(144,238, 144, 150)
+            #painter.setBrush(QBrush(green))
+            #painter.setPen(Qt.NoPen)
+            #painter.drawPie(scan_rect, int(start_angle), int(span_angle))
             #painter.drawPie(scan_rect, int(start_angle), int(span_angle))
             #painter.drawPie(scan_rect, int(start_angle), int(span_angle))
             #dash_pen = QPen(QColor(255, 0, 0), 2, Qt.DashLine)
             #dash_pen.setDashPattern([4, 4])
+
             if radar_id in self.tracked_targets:
                 for target_id in list(self.tracked_targets[radar_id].keys()):
                     target_id= int(target_id)
@@ -364,6 +397,7 @@ class MapView(QGraphicsView):
                         painter.setBrush(QBrush(Qt.red))
                         painter.drawEllipse(QPointF(end_x, end_y), 4, 4)
         self.update()
+
     '''
     def draw_radar_sector(self, painter):
         scan_angle = (self.current_step * 10) % 360
@@ -449,20 +483,19 @@ class MapView(QGraphicsView):
                 self.update()
     '''
     def update_target_azimuths(self):
-        for radar_id, radar_data in self.radar.items():
-            radar_icon = radar_data['icon']
-            center = radar_icon.scenePos()
-            updated = False
-            for target_id in list(self.tracked_targets.keys()):
-                if target_id in self.trails and self.trails[target_id]:
-                    target_point = self.trails[target_id][-1]
-                    dx = target_point.x() - center.x()
-                    dy = center.y() - target_point.y()
-                    self.tracked_targets[target_id] = (np.degrees(np.arctan2(dy, dx)) + 360) % 360
-                    updated = True
-            if updated:
-                self.update()
-
+            for radar_id, radar_data in self.radar.items():
+                radar_icon = radar_data['icon']
+                center = radar_icon.scenePos()
+                updated = False
+                for target_id in list(self.tracked_targets.keys()):
+                    if target_id in self.trails and self.trails[target_id]:
+                        target_point = self.trails[target_id][-1]
+                        dx = target_point.x() - center.x()
+                        dy = center.y() - target_point.y()
+                        self.tracked_targets[target_id] = (np.degrees(np.arctan2(dy, dx)) + 360) % 360
+                        updated = True
+                if updated:
+                    self.update()
     def add_explosion(self, step, explosion_data):
         explosion_id = f"explosion_{step}"
         center = QPoint(int(explosion_data['x']), int(explosion_data['y']))
@@ -492,26 +525,15 @@ class MapView(QGraphicsView):
         if not all_points:
             return 50
         max_distance = max(np.sqrt((point.x() - center.x())**2 + (point.y() - center.y())**2) for point in all_points)
-        return max(150, max(50, int(max_distance * 1.2)))
-    
-    def to_screen_coords(self, world_coords: np.ndarray) -> QPoint:
-        scale = 0.5  # подбери под твой масштаб
-        offset_x, offset_y = 5, 5  # сдвиг для центра координат
-        return QPoint(int(world_coords[0] * scale + offset_x),
-                  int(world_coords[1] * scale + offset_y))
+        return max(100, max(50, int(max_distance * 1.2)))
 
     def add_blast_effect(self, rocket_id: int, rocket_coords: np.ndarray, plane_id: int, plane_coords: np.ndarray, collateral_damage: List[Tuple[int, np.ndarray]]):
-        center_world = rocket_coords
-        center_screen = self.to_screen_coords(center_world)
-        #center = QPoint(int((rocket_coords[0] + plane_coords[0]) / 2), int((rocket_coords[1] + plane_coords[1]) / 2))
-        #all_points = [center]
-        #all_points.extend(QPoint(int(c[0]), int(c[1])) for _, c in collateral_damage)
-        #blast_radius = self.calculate_blast_radius(center, all_points)
-        all_points = [center_world]
-        all_points.extend(c[1] for c in collateral_damage)
-        blast_radius = self.calculate_blast_radius(center_screen, [self.to_screen_coords(p) for p in all_points])
+        center = QPoint(int((rocket_coords[0] + plane_coords[0]) / 2), int((rocket_coords[1] + plane_coords[1]) / 2))
+        all_points = [center]
+        all_points.extend(QPoint(int(c[0]), int(c[1])) for _, c in collateral_damage)
+        blast_radius = self.calculate_blast_radius(center, all_points)
         explosion_id = f"blast_{rocket_id}_{plane_id}"
-        self.explosions[explosion_id] = {'center': center_screen,'max_radius': blast_radius, 'current_radius': 10, 'alpha': 180, 'step': 0,'max_steps': 3}
+        self.explosions[explosion_id] = {'center': center,'max_radius': blast_radius, 'current_radius': 10, 'alpha': 180, 'step': 0,'max_steps': 3}
         for obj_id, coords in collateral_damage:
             point = QPoint(int(coords[0]), int(coords[1]))
             self.damage_markers[f"damage_{obj_id}"] = {'position': point, 'alpha': 180, 'step': 0, 'max_steps': 40}

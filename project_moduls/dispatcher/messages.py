@@ -22,6 +22,15 @@ class SEKilled(Message):
     plane_id: int
     plane_coords: NDArray[np.float64]
     collateral_damage: List[Tuple[int, NDArray[np.float64]]]
+
+@dataclass
+class SEKilledGUI(Message):
+    rocket_id: int
+    rocket_coords: NDArray[np.float64]
+    death_range: int
+    plane_id: int
+    plane_coords: NDArray[np.float64]
+    collateral_damage: List[Tuple[int, NDArray[np.float64]]]
     
 @dataclass
 class RocketInactivated(Message):

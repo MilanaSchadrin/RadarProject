@@ -12,12 +12,12 @@ MISSILE_TYPE_CONFIG = {
      MissileType.TYPE_1: {
          "speed": 300, # абсолютная величина скорости
          "currLifeTime": 1000,
-         "damageRadius": 500
+         "damageRadius": 400
      },
      MissileType.TYPE_2: {
          "speed": 400,
          "currLifeTime": 1000,
-         "damageRadius": 500
+         "damageRadius": 400
      }
  }
 
