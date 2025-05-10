@@ -21,7 +21,6 @@ class GraphicsIcon(QGraphicsPixmapItem, QGraphicsObject):
         super().__init__(scaled_pixmap)
         self.setTransformationMode(Qt.SmoothTransformation)
 
-
     def pos(self) -> QPointF:
         return super().pos()
 
