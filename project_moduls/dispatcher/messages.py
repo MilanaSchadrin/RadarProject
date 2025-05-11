@@ -88,3 +88,8 @@ class ToGuiRocketInactivated(Message):
 class RocketUpdate(Message):
     rocket_id:int
     rocket_coords:NDArray[np.float64]
+
+@dataclass
+class TargetUnfollowedGUI(Message): 
+    radarId:str
+    targetId:str

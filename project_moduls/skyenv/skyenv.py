@@ -144,7 +144,7 @@ class SkyEnv:
                              planes=data)
         self.dispatcher.send_message(message)
         messagetoRadar = SEStarting(recipient_id=Modules.RadarMain,
-                                    priority=Priorities.LOW,
+                                    priority=Priorities.SUPERLOW,
                                     planes=data)
         self.dispatcher.send_message(messagetoRadar)
 
@@ -180,8 +180,11 @@ class SkyEnv:
                         #self.check_if_in_radius(self, self.rockets[missile.missileID].get_currentPos(),self.rockets[missile.missileID].get_radius())
                     if missile.missileID in self.rockets:
                         self.rockets[missile.missileID].rocket_step(missile.velocity)
-                        message = RocketUpdate(Modules.GUI, Priorities.STANDARD, missile.missileID,self.rockets[missile.missileID].get_currentPos())
-                        message = RocketUpdate(Modules.RadarMain, Priorities.STANDARD, missile.missileID,self.rockets[missile.missileID].get_currentPos())                     
+                        message = RocketUpdate(Modules.GUI, Priorities.SUPERLOW, missile.missileID,self.rockets[missile.missileID].get_currentPos())
+                        self.dispatcher.send_message(message)
+                        message = RocketUpdate(Modules.RadarMain, Priorities.LOW, missile.missileID,self.rockets[missile.missileID].get_currentPos())
+                        self.dispatcher.send_message(message)
+              
         for rocket_id, rocket in list(self.rockets.items()):
             self.check_collision(rocket)
         for rocket_id, rocket in list(self.rockets.items()):

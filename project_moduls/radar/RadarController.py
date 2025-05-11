@@ -12,6 +12,7 @@ from dispatcher.messages import (
     SEStarting,
     SEAddRocketToRadar,
     RocketUpdate,
+    TargetUnfollowedGUI
 )
 
 class TargetEnv:
@@ -131,6 +132,11 @@ class RadarController:
 
                     allDetectedMissiles.update(detectedMissile)
 
+            for targetId in temp_targets:
+                if self.allEnvTargets[targetId].isFollowed == True:
+                    self.allEnvTargets[targetId].isFollowed = False
+                    self.sendUnfollowedGUI(radar.radarId, targetId)
+
             # 4. Обработка всех замеченных целей (здесьь не должнл быть DESTROYED)
   
             for radar in self.radars.values():
@@ -242,7 +248,8 @@ class RadarController:
         "Обновляет текущие координаты ракеты"
         missile_id = message.rocket_id
         missile_coords = message.rocket_coords
-        self.allEnvMissiles[missile_id].updateCoords(missile_coords)
+        if missile_id in self.allEnvMissiles:
+            self.allEnvMissiles[missile_id].updateCoords(missile_coords)
 
     def sendCurrentTarget(
         self,
@@ -257,6 +264,11 @@ class RadarController:
     def sendAllObjects(self) -> None:
         """Отправляет список обнаруженных целей."""
         message = RadarControllerObjects(Modules.ControlCenter,Priorities.LOW,self.allTargets)
+        self.dispatcher.send_message(message)
+
+    def sendUnfollowedGUI(self, radarId: str, targetId: str):
+        """Отправляет сообщение GUI о том, что цель перестала отслеживаться."""
+        message = TargetUnfollowedGUI(Modules.GUI, Priorities.LOW, radarId, targetId)
         self.dispatcher.send_message(message)
 
     
