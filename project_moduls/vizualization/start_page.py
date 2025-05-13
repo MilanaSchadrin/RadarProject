@@ -178,8 +178,37 @@ class StartPage(QWidget):
         self.show_results()
 
     def show_results(self):
+
         self.map_window = MapWindow(self.simulation.db)
         self.map_window.set_simulation_data(self.data_colector.steps_data)
+        self.map_window.rockets_data = self.data_colector.rockets_data
+        #print("ROCKETS", self.map_window.rockets_data)
+        '''
+        self.map_window.rockets_data = {
+
+            "701": {
+                0: (0, 500),
+                1: (25, 475),
+                2: (50, 450),
+                3: (75, 425),
+                4: (100, 400),
+                5: (125, 375),
+                6: (150, 350),
+                7: (175, 325),
+                8: (200, 300),
+                9: (225, 275),
+                10: (250, 250),
+                11: (275, 225),
+                12: (300, 200),
+                13: (325, 175),
+                14: (350, 150),
+                15: (375, 125),
+                16: (400, 100),
+                17: (425, 75),
+                18: (450, 50),
+                19: (475, 25),
+                20: (500, 0) }}
+        '''
         self.map_window.show()
         for i, step in enumerate(self.data_colector.steps_data):
             msg_count = len(step['messages'])

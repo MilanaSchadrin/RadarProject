@@ -119,34 +119,32 @@ class Rocket(SkyObject):
         self.dragcoeff = 0
         self.gravity = -9.8
         self.time_step = time_step
-        self.currentPos = np.array(start[:3]) if len(start) > 3 else np.array(start)
+        self.currentPos = np.array(start[:3])
 
-        super().__init__(obj_id, start, start, timeSteps)
+        super().__init__(obj_id, start=start, finish=start, timeSteps=timeSteps, speed=0)
         self.lifePeriod = self.timeSteps - self.startTime
         self.currentTime = 1
 
     def rocket_step(self, velocity):
-        t = self.currentTime * self.time_step
-        pos = self.currentPos
+        print(velocity)
         if not np.allclose(velocity, 0):
-            self.velocity = velocity
-            self.currentPos = pos + velocity * t
-            return 
-        progress = self.currentTime / self.timeSteps
-        self.currentTime +=1
-        current_z = pos[2]
-        if progress >= 0.8:
-            t_fall = (self.time_step - int(0.875 * self.timeSteps)) * self.time_step
-            z = current_z + 0.5 * self.gravity * t_fall**2
-            self.currentPos = np.array([pos[0], pos[1], max(0, z)])
-            return 
-        elif current_z < 1000:
-            z = current_z + 0.5 * 9.8 * t**2
-            self.currentPos = np.array([pos[0], pos[1], min(z, 1000)])
-            return
+            self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
+            new_pos = self.currentPos + self.velocity*self.time_step
+            #print('was here')
         else:
-             self.currentPos = np.array([pos[0] + self.velocity[0] * t,pos[1] + self.velocity[1] * t,pos[2]])
-             return
+            direction = self.velocity.copy()
+            x, y, z = self.currentPos
+
+            x += direction[0] * self.time_step
+            y += direction[1] * self.time_step
+            if z < 1000:
+                z += direction[2] * self.time_step
+            else:
+                z += direction[2] * self.time_step - 0.5 * abs(self.gravity) * self.time_step ** 2
+                z = max(0, z)
+            new_pos = np.array([x, y, z])
+        self.currentPos = new_pos
+        self.currentTime += 1
     
     def get_radius(self):
         return self.radius
@@ -161,4 +159,7 @@ class Rocket(SkyObject):
         return self.killed
     
     def get_currentPos(self):
-        return tuple(self.currentPos[:3]) if len(self.currentPos) > 3 else tuple(self.currentPos)
+        return tuple(self.currentPos[:3])
+    
+    def get_currentPosGUI(self):
+        return tuple(self.currentPos[:3] / 1000)

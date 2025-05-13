@@ -25,6 +25,7 @@ class SkyEnv:
         self.timeSteps = timeSteps
         self.currentTime = 0
         self.to_remove = set()
+        self.stuff = []
 
     def make_planes(self, plane_data):
         for data in plane_data:
@@ -63,7 +64,7 @@ class SkyEnv:
         if plane.get_status() == False:  # Plane already lost
             return
         planetarjectory = get_plane_trajectory_from_rocket(self.pairs, rocket)
-        positionRocket = np.array(rocket.get_currentPos())* 1000
+        positionRocket = np.array(rocket.get_currentPos())
         positionPlane = np.array(planetarjectory[self.currentTime-1])* 1000
         distance = np.linalg.norm(positionPlane-positionRocket)
         if distance <= rocket.get_radius():
@@ -96,7 +97,7 @@ class SkyEnv:
     
     def add_rocket(self, rocket, missile, target_id):
         self.rockets[rocket.get_id()] = rocket
-        message = SEAddRocket(Modules.GUI, Priorities.HIGH,rocket.get_id(),rocket.get_currentPos())
+        message = SEAddRocket(Modules.GUI, Priorities.HIGH,rocket.get_id(),rocket.get_currentPosGUI())
         self.dispatcher.send_message(message)
         message = SEAddRocketToRadar(Modules.RadarMain,Priorities.SUPERHIGH,target_id, missile, rocket.get_currentPos())
         self.dispatcher.send_message(message)
@@ -157,15 +158,17 @@ class SkyEnv:
             if isinstance(message,LaunchertoSEMissileLaunched):
                 targetId = message.targetId
                 miss = message.missile
+                scaled_coords = np.array(miss.currentCoords) * 1000
                 rocket = Rocket(
-    obj_id=miss.missileID,
-    start=miss.currentCoords,
-    velocity=miss.velocity,
-    startTime=self.currentTime,
-    radius=miss.damageRadius,
-    time_step=2,              
-    timeSteps=self.timeSteps   
-)
+                    obj_id=miss.missileID,
+                    start=scaled_coords,
+                    velocity=miss.velocity,
+                    startTime=self.currentTime,
+                    radius=miss.damageRadius,
+                    time_step=2,              
+                    timeSteps=self.timeSteps   )
+                #print(miss.velocity)
+                self.stuff.append(miss.currentCoords)
                 self.add_rocket(rocket,miss,targetId)
             elif isinstance(message,CCToSkyEnv):
                 rocketsCC = message.missiles
@@ -180,11 +183,11 @@ class SkyEnv:
                         #self.check_if_in_radius(self, self.rockets[missile.missileID].get_currentPos(),self.rockets[missile.missileID].get_radius())
                     if missile.missileID in self.rockets:
                         self.rockets[missile.missileID].rocket_step(missile.velocity)
-                        message = RocketUpdate(Modules.GUI, Priorities.SUPERLOW, missile.missileID,self.rockets[missile.missileID].get_currentPos())
+                        message = RocketUpdate(Modules.GUI, Priorities.SUPERLOW, missile.missileID,self.rockets[missile.missileID].get_currentPosGUI())
+                        self.stuff.append(self.rockets[missile.missileID].get_currentPos())
                         self.dispatcher.send_message(message)
                         message = RocketUpdate(Modules.RadarMain, Priorities.LOW, missile.missileID,self.rockets[missile.missileID].get_currentPos())
                         self.dispatcher.send_message(message)
-              
         for rocket_id, rocket in list(self.rockets.items()):
             self.check_collision(rocket)
         for rocket_id, rocket in list(self.rockets.items()):

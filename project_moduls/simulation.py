@@ -61,6 +61,7 @@ class Simulation:
             if progress_callback:
                 progress_callback(i+1)
                 QApplication.processEvents()
+        #print(self.skyEnv.stuff)
             #self.app.exec_()#передовать и вызывать в update у тебя
             
     def run(self):

@@ -16,7 +16,9 @@ from typing import List, Tuple
 from typing import Dict
 import traceback
 
-
+from types import SimpleNamespace
+import numpy as np
+import math
 
 class MapWindow(QMainWindow):
     def __init__(self, db_manager):
@@ -61,6 +63,7 @@ class MapWindow(QMainWindow):
         self.inactive_rockets = {}
         self.cross_visible_time = 500
 
+        #self.rockets_data ... заполняем чhep data_collector
     def setup_control_panel(self, main_layout):
          right_panel = QVBoxLayout()
          self.text_output = QTextEdit()
@@ -193,7 +196,8 @@ class MapWindow(QMainWindow):
                     self.animate_plane_movement(plane_data, target_x, target_y,plane_id)
                 self.update_plane_rotation(plane_data, target_idx, coords)
                 plane_data['last_pos'] = (target_x, target_y)
-
+    '''
+    раньше работало
     def update_zur_positions(self, instant_update=False):
           for zur_id, zur_data in self.rockets.items():
                 if 'first_appearance_step' not in zur_data:
@@ -221,7 +225,6 @@ class MapWindow(QMainWindow):
                     zur_data['last_processed_step'] = self.current_step
                 else:
                     zur_data['icon'].hide()
-
     def update_rocket_rotation(self, rocket_data, target_idx, coords):
            if len(coords) <= 1:
                 return
@@ -239,6 +242,7 @@ class MapWindow(QMainWindow):
            angle_rad = math.atan2(dy, dx)
            angle_deg = math.degrees(angle_rad)
            rocket_data['icon'].rotate_to(((angle_deg + 90) % 360))
+    '''
     '''
     def animate_movement(self, obj_data, target_x, target_y, obj_id, is_rocket=False):
            self.animation_in_progress = True
@@ -311,7 +315,7 @@ class MapWindow(QMainWindow):
                 self.map_view.add_to_trail(plane_id, QPoint(x, y))
            else:
                 self.planes[plane_id]['coords'] = flat_coords
-
+    '''
     def visualize_zur_track(self, zur_id, coords: np.ndarray):
            if coords is None or len(coords) == 0:
                 return
@@ -341,10 +345,67 @@ class MapWindow(QMainWindow):
                     self.map_view.add_to_trail(zur_id, QPoint(x, y))
                     self.rockets[zur_id]['last_pos'] = (x, y)
                     self.rockets[zur_id]['last_processed_step'] = self.current_step
+    '''
+    def visualize_zur_track(self, zur_id, initial_coords=None):
+           if zur_id not in self.rockets:
+               icon = RocketIcon("./vizualization/pictures/rocket.png")
+               icon.setToolTip(f"ID ракеты: {zur_id}")
+               self.rockets[zur_id] = {
+                   'icon': icon,
+                   'last_pos': None,
+                   'current_angle': 0,
+                   'first_appearance_step': next(iter(self.rockets_data[zur_id].keys())) if zur_id in self.rockets_data else self.current_step,
+                   'last_processed_step': -1
+               }
+               self.map_view.scene.addItem(icon)
+               icon.hide()
+
+    def update_zur_positions(self, instant_update=False):
+                   """Обновляет позиции ракет на текущем шаге"""
+                   for zur_id, zur_data in self.rockets.items():
+                       if 'first_appearance_step' not in zur_data:
+                           continue
+                       current_coords = self.get_rocket_coords_at_step(zur_id, self.current_step)
+                       if current_coords is not None:
+                           target_x, target_y = current_coords[0], current_coords[1]
+                           zur_data['icon'].show()
+                           if instant_update or zur_data.get('last_pos') is None:
+                               zur_data['icon'].setPos(QPointF(target_x - 10, target_y - 10))
+                               zur_data['last_pos'] = (target_x, target_y)
+                               self.map_view.add_to_trail(zur_id, QPointF(target_x, target_y))
+                           else:
+                               if self.is_playing:
+                                   self.animate_plane_movement(zur_data, target_x, target_y, zur_id)
+                               else:
+                                   zur_data['icon'].setPos(QPointF(target_x - 10, target_y - 10))
+                                   self.map_view.add_to_trail(zur_id, QPointF(target_x, target_y))
+                           self.update_rocket_rotation(zur_id, zur_data, target_x, target_y)
+
+                           zur_data['last_processed_step'] = self.current_step
+                       else:
+                           zur_data['icon'].hide()
+
+    def get_rocket_coords_at_step(self, rocket_id, step):
+                               if rocket_id in self.rockets_data:
+                                   for s in sorted(self.rockets_data[rocket_id].keys(), reverse=True):
+                                       if s <= step:
+                                           return self.rockets_data[rocket_id][s]
+                               return None
+    def update_rocket_rotation(self, rocket_id, rocket_data, target_x, target_y):
+                                if rocket_data.get('last_pos'):
+                                    last_x, last_y = rocket_data['last_pos']
+                                    dx = target_x - last_x
+                                    dy = target_y - last_y
+                                    if dx != 0 or dy != 0:
+                                        angle_rad = math.atan2(dy, dx)
+                                        angle_deg = math.degrees(angle_rad)
+                                        rocket_data['icon'].rotate_to(((angle_deg + 90) % 360))
+                                rocket_data['last_pos'] = (target_x, target_y)
 
     def process_step(self, step_data):
            for msg in step_data['messages']:
                 self.process_message(msg)
+
 
     def process_message(self, msg):
            try:
@@ -354,8 +415,45 @@ class MapWindow(QMainWindow):
 
                 elif msg['type'] == 'rocket_add':
                     #print('rocket_add')
-                    rocket_data=msg['data']
-                    self.visualize_zur_track(rocket_data.rocket_id, rocket_data.rocket_coords)
+                    rocket_data = msg['data']
+                    self.visualize_zur_track(rocket_data.rocket_id)
+                    self.update_zur_positions()
+
+                    #self.visualize_zur_track(rocket_data.rocket_id, rocket_data.rocket_coords)
+                    #self.handle_rocket_add(msg['data'])
+
+                elif msg['type'] == 'rocket_update':
+                        self.update_zur_positions()
+
+                        #print(msg['data'])
+                        '''
+                        start_x, start_y = 200, 200
+                        end_x, end_y = 500, 500
+
+                        #для теста
+                        total_steps = 30
+                        if self.curr < total_steps:
+                                progress = self.current_step / total_steps
+                                current_x = start_x + (end_x - start_x) * progress
+                                current_y = start_y + (end_y - start_y) * progress
+                        else:
+                                current_x, current_y = end_x, end_y
+
+                        updated_rocket_data = SimpleNamespace(
+                                rocket_id=701,
+                                rocket_coords=np.array([current_x, current_y])
+                            )
+                        updated_rocket_data_2 = SimpleNamespace(
+                                    rocket_id=702,
+                                    rocket_coords=np.array([current_x, current_y])
+                                )
+                        self.curr+=1
+                        self.handle_rocket_update(updated_rocket_data)
+                        self.handle_rocket_update(updated_rocket_data_2)
+
+                        #self.handle_rocket_update( rocket_data)
+                        #self.visualize_zur_track(rocket_data.rocket_id, rocket_data.rocket_coords)
+                        '''
 
                 elif msg['type'] == 'radar_tracking':
                     #print('radar_tracking')
@@ -624,4 +722,3 @@ class MapWindow(QMainWindow):
         if secondary_damage:
              damaged_objects = ", ".join([f"#{obj_id}" for obj_id, _ in secondary_damage])
              self.text_output.append(f'<span style="color: orange;">⚠️ Вторичные повреждения: {damaged_objects}</span>')
-

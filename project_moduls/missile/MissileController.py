@@ -90,7 +90,7 @@ class MissileController:
 
     def _change_trajectory(self, target, missile):
         """Изменяет направление ракете."""
-        distance = np.array(target.currentCoords)* 1000 - np.array(missile.currentCoords)* 1000
+        distance = np.array(target.currentCoords) - np.array(missile.currentCoords)
         norm = np.linalg.norm(distance)
         e = distance / norm
 
@@ -105,9 +105,9 @@ class MissileController:
     # не используется в реализации
     def _will_explode(self, target, missile):
         """Проверяет, что target будет в радиусе взрыва ракеты missile."""
-        r_pos = np.array(missile.currentCoords)*1000
+        r_pos = np.array(missile.currentCoords)
         r_vel = np.array(missile.velocity)
-        t_pos = np.array(target.currentCoords)*1000
+        t_pos = np.array(target.currentCoords)
         t_vel = np.array(target.currentSpeedVector)
 
         # Вычисляем относительные позицию и скорость

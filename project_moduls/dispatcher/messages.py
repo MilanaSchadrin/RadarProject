@@ -87,7 +87,7 @@ class ToGuiRocketInactivated(Message):
 @dataclass
 class RocketUpdate(Message):
     rocket_id:int
-    rocket_coords:NDArray[np.float64]
+    rocket_coords:Tuple
 
 @dataclass
 class TargetUnfollowedGUI(Message): 
