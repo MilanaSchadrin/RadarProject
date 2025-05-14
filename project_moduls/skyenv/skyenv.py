@@ -5,6 +5,8 @@ from dispatcher.messages import SEKilled,SEKilledGUI,SEAddRocket,SEAddRocketToRa
 from dispatcher.dispatcher import Dispatcher
 from dispatcher.enums import *
 from queue import PriorityQueue
+from missile.Missile import MissileStatus
+import math
 
 def get_plane_trajectory_from_rocket(paires, rocket:Rocket):
         keys = paires.get(rocket.get_id())
@@ -66,15 +68,21 @@ class SkyEnv:
         planetarjectory = get_plane_trajectory_from_rocket(self.pairs, rocket)
         positionRocket = np.array(rocket.get_currentPos())
         positionPlane = np.array(planetarjectory[self.currentTime-1])* 1000
+        pos_rocket_2d = positionRocket[:2]
+        pos_plane_2d = positionPlane[:2]
         #print(positionPlane, positionRocket)
         distance = np.linalg.norm(positionPlane-positionRocket)
-        if distance <= rocket.get_radius():
+        dx = positionRocket[0] - positionPlane[0]
+        dy = positionRocket[1] - positionPlane[1]
+
+        if dx  <= rocket.get_radius() or dy  <= rocket.get_radius():
             print(rocket.get_radius())
             plane.killed
             rocket.boom()
             print('I made boom')
+            print(self.currentTime)
             collateralDamage = self.check_if_in_radius(positionRocket, rocket.get_radius())
-            message = SEKilledGUI(Modules.GUI, Priorities.SUPERHIGH,rocket.get_id(),positionRocket,rocket.get_radius(),get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
+            message = SEKilledGUI(Modules.GUI, Priorities.SUPERHIGH,rocket.get_id(),positionRocket/1000,rocket.get_radius(),get_plane_id_from_rocket(self.pairs,rocket),positionPlane/1000, collateralDamage)
             self.dispatcher.send_message(message)
             message = SEKilled(Modules.RadarMain, Priorities.HIGH,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
             self.dispatcher.send_message(message)
@@ -181,6 +189,14 @@ class SkyEnv:
                 #print(rocketsCC)
                 #print(self.rockets)
                 for missile in rocketsCC:
+                    # изменение статуса ракете
+                    if missile.missileID in self.rockets:
+                        if missile.status == MissileStatus.AUTOMATIC:
+                            self.rockets[missile.missileID].status = False
+                        else:
+                            self.rockets[missile.missileID].status = True
+
+
                     if missile.currLifeTime <=0 and missile.missileID in self.rockets: 
                         self.rockets[missile.missileID].boom()
                         message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)

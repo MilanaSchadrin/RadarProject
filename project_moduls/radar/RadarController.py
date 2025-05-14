@@ -121,9 +121,10 @@ class RadarController:
                     target = self.allTargets[target_id]
 
                     if self.allEnvTargets[target_id].isFollowed == False:
-                        self.sendCurrentTarget(radar.radarId, target_id, radar.maxRange)
+                        self.sendCurrentTarget(radar.radarId, target_id, radar.maxRange//1000)
                         self.allEnvTargets[target_id].isFollowed = True
                     target.currentCoords = self.getAbsoluteCoords(radar, followedTargets[target_id][0])
+                    #print(target.currentCoords)
                     target.currentSpeedVector = followedTargets[target_id][1]
  
                     temp_targets.remove(target_id)
@@ -135,6 +136,7 @@ class RadarController:
             for targetId in temp_targets:
                 if self.allEnvTargets[targetId].isFollowed == True:
                     self.allEnvTargets[targetId].isFollowed = False
+                    #print('I was in here, so no ray')
                     self.sendUnfollowedGUI(radar.radarId, targetId)
 
             # 4. Обработка всех замеченных целей (здесьь не должнл быть DESTROYED)
@@ -269,6 +271,7 @@ class RadarController:
     def sendUnfollowedGUI(self, radarId: str, targetId: str):
         """Отправляет сообщение GUI о том, что цель перестала отслеживаться."""
         message = TargetUnfollowedGUI(Modules.GUI, Priorities.LOW, radarId, targetId)
+        #print('was hereeeee, so send message')
         self.dispatcher.send_message(message)
 
     

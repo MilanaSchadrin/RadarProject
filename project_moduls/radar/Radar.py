@@ -16,7 +16,7 @@ class Radar:
         self.position: Tuple[float, float, float] = (position[0]*1000,position[1]*1000,position[2]*1000)
         print(self.position)
         self.maxRange: float = maxRange
-        self.noiseLevel: float = random.uniform(0.1, 1)
+        self.noiseLevel: float = random.uniform(0.01, 0.1)
 
         self.maxFollowedCount: int = maxFollowedCount
         self.followedTargets: Dict[str, Tuple[Tuple[float, float, float], Tuple[float, float, float], int]] = {}
@@ -32,10 +32,13 @@ class Radar:
         dz = current_coords[2] - self.position[2]
         
         distance = math.sqrt(dx**2 + dy**2 + dz**2)
+        
 
         if (distance <= self.maxRange):
+            #print(distance,self.maxRange,True)
             return True, (dx, dy, dz)
         else:
+            #print(distance,self.maxRange,False)
             return False, (0, 0, 0)
 
     def _process_target(self, target_env, currentStep, followedTargetsNow):

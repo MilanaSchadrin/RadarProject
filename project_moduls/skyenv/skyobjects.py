@@ -111,7 +111,7 @@ class Plane(SkyObject):
         self.status = False
 
 class Rocket(SkyObject):
-    def __init__(self, obj_id, start, velocity, startTime, radius=20, time_step=5,timeSteps: int =250):
+    def __init__(self, obj_id, start, velocity, startTime, radius=20, time_step=5,timeSteps: int =250, status: bool = True):
         self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
         self.radius = radius
         self.killed = False
@@ -120,6 +120,7 @@ class Rocket(SkyObject):
         self.gravity = -9.8
         self.time_step = time_step
         self.currentPos = np.array(start[:3])
+        self.status = status # True - ракета обработалась в MissileController, False - надо запустить на бал. траекторию
 
         super().__init__(obj_id, start=start, finish=start, timeSteps=timeSteps, speed=0)
         self.lifePeriod = self.timeSteps - self.startTime
@@ -127,7 +128,8 @@ class Rocket(SkyObject):
 
     def rocket_step(self, velocity):
         #print(velocity)
-        if not np.allclose(velocity, 0):
+        #print(self.status)
+        if self.status:
             self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
             new_pos = self.currentPos + self.velocity*self.time_step
             #print('was here')

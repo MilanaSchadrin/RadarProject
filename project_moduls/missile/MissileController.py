@@ -31,22 +31,22 @@ class MissileController:
         missile = next(iter(target.attachedMissiles.values()), None)
 
         if missile.isDetected:
-
             if target.status == TargetStatus.DESTROYED: # уничтоженная цель
                 missile.status = MissileStatus.INACTIVE
                 self._unusefulMissiles.append(missile)
 
             elif target.status == TargetStatus.UNDETECTED:
-                self._nullify_trajectory(missile)
+                self._automatic_trajectory(missile)
 
             elif self._collision(missile, target):
                 self._destroy_missile(missile)
 
             else:
+                missile.status = MissileStatus.ACTIVE
                 self._change_trajectory(target, missile)
 
         else:
-            self._nullify_trajectory(missile)
+            self._automatic_trajectory(missile)
 
         self._missiles.append(missile)
 
@@ -103,8 +103,8 @@ class MissileController:
         missile.velocity = tuple(e * abs_velocity)
 
 
-    def _nullify_trajectory(self, missile):
-        missile.velocity = (0.0, 0.0, 0.0)
+    def _automatic_trajectory(self, missile):
+        missile.status = MissileStatus.AUTOMATIC
 
 
     # не используется в реализации
