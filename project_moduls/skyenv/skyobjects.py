@@ -126,7 +126,7 @@ class Rocket(SkyObject):
         self.currentTime = 1
 
     def rocket_step(self, velocity):
-        print(velocity)
+        #print(velocity)
         if not np.allclose(velocity, 0):
             self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
             new_pos = self.currentPos + self.velocity*self.time_step

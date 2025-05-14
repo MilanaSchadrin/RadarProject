@@ -37,6 +37,7 @@ class Missile:
         self.currLifeTime: int = currLifeTime
         self.damageRadius: float = damageRadius
         self.status: MissileStatus = status
+        self.isDetected = False
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]):
         self.currentCoords = tuple(newCoords[:3]) if len(newCoords) > 3 else tuple(newCoords)

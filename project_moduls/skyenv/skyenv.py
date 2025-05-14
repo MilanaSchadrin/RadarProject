@@ -66,6 +66,7 @@ class SkyEnv:
         planetarjectory = get_plane_trajectory_from_rocket(self.pairs, rocket)
         positionRocket = np.array(rocket.get_currentPos())
         positionPlane = np.array(planetarjectory[self.currentTime-1])* 1000
+        #print(positionPlane, positionRocket)
         distance = np.linalg.norm(positionPlane-positionRocket)
         if distance <= rocket.get_radius():
             print(rocket.get_radius())
@@ -140,10 +141,15 @@ class SkyEnv:
         data = {} #all planes in this period
         for j in self.planes:
             data[j.get_id()] = j.get_trajectory()
+            #print(data[j.get_id()])
         message = SEStarting(recipient_id=Modules.GUI,
                              priority=Priorities.LOW,
                              planes=data)
+        
         self.dispatcher.send_message(message)
+        for j in self.planes:
+            data[j.get_id()] = j.get_trajectory()*1000
+            #print(data[j.get_id()])
         messagetoRadar = SEStarting(recipient_id=Modules.RadarMain,
                                     priority=Priorities.SUPERLOW,
                                     planes=data)
@@ -158,7 +164,7 @@ class SkyEnv:
             if isinstance(message,LaunchertoSEMissileLaunched):
                 targetId = message.targetId
                 miss = message.missile
-                scaled_coords = np.array(miss.currentCoords) * 1000
+                scaled_coords = np.array(miss.currentCoords)
                 rocket = Rocket(
                     obj_id=miss.missileID,
                     start=scaled_coords,

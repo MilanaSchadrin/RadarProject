@@ -13,8 +13,8 @@ class Radar:
         self.radarController = radarController
         self.dispatcher: Dispatcher = dispatcher
         self.radarId: str = radarId
-        self.position: Tuple[float, float, float] = position
-
+        self.position: Tuple[float, float, float] = (position[0]*1000,position[1]*1000,position[2]*1000)
+        print(self.position)
         self.maxRange: float = maxRange
         self.noiseLevel: float = random.uniform(0.1, 1)
 

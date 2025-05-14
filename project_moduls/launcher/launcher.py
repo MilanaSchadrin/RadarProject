@@ -38,7 +38,7 @@ class Launcher:
         if available_silo is None:
             return  # handle appropriatel
         self._silos[available_silo] = 0
-        start_coords = (self.coord[0], self.coord[1], self.coord[2])
+        start_coords = (self.coord[0]*1000, self.coord[1]*1000, self.coord[2]*1000)
 
         if available_silo<=self.silo_num//2:
             type=MissileType.TYPE_1

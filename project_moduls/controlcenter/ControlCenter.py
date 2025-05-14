@@ -38,7 +38,7 @@ class ControlCenter:
                 dispatcher=self._dispatcher,
                 radarId=str(radar_id),
                 position=radar_info['position'],
-                maxRange=radar_info['range_input'],
+                maxRange=radar_info['range_input']*1000,
                 #coneAngleDeg=radar_info['angle_input'],
                 maxFollowedCount=radar_info['max_targets'],
                 #maxTargetCount=radar_info['max_targets'],

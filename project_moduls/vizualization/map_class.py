@@ -411,7 +411,8 @@ class MapWindow(QMainWindow):
            try:
                 if msg['type'] == 'plane_start':
                     for plane_id, coords in msg['data'].planes.items():
-                        self.visualize_plane_track(plane_id, coords)
+                        #print(coords)
+                        self.visualize_plane_track(plane_id, coords/1000)
 
                 elif msg['type'] == 'rocket_add':
                     #print('rocket_add')
