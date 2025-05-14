@@ -38,7 +38,7 @@ class DatabaseManager:
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS radars (
-                radar_id INTEGER PRIMARY KEY,
+                radar_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL,
@@ -165,6 +165,47 @@ class DatabaseManager:
             cc[cc_id] = {
                 'position': (px, py, pz)}
         return cc
+    def update_radar_position(self, radar_id: int, new_position: Tuple[float, float, float]) -> None:
+        self.cursor.execute(
+            """UPDATE radars 
+            SET pos_x = ?, pos_y = ?, pos_z = ?
+            WHERE radar_id = ?""",
+            (*new_position, radar_id))
+        self.conn.commit()
+
+    def update_radar_range(self, radar_id: int, new_range: float) -> None:
+        self.cursor.execute(
+            """UPDATE radars 
+            SET range_input = ?
+            WHERE radar_id = ?""",
+            (new_range, radar_id))
+        self.conn.commit()
+
+    def update_launcher_position(self, launcher_id: int, new_position: Tuple[float, float, float]) -> None:
+        self.cursor.execute(
+            """UPDATE launchers 
+            SET pos_x = ?, pos_y = ?, pos_z = ?
+            WHERE launcher_id = ?""",
+            (*new_position, launcher_id))
+        self.conn.commit()
+
+    def update_launcher_missile_count(self, launcher_id: int, new_count: int) -> None:
+        self.cursor.execute(
+            """UPDATE launchers 
+            SET missile_count = ?
+            WHERE launcher_id = ?""",
+            (new_count, launcher_id))
+        self.conn.commit()
+
+    def clear_table(self, table_name: str) -> None:
+        if table_name in ['planes', 'radars', 'launchers', 'CC']:
+            self.cursor.execute(f"DELETE FROM {table_name}")
+            self.conn.commit()
+
+    def delete_row(self, table_name: str, row_id: int) -> None:
+        if table_name in ['planes', 'radars', 'launchers', 'CC']:
+            self.cursor.execute(f"DELETE FROM {table_name} WHERE {table_name[:-1]}_id = ?", (row_id,))
+            self.conn.commit()
 
     def close(self) -> None:
         self.conn.close()
