@@ -26,6 +26,7 @@ class Target:
         self.attachedMissiles: Dict[str, Missile] = {}
         self.priority: int = 0
         self.isDetected = False
+        self.gotMissile = False
 
     def updateCurrentCoords(self, newCoords: Tuple[float, float, float]) -> None:
         """Обновить текущие координаты."""

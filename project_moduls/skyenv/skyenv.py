@@ -75,10 +75,11 @@ class SkyEnv:
         dx = positionRocket[0] - positionPlane[0]
         dy = positionRocket[1] - positionPlane[1]
 
-        if dx  <= rocket.get_radius() or dy  <= rocket.get_radius():
+        if abs(dx)  <= rocket.get_radius() or abs(dy)  <= rocket.get_radius():
             print(rocket.get_radius())
             plane.killed
             rocket.boom()
+            print(positionRocket[0],positionRocket[1],positionPlane[0],positionPlane[1])
             print('I made boom')
             print(self.currentTime)
             collateralDamage = self.check_if_in_radius(positionRocket, rocket.get_radius())
@@ -108,6 +109,7 @@ class SkyEnv:
         self.rockets[rocket.get_id()] = rocket
         message = SEAddRocket(Modules.GUI, Priorities.HIGH,rocket.get_id(),rocket.get_currentPosGUI())
         self.dispatcher.send_message(message)
+        print(rocket.get_id(),rocket.get_currentPosGUI(),self.currentTime)
         message = SEAddRocketToRadar(Modules.RadarMain,Priorities.SUPERHIGH,target_id, missile, rocket.get_currentPos())
         self.dispatcher.send_message(message)
         self.add_pair(rocket.get_id(),target_id)

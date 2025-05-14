@@ -228,11 +228,12 @@ class RadarController:
             killedTarget.updateStatus(TargetStatus.DESTROYED)
             
             if killRocketId in killedTarget.attachedMissiles:
-                killedTarget.detachMissile(killRocketId)
                 self.allEnvMissiles.pop(killRocketId)
+                killedTarget.detachMissile(killRocketId)
 
     def start(self, message: SEStarting) -> None:
-        """Получает начальные данные о целях в небе."""
+        """Получает начальные данны
+        е о целях в небе."""
         for targetId, targetCoords in message.planes.items():
             self.allEnvTargets[targetId] = TargetEnv(targetId, targetCoords)
             self.allTargets[targetId] = Target(targetId, TargetStatus.UNDETECTED)

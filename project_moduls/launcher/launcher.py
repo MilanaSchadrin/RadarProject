@@ -60,6 +60,7 @@ class Launcher:
         damageRadius = radius)
         self.ctrl.acknowledge(target.targetId, M)
         target.attachMissile(M)
+        target.gotMissile = True
 
     def available_missiles(self):
         return sum(self._silos)

@@ -29,7 +29,8 @@ class MissileController:
     def process_missile_of_target(self, target):
         """Обрабатывает ракету у данной цели."""
         missile = next(iter(target.attachedMissiles.values()), None)
-
+        if missile is None:
+            return
         if missile.isDetected:
             if target.status == TargetStatus.DESTROYED: # уничтоженная цель
                 missile.status = MissileStatus.INACTIVE
@@ -52,6 +53,7 @@ class MissileController:
 
 
     def process_unuseful_missiles(self):
+
         """Обрабатывает список всех ненужных ракет"""
         for currMissile in self._unusefulMissiles:
             destroy = True
@@ -122,7 +124,7 @@ class MissileController:
         # A*t^2 + B*t + C < 0
         A = np.dot(v, v)
         B = 2 * np.dot(d, v)
-        C = np.dot(d, d) - missile.damageRadius ** 2
+        C = np.dot(d, d) - (missile.damageRadius//2) ** 2
 
         if A == 0:
             return C < 0  # Уже в радиусе взрыва

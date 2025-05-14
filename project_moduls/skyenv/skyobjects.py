@@ -142,7 +142,7 @@ class Rocket(SkyObject):
             if z < 1000:
                 z += direction[2] * self.time_step
             else:
-                z += direction[2] * self.time_step - 0.5 * abs(self.gravity) * self.time_step ** 2
+                z -= direction[2] * self.time_step
                 z = max(0, z)
             new_pos = np.array([x, y, z])
         self.currentPos = new_pos

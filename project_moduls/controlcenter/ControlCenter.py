@@ -119,11 +119,11 @@ class ControlCenter:
             if target.status in [TargetStatus.DESTROYED, TargetStatus.UNDETECTED]:
                 break
             missile_count = sum(1 for missile in target.attachedMissiles.values())
-            if missile_count == 0:
+            if missile_count == 0 and target.gotMissile==False:
                 if target.status == TargetStatus.FOLLOWED:
                     self._dispatcher.send_message(
                         CCLaunchMissile(Modules.LauncherMain, Priorities.HIGH, target))
-            else:
+            elif target.gotMissile==True:
                 self._missileController.process_missile_of_target(target)
 
         self._missileController.process_unuseful_missiles()
