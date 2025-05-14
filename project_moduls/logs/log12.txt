@@ -1,0 +1,639 @@
+Message Type: SEStarting
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+planes: {601: array([[1.00000000e+02, 3.00000000e+02, 0.00000000e+00],
+       [1.01000000e+02, 3.00000000e+02, 1.66666667e-02],
+       [1.02000000e+02, 3.00000000e+02, 3.33333333e-02],
+       [1.03000000e+02, 3.00000000e+02, 5.00000000e-02],
+       [1.04000000e+02, 3.00000000e+02, 6.66666667e-02],
+       [1.05000000e+02, 3.00000000e+02, 8.33333333e-02],
+       [1.06000000e+02, 3.00000000e+02, 1.00000000e-01],
+       [1.07000000e+02, 3.00000000e+02, 1.16666667e-01],
+       [1.08000000e+02, 3.00000000e+02, 1.33333333e-01],
+       [1.09000000e+02, 3.00000000e+02, 1.50000000e-01],
+       [1.10000000e+02, 3.00000000e+02, 1.66666667e-01],
+       [1.11000000e+02, 3.00000000e+02, 1.83333333e-01],
+       [1.12000000e+02, 3.00000000e+02, 2.00000000e-01],
+       [1.13000000e+02, 3.00000000e+02, 2.16666667e-01],
+       [1.14000000e+02, 3.00000000e+02, 2.33333333e-01],
+       [1.15000000e+02, 3.00000000e+02, 2.50000000e-01],
+       [1.16000000e+02, 3.00000000e+02, 2.66666667e-01],
+       [1.17000000e+02, 3.00000000e+02, 2.83333333e-01],
+       [1.18000000e+02, 3.00000000e+02, 3.00000000e-01],
+       [1.19000000e+02, 3.00000000e+02, 3.16666667e-01],
+       [1.20000000e+02, 3.00000000e+02, 3.33333333e-01],
+       [1.21000000e+02, 3.00000000e+02, 3.50000000e-01]]), 602: array([[6.00000000e+02, 7.00000000e+02, 0.00000000e+00],
+       [6.01000000e+02, 7.00000000e+02, 1.42857143e-02],
+       [6.02000000e+02, 7.00000000e+02, 2.85714286e-02],
+       [6.03000000e+02, 7.00000000e+02, 4.28571429e-02],
+       [6.04000000e+02, 7.00000000e+02, 5.71428571e-02],
+       [6.05000000e+02, 7.00000000e+02, 7.14285714e-02],
+       [6.06000000e+02, 7.00000000e+02, 8.57142857e-02],
+       [6.07000000e+02, 7.00000000e+02, 1.00000000e-01],
+       [6.08000000e+02, 7.00000000e+02, 1.14285714e-01],
+       [6.09000000e+02, 7.00000000e+02, 1.28571429e-01],
+       [6.10000000e+02, 7.00000000e+02, 1.42857143e-01],
+       [6.11000000e+02, 7.00000000e+02, 1.57142857e-01],
+       [6.12000000e+02, 7.00000000e+02, 1.71428571e-01],
+       [6.13000000e+02, 7.00000000e+02, 1.85714286e-01],
+       [6.14000000e+02, 7.00000000e+02, 2.00000000e-01],
+       [6.15000000e+02, 7.00000000e+02, 2.14285714e-01],
+       [6.16000000e+02, 7.00000000e+02, 2.28571429e-01],
+       [6.17000000e+02, 7.00000000e+02, 2.42857143e-01],
+       [6.18000000e+02, 7.00000000e+02, 2.57142857e-01],
+       [6.19000000e+02, 7.00000000e+02, 2.71428571e-01],
+       [6.20000000e+02, 7.00000000e+02, 2.85714286e-01],
+       [6.21000000e+02, 7.00000000e+02, 3.00000000e-01]]), 603: array([[2.00000000e+02, 1.00000000e+02, 0.00000000e+00],
+       [2.00196116e+02, 1.00980581e+02, 1.96116137e-02],
+       [2.00392232e+02, 1.01961161e+02, 3.92232274e-02],
+       [2.00588348e+02, 1.02941742e+02, 5.88348410e-02],
+       [2.00784465e+02, 1.03922323e+02, 7.84464547e-02],
+       [2.00980581e+02, 1.04902903e+02, 9.80580684e-02],
+       [2.01176697e+02, 1.05883484e+02, 1.17669682e-01],
+       [2.01372813e+02, 1.06864065e+02, 1.37281296e-01],
+       [2.01568929e+02, 1.07844645e+02, 1.56892909e-01],
+       [2.01765045e+02, 1.08825226e+02, 1.76504523e-01],
+       [2.01961161e+02, 1.09805807e+02, 1.96116137e-01],
+       [2.02157278e+02, 1.10786388e+02, 2.15727750e-01],
+       [2.02353394e+02, 1.11766968e+02, 2.35339364e-01],
+       [2.02549510e+02, 1.12747549e+02, 2.54950978e-01],
+       [2.02745626e+02, 1.13728130e+02, 2.74562592e-01],
+       [2.02941742e+02, 1.14708710e+02, 2.94174205e-01],
+       [2.03137858e+02, 1.15689291e+02, 3.13785819e-01],
+       [2.03333974e+02, 1.16669872e+02, 3.33397433e-01],
+       [2.03530090e+02, 1.17650452e+02, 3.53009046e-01],
+       [2.03726207e+02, 1.18631033e+02, 3.72620660e-01],
+       [2.03922323e+02, 1.19611614e+02, 3.92232274e-01],
+       [2.04118439e+02, 1.20592194e+02, 4.11843887e-01]])}
+----------------------------------------
+Message Type: SEStarting
+recipient_id: Modules.RadarMain
+priority: Priorities.SUPERLOW
+planes: {601: array([[1.00000000e+02, 3.00000000e+02, 0.00000000e+00],
+       [1.01000000e+02, 3.00000000e+02, 1.66666667e-02],
+       [1.02000000e+02, 3.00000000e+02, 3.33333333e-02],
+       [1.03000000e+02, 3.00000000e+02, 5.00000000e-02],
+       [1.04000000e+02, 3.00000000e+02, 6.66666667e-02],
+       [1.05000000e+02, 3.00000000e+02, 8.33333333e-02],
+       [1.06000000e+02, 3.00000000e+02, 1.00000000e-01],
+       [1.07000000e+02, 3.00000000e+02, 1.16666667e-01],
+       [1.08000000e+02, 3.00000000e+02, 1.33333333e-01],
+       [1.09000000e+02, 3.00000000e+02, 1.50000000e-01],
+       [1.10000000e+02, 3.00000000e+02, 1.66666667e-01],
+       [1.11000000e+02, 3.00000000e+02, 1.83333333e-01],
+       [1.12000000e+02, 3.00000000e+02, 2.00000000e-01],
+       [1.13000000e+02, 3.00000000e+02, 2.16666667e-01],
+       [1.14000000e+02, 3.00000000e+02, 2.33333333e-01],
+       [1.15000000e+02, 3.00000000e+02, 2.50000000e-01],
+       [1.16000000e+02, 3.00000000e+02, 2.66666667e-01],
+       [1.17000000e+02, 3.00000000e+02, 2.83333333e-01],
+       [1.18000000e+02, 3.00000000e+02, 3.00000000e-01],
+       [1.19000000e+02, 3.00000000e+02, 3.16666667e-01],
+       [1.20000000e+02, 3.00000000e+02, 3.33333333e-01],
+       [1.21000000e+02, 3.00000000e+02, 3.50000000e-01]]), 602: array([[6.00000000e+02, 7.00000000e+02, 0.00000000e+00],
+       [6.01000000e+02, 7.00000000e+02, 1.42857143e-02],
+       [6.02000000e+02, 7.00000000e+02, 2.85714286e-02],
+       [6.03000000e+02, 7.00000000e+02, 4.28571429e-02],
+       [6.04000000e+02, 7.00000000e+02, 5.71428571e-02],
+       [6.05000000e+02, 7.00000000e+02, 7.14285714e-02],
+       [6.06000000e+02, 7.00000000e+02, 8.57142857e-02],
+       [6.07000000e+02, 7.00000000e+02, 1.00000000e-01],
+       [6.08000000e+02, 7.00000000e+02, 1.14285714e-01],
+       [6.09000000e+02, 7.00000000e+02, 1.28571429e-01],
+       [6.10000000e+02, 7.00000000e+02, 1.42857143e-01],
+       [6.11000000e+02, 7.00000000e+02, 1.57142857e-01],
+       [6.12000000e+02, 7.00000000e+02, 1.71428571e-01],
+       [6.13000000e+02, 7.00000000e+02, 1.85714286e-01],
+       [6.14000000e+02, 7.00000000e+02, 2.00000000e-01],
+       [6.15000000e+02, 7.00000000e+02, 2.14285714e-01],
+       [6.16000000e+02, 7.00000000e+02, 2.28571429e-01],
+       [6.17000000e+02, 7.00000000e+02, 2.42857143e-01],
+       [6.18000000e+02, 7.00000000e+02, 2.57142857e-01],
+       [6.19000000e+02, 7.00000000e+02, 2.71428571e-01],
+       [6.20000000e+02, 7.00000000e+02, 2.85714286e-01],
+       [6.21000000e+02, 7.00000000e+02, 3.00000000e-01]]), 603: array([[2.00000000e+02, 1.00000000e+02, 0.00000000e+00],
+       [2.00196116e+02, 1.00980581e+02, 1.96116137e-02],
+       [2.00392232e+02, 1.01961161e+02, 3.92232274e-02],
+       [2.00588348e+02, 1.02941742e+02, 5.88348410e-02],
+       [2.00784465e+02, 1.03922323e+02, 7.84464547e-02],
+       [2.00980581e+02, 1.04902903e+02, 9.80580684e-02],
+       [2.01176697e+02, 1.05883484e+02, 1.17669682e-01],
+       [2.01372813e+02, 1.06864065e+02, 1.37281296e-01],
+       [2.01568929e+02, 1.07844645e+02, 1.56892909e-01],
+       [2.01765045e+02, 1.08825226e+02, 1.76504523e-01],
+       [2.01961161e+02, 1.09805807e+02, 1.96116137e-01],
+       [2.02157278e+02, 1.10786388e+02, 2.15727750e-01],
+       [2.02353394e+02, 1.11766968e+02, 2.35339364e-01],
+       [2.02549510e+02, 1.12747549e+02, 2.54950978e-01],
+       [2.02745626e+02, 1.13728130e+02, 2.74562592e-01],
+       [2.02941742e+02, 1.14708710e+02, 2.94174205e-01],
+       [2.03137858e+02, 1.15689291e+02, 3.13785819e-01],
+       [2.03333974e+02, 1.16669872e+02, 3.33397433e-01],
+       [2.03530090e+02, 1.17650452e+02, 3.53009046e-01],
+       [2.03726207e+02, 1.18631033e+02, 3.72620660e-01],
+       [2.03922323e+02, 1.19611614e+02, 3.92232274e-01],
+       [2.04118439e+02, 1.20592194e+02, 4.11843887e-01]])}
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920462ed68>, 602: <radar.Target.Target object at 0x72920462eb38>, 603: <radar.Target.Target object at 0x72920462eda0>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920462ee80>, 602: <radar.Target.Target object at 0x72920462e828>, 603: <radar.Target.Target object at 0x72920462e5f8>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920462ecf8>, 602: <radar.Target.Target object at 0x72920462ecc0>, 603: <radar.Target.Target object at 0x72920463c048>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920463c278>, 602: <radar.Target.Target object at 0x72920463c320>, 603: <radar.Target.Target object at 0x72920463c3c8>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920463c5f8>, 602: <radar.Target.Target object at 0x72920463c6a0>, 603: <radar.Target.Target object at 0x72920463c748>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920463c978>, 602: <radar.Target.Target object at 0x72920463ca20>, 603: <radar.Target.Target object at 0x72920463cac8>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920463ccf8>, 602: <radar.Target.Target object at 0x72920463cda0>, 603: <radar.Target.Target object at 0x72920463ce48>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x7292007550b8>, 602: <radar.Target.Target object at 0x729200755160>, 603: <radar.Target.Target object at 0x729200755208>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x729200755438>, 602: <radar.Target.Target object at 0x7292007554e0>, 603: <radar.Target.Target object at 0x729200755588>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x7292007557b8>, 602: <radar.Target.Target object at 0x729200755860>, 603: <radar.Target.Target object at 0x729200755908>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x729200755b38>, 602: <radar.Target.Target object at 0x729200755be0>, 603: <radar.Target.Target object at 0x729200755c88>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x729200755eb8>, 602: <radar.Target.Target object at 0x729200755f60>, 603: <radar.Target.Target object at 0x729200756048>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x729200756278>, 602: <radar.Target.Target object at 0x729200756320>, 603: <radar.Target.Target object at 0x7292007563c8>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x7292007565f8>, 602: <radar.Target.Target object at 0x7292007566a0>, 603: <radar.Target.Target object at 0x729200756748>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x729200756978>, 602: <radar.Target.Target object at 0x729200756a20>, 603: <radar.Target.Target object at 0x729200756ac8>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x729200756cf8>, 602: <radar.Target.Target object at 0x729200756da0>, 603: <radar.Target.Target object at 0x729200756e48>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920075a0b8>, 602: <radar.Target.Target object at 0x72920075a160>, 603: <radar.Target.Target object at 0x72920075a208>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920075a438>, 602: <radar.Target.Target object at 0x72920075a4e0>, 603: <radar.Target.Target object at 0x72920075a588>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920075a7b8>, 602: <radar.Target.Target object at 0x72920075a860>, 603: <radar.Target.Target object at 0x72920075a908>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920075ab38>, 602: <radar.Target.Target object at 0x72920075abe0>, 603: <radar.Target.Target object at 0x72920075ac88>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920075aeb8>, 602: <radar.Target.Target object at 0x72920075af60>, 603: <radar.Target.Target object at 0x72920075c048>}
+----------------------------------------
+Message Type: CCToRadarNewStatus
+recipient_id: Modules.RadarMain
+priority: Priorities.STANDARD
+priority_s: 1747001544
+new_target_status: (602, 1)
+----------------------------------------
+Message Type: TargetUnfollowedGUI
+recipient_id: Modules.GUI
+priority: Priorities.LOW
+radarId: 1
+targetId: 602
+----------------------------------------
+Message Type: RadarToGUICurrentTarget
+recipient_id: Modules.GUI
+priority: Priorities.STANDARD
+radar_id: 2
+target_id: 602
+sector_size: 300.0
+----------------------------------------
+Message Type: RadarControllerObjects
+recipient_id: Modules.ControlCenter
+priority: Priorities.LOW
+detected_objects: {601: <radar.Target.Target object at 0x72920075c278>, 602: <radar.Target.Target object at 0x72920075c320>, 603: <radar.Target.Target object at 0x72920075c3c8>}
+----------------------------------------
