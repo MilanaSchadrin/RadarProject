@@ -8,7 +8,7 @@ from dispatcher.messages import SEKilled,SEAddRocket,SEStarting, ToGuiRocketInac
 from dispatcher.dispatcher import Dispatcher
 from vizualization.data_collector_for_visual import  SimulationDataCollector
 from vizualization.parametr_window import ParametersWindow
-from PyQt5.QtWidgets import QApplication,QProgressBar, QDialog,QSpinBox, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox,QHBoxLayout
+from PyQt5.QtWidgets import QApplication,QProgressBar,QMessageBox, QDialog,QSpinBox, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox,QHBoxLayout
 from PyQt5.QtCore import QTimer, Qt, QSize
 from PyQt5.QtGui import QIntValidator,QMovie
 from vizualization.map_class import MapWindow
@@ -25,6 +25,28 @@ class StartPage(QWidget):
         self.expect_modules=set()
         self.data_colector = SimulationDataCollector(self.dispatcher)
         self.init_ui()
+
+    def load_db_parameters(self):
+            db_name = self.db_name_input.text()
+            if not db_name:
+                QMessageBox.warning(self, "Ошибка", "Введите название базы данных")
+                return
+
+                #self.simulation.db
+            planes = self.simulation.db.load_planes()
+            radars = self.simulation.db.load_radars()
+            launchers = self.simulation.db.load_launchers()
+            cc = self.simulation.db.load_cc()
+
+            db_data = {'planes': planes,'radars': radars,'launchers': launchers,'cc': cc}
+            for module_name, params in db_data.items():
+                self.module_params[module_name] = params
+
+            self.update_params_display()
+            QMessageBox.information(self, "Успеx", "Параметры успешно загружены из базы данных")
+
+
+
 
     def init_ui(self):
         self.setWindowTitle("Параметры моделирования")
@@ -44,6 +66,10 @@ class StartPage(QWidget):
         layout.addWidget(self.db_name)
         self.db_name_input=QLineEdit()
         layout.addWidget(self.db_name_input)
+
+        self.load_db_button = QPushButton('Загрузить параметры из БД')
+        self.load_db_button.clicked.connect(self.load_db_parameters)
+        layout.addWidget(self.load_db_button)
 
         self.button_radar = QPushButton('Модуль радиолокатора', self)
         self.button_pbu = QPushButton('Модуль ПБУ', self)
@@ -82,6 +108,7 @@ class StartPage(QWidget):
                 display_text.append(f"{param}: {value}")
             display_text.append("")
         self.params_display.setPlainText("\n".join(display_text))
+
 
     def set_params_callback(self, callback, expect_modules):
         self.on_params_save_callback = callback
@@ -182,33 +209,7 @@ class StartPage(QWidget):
         self.map_window = MapWindow(self.simulation.db)
         self.map_window.set_simulation_data(self.data_colector.steps_data)
         self.map_window.rockets_data = self.data_colector.rockets_data
-        #print("ROCKETS", self.map_window.rockets_data)
-        '''
-        self.map_window.rockets_data = {
 
-            "701": {
-                0: (0, 500),
-                1: (25, 475),
-                2: (50, 450),
-                3: (75, 425),
-                4: (100, 400),
-                5: (125, 375),
-                6: (150, 350),
-                7: (175, 325),
-                8: (200, 300),
-                9: (225, 275),
-                10: (250, 250),
-                11: (275, 225),
-                12: (300, 200),
-                13: (325, 175),
-                14: (350, 150),
-                15: (375, 125),
-                16: (400, 100),
-                17: (425, 75),
-                18: (450, 50),
-                19: (475, 25),
-                20: (500, 0) }}
-        '''
         self.map_window.show()
         for i, step in enumerate(self.data_colector.steps_data):
             msg_count = len(step['messages'])
@@ -217,19 +218,20 @@ class StartPage(QWidget):
                 for msg in step['messages']:
                     pass
                     #print(f"  - {msg['type']} (приоритет: {msg['priority']})")
-        self.hide()
+        #self.hide()
 
     def open_parameters_window(self, module_name):
-        self.params_window = ParametersWindow(module_name, self.store_parameters, self)
+        self.params_window = ParametersWindow(module_name, self.store_parameters, self.simulation.db)
         self.params_window.show()
 
     def store_parameters(self, module_name, params_dict):
        self.module_params[module_name] = params_dict
+       print("STORE", self.module_params[module_name])
        self.update_params_display()
-       if self.expect_modules and self.on_params_save_callback:
-           if self.expect_modules.issubset(self.module_params.keys()):
-               self.on_params_save_callback(self.module_params)
-               print(f'Параметры модуля {module_name} сохранены: {params_dict}')
+       #if  self.on_params_save_callback:
+           #if self.expect_modules.issubset(self.module_params.keys()):
+       self.on_params_save_callback(self.module_params)
+       print(f'Параметры модуля {module_name} сохранены: {params_dict}')
 
     def set_session_params(self, db):
        for module_name, params in self.module_params.items():

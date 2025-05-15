@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QGroupBox,QMessageBox, QLabel
 from PyQt5.QtCore import QTimer, QRegExp
 from PyQt5.QtGui import QIntValidator,QRegExpValidator
 
+
 class ParametersWindow(QWidget):
     def __init__(self, module_name, on_save_callback, main_wind):
         super().__init__()
@@ -298,6 +299,7 @@ class ParametersWindow(QWidget):
                 element = {'start_pos': fields['start'].text(),'end_pos': fields['end'].text(),}
                 params_dict['elements'].append(element)
             params = params_dict
+            self.on_save(self.module_name, params)
         if self.module_name == 'Радиолокатор':
                     count = int(self.module_count.text()) if self.module_count.text() else 1
                     params_dict = {'count': count, 'radars': []}
@@ -310,8 +312,9 @@ class ParametersWindow(QWidget):
                             'range': float(fields['range'].text())
                         }
                         params_dict['radars'].append(radar_params)
-
                     params = params_dict
+                    self.on_save(self.module_name, params)
+
         elif self.module_name == 'ПУ':
 
                                 count = int(self.module_count.text()) if self.module_count.text() else 1
@@ -329,13 +332,14 @@ class ParametersWindow(QWidget):
                                     params_dict['launchers'].append(launcher_params)
 
                                 params = params_dict
+                                self.on_save(self.module_name, params)
 
         elif self.module_name == 'ПБУ':
             params = {'position': tuple(map(float, self.pos_control.text().split(',')))}
-        self.on_save(self.module_name, params)
+            self.on_save(self.module_name, params)
+        #self.on_save(self.module_name, params)
         self.close()
-        '''
-        elif self.module_name == 'ПУ':
-            params = { 'position': tuple(map(float, self.pos_pu.text().split(','))), 'missile_count': int(self.cout_zur.text()), 'range': int(self.dist_zur.text()),'velocity': int(self.vel_zur.text())}
-        '''
-        
+
+
+
+

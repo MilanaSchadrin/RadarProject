@@ -36,13 +36,13 @@ class SkyEnv:
 
     def check_if_in_radius(self, explosionPos, radius):
         collateralDamage = []
-        explosionPos = np.array(explosionPos)
+        explosionPos = np.array(explosionPos[:2])
         for i in self.planes:
             i_trajectory = i.get_trajectory()
             i_id = i.get_id()
             if i.get_status()  == False:
                 continue
-            position = np.array(i_trajectory[self.currentTime-1])
+            position = np.array(i_trajectory[self.currentTime - 1][:2]) * 1000 
             distance = np.linalg.norm(position - explosionPos)
             if distance <=radius:
                 collateralDamage.append((i_id, position))
@@ -50,8 +50,8 @@ class SkyEnv:
                 self.to_remove.add(('plane', i_id))
         for rocket_id, rocket in list(self.rockets.items()):
             if rocket.is_killed():
-                continue  
-            position = np.array(rocket.get_currentPos())
+                continue 
+            position = np.array(rocket.get_currentPos()[:2])
             distance = np.linalg.norm(position - explosionPos)
             if distance <= radius:
                 collateralDamage.append((rocket_id, position))
@@ -83,7 +83,7 @@ class SkyEnv:
             print('I made boom')
             print(self.currentTime)
             collateralDamage = self.check_if_in_radius(positionRocket, rocket.get_radius())
-            message = SEKilledGUI(Modules.GUI, Priorities.SUPERHIGH,rocket.get_id(),positionRocket/1000,rocket.get_radius(),get_plane_id_from_rocket(self.pairs,rocket),positionPlane/1000, collateralDamage)
+            message = SEKilledGUI(Modules.GUI, Priorities.SUPERHIGH,rocket.get_id(),positionRocket/1000,rocket.get_radius()//10,get_plane_id_from_rocket(self.pairs,rocket),positionPlane/1000, collateralDamage)
             self.dispatcher.send_message(message)
             message = SEKilled(Modules.RadarMain, Priorities.HIGH,rocket.get_id(),positionRocket,get_plane_id_from_rocket(self.pairs,rocket),positionPlane, collateralDamage)
             self.dispatcher.send_message(message)

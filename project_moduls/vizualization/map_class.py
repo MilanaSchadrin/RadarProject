@@ -3,7 +3,7 @@ import math
 import time
 import numpy as np
 from typing import Optional
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton,QWidget,QVBoxLayout, QHBoxLayout, QTextEdit, QLabel, QFrame
+from PyQt5.QtWidgets import QApplication,QGraphicsEllipseItem, QMainWindow, QPushButton,QWidget,QVBoxLayout, QHBoxLayout, QTextEdit, QLabel, QFrame
 from PyQt5.QtCore import Qt, QTimer, QPoint, QRectF, QPointF,QPropertyAnimation, QRect, QSequentialAnimationGroup,QPauseAnimation, QAbstractAnimation, QParallelAnimationGroup
 from PyQt5.QtGui import QPainter, QColor, QPixmap, QBrush, QColor, QPen
 from vizualization.map_window import  MapView
@@ -42,7 +42,7 @@ class MapWindow(QMainWindow):
 
         self.playback_timer = QTimer(self)
         self.playback_timer.timeout.connect(self.next_step)
-        self.playback_speed = 100
+        self.playback_speed = 50
         self.text_output.append(f"Моделирование работы ЗРС")
 
         self.rockets = {}
@@ -62,7 +62,7 @@ class MapWindow(QMainWindow):
         self.animation_steps = 20
         self.inactive_rockets = {}
         self.cross_visible_time = 500
-
+        self.preserve_rotation_on_backward = True
         #self.rockets_data ... заполняем чhep data_collector
     def setup_control_panel(self, main_layout):
          right_panel = QVBoxLayout()
@@ -103,6 +103,7 @@ class MapWindow(QMainWindow):
             plane_data['current_step'] = 0
 
     def play_steps(self):
+          self.preserve_rotation_on_backward=True
           if self.current_step >= self.max_step:
             self.current_step = -1
           self.is_playing = True
@@ -114,6 +115,7 @@ class MapWindow(QMainWindow):
           #self.is_playing = False
 
     def next_step(self):
+          self.preserve_rotation_on_backward=True
           if not self.is_playing:
             return
           if self.current_step < self.max_step:
@@ -123,6 +125,7 @@ class MapWindow(QMainWindow):
           if self.current_step == self.max_step:
             self.stop_playback()
     def prev_step(self):
+           self.preserve_rotation_on_backward = False
            if not self.is_playing:
                 return
            if self.current_step   < self.max_step:
@@ -132,36 +135,50 @@ class MapWindow(QMainWindow):
             self.restore_objects_state()
 
     def restore_objects_state(self):
-            for plane_id, plane_data in self.planes.items():
-                if 'pre_explosion_state' in plane_data:
-                    if plane_data['pre_explosion_state']['visible']:
-                        plane_data['icon'].show()
-                        plane_data['icon'].setPos(plane_data['pre_explosion_state']['pos'])
-                coords = plane_data['coords']
-                if self.current_step < len(coords):
+                for plane_id, plane_data in self.planes.items():
+                    if 'pre_explosion_state' in plane_data:
+                        if (plane_data['pre_explosion_state']['visible'] and
+                                       ('explosion_step' not in plane_data or self.current_step < plane_data['explosion_step'])):
+                                       plane_data['icon'].show()
+                                       plane_data['icon'].setPos(plane_data['pre_explosion_state']['pos'])
+
+                            #plane_data['icon'].show()
+                            #plane_data['icon'].setPos(plane_data['pre_explosion_state']['pos'])
+                    coords = plane_data['coords']
+                    if self.current_step < len(coords):
+                        if 'explosion_step' in plane_data and self.current_step >= plane_data['explosion_step']:
+                                   plane_data['icon'].hide()
+                                   continue
                         x, y = coords[self.current_step]
                         plane_data['icon'].setPos(QPointF(x, y))
                         plane_data['last_pos'] = (x, y)
                         plane_data['icon'].show()
-            for rocket_id, rocket_data in self.rockets.items():
-                if 'pre_explosion_state' in rocket_data:
+
+                for rocket_id, rocket_data in self.rockets.items():
+                    if 'pre_explosion_state' in rocket_data:
                         if rocket_data['pre_explosion_state']['visible']:
                             rocket_data['icon'].show()
                             rocket_data['icon'].setPos(rocket_data['pre_explosion_state']['pos'])
-                if 'first_appearance_step' in rocket_data and self.current_step >= rocket_data['first_appearance_step']:
-                        coords = rocket_data['coords']
-                        coord_idx = self.current_step - rocket_data['first_appearance_step']
-                        if coord_idx < len(coords):
-                            x, y = coords[coord_idx]
+
+                    if 'first_appearance_step' in rocket_data and self.current_step >= rocket_data['first_appearance_step']:
+                        if 'explosion_step' in rocket_data and self.current_step >= rocket_data['explosion_step']:
+                                        rocket_data['icon'].hide()
+                                        continue
+                        current_coords = self.get_rocket_coords_at_step(rocket_id, self.current_step)
+                        if current_coords is not None:
+                            x, y = current_coords[0], current_coords[1]
                             rocket_data['icon'].setPos(QPointF(x, y))
                             rocket_data['last_pos'] = (x, y)
                             rocket_data['icon'].show()
-                else:
+                            # Убрано автоматическое обновление поворота при восстановлении состояния
+                    else:
                         rocket_data['icon'].hide()
-            for rocket_id, cross_label in list(self.inactive_rockets.items()):
+
+                for rocket_id, cross_label in list(self.inactive_rockets.items()):
                     cross_label.hide()
                     cross_label.deleteLater()
                     del self.inactive_rockets[rocket_id]
+
 
     def update_visualization(self, instant_update=False):
           step_data = self.simulation_steps[self.current_step]
@@ -186,6 +203,9 @@ class MapWindow(QMainWindow):
 
     def update_planes(self, instant_update=False):
           for plane_id, plane_data in self.planes.items():
+                if 'explosion_step' in plane_data and self.current_step >= plane_data['explosion_step']:
+                  plane_data['icon'].hide()
+                  continue
                 coords = plane_data['coords']
                 target_idx = min(self.current_step, len(coords) - 1)
                 target_x, target_y = coords[target_idx]
@@ -358,12 +378,16 @@ class MapWindow(QMainWindow):
                    'last_processed_step': -1
                }
                self.map_view.scene.addItem(icon)
-               icon.hide()
+               #icon.hide()
 
     def update_zur_positions(self, instant_update=False):
+                   #print("UPDATE", self.rockets, self.current_step)
                    """Обновляет позиции ракет на текущем шаге"""
                    for zur_id, zur_data in self.rockets.items():
                        if 'first_appearance_step' not in zur_data:
+                           continue
+                       if 'explosion_step' in zur_data and self.current_step >= zur_data['explosion_step']:
+                           zur_data['icon'].hide()
                            continue
                        current_coords = self.get_rocket_coords_at_step(zur_id, self.current_step)
                        if current_coords is not None:
@@ -392,6 +416,8 @@ class MapWindow(QMainWindow):
                                            return self.rockets_data[rocket_id][s]
                                return None
     def update_rocket_rotation(self, rocket_id, rocket_data, target_x, target_y):
+         #print("ROTATION", self.preserve_rotation_on_backward)
+         if  self.preserve_rotation_on_backward==True:
                                 if rocket_data.get('last_pos'):
                                     last_x, last_y = rocket_data['last_pos']
                                     dx = target_x - last_x
@@ -401,12 +427,48 @@ class MapWindow(QMainWindow):
                                         angle_deg = math.degrees(angle_rad)
                                         rocket_data['icon'].rotate_to(((angle_deg + 90) % 360))
                                 rocket_data['last_pos'] = (target_x, target_y)
+         else:
+             if rocket_data.get('last_pos'):
+                 last_x, last_y = rocket_data['last_pos']
+                 dx = target_x - last_x
+                 dy = target_y - last_y
+                 if dx != 0 or dy != 0:
+                     angle_rad = math.atan2(dy, dx)
+                     angle_deg = math.degrees(angle_rad)
+                     rocket_data['icon'].rotate_to(((angle_deg - 90) % 360))
+             rocket_data['last_pos'] = (target_x, target_y)
 
     def process_step(self, step_data):
            for msg in step_data['messages']:
                 self.process_message(msg)
 
+    def remove_radar_target(self, radar_id, plane_id):
+                    """
+                    Удаляет цель из списка отслеживаемых целей радара
+                    :param radar_id: ID радара (как строка или число)
+                    :param plane_id: ID самолета (как число)
+                    """
+                    # Преобразуем radar_id в строку, если ключи хранятся как строки
+                    radar_key = str(radar_id)
 
+                    if radar_key in self.tracked_targets:
+                        if plane_id in self.tracked_targets[radar_key]:
+                            del self.tracked_targets[radar_key][plane_id]
+                            print(f"Удалена цель {plane_id} у радара {radar_id}")
+
+                            # Если у радара больше нет целей, можно удалить и сам радар из словаря
+                            if not self.tracked_targets[radar_key]:
+                                del self.tracked_targets[radar_key]
+                                print(f"Радар {radar_id} больше не отслеживает цели и удален из списка")
+
+                            # Обновляем отрисовку
+                            self.map_view.update()
+                        else:
+                            print(f"Цель {plane_id} не найдена у радара {radar_id}")
+                    else:
+                        print(f"Радар {radar_id} не найден в tracked_targets")
+
+                    print("Обновленный tracked_targets:", self.tracked_targets)
     def process_message(self, msg):
            try:
                 if msg['type'] == 'plane_start':
@@ -460,29 +522,78 @@ class MapWindow(QMainWindow):
                     #print('radar_tracking')
                     radar_id = msg['data'].radar_id
                     target_id = msg['data'].target_id
-                    if radar_id not in self.tracked_targets:
-                        self.tracked_targets[radar_id] = {}
+                    #print('self.current_step', self.current_step)
+                    #print('radar_id', radar_id)
+                    #print('target_id', target_id)
+                    #if radar_id not in self.tracked_targets:
+                    #    self.tracked_targets[radar_id] = {}
                     self.map_view.handle_target_detection(int(radar_id), target_id, msg['data'].sector_size)
                     self.text_output.append(f"Радар {radar_id} отслеживает цель {target_id}")
                     if target_id not in self.tracked_targets[radar_id]:
                         self.tracked_targets[radar_id][target_id] = {'sector_size': msg['data'].sector_size,'last_detection': self.current_step}
 
+                elif msg['type'] == 'radar_untracking':
+                    #print("MAP", self.tracked_targets)
+                    radar_id = msg['data'].radarId
+                    target_id = msg['data'].targetId
+                    print("UNTRACK radar_id", radar_id)
+                    print("UNTRACK  target_id ", target_id)
+                    #self.remove_radar_target(radar_id, target_id)
+                    #self.update_radar_targets()
+                    self.map_view.handle_target_untracking(radar_id, target_id)
+
+                    #print("FROM UPTRACK", self.tracked_targets)
+                    self.text_output.append(f"Радар {radar_id} прекратил отслеживание цели {target_id}")
+                    #self.map_view.update()
+
                 elif msg['type'] == 'explosion':
-                    self.planes[msg['data'].plane_id]['icon'].show()
-                    #print('Коллизия', msg['data'].collision_step, 'САМОЛЕТ',msg['data'].plane_id  )
-                    explosion_data = {'collision_step': msg['data'].collision_step, 'rocket_id': msg['data'].rocket_id, 'rocket_coords': msg['data'].rocket_coords,
-                                                                    'plane_id': msg['data'].plane_id, 'plane_coords': msg['data'].plane_coords,
-                                                                    'collateral_damage': [(damage[0], damage[1]) for damage in msg['data'].collateral_damage] if hasattr(msg['data'], 'collateral_damage') else []}
+                            explosion_data = msg['data']
+                            self.map_view.handle_target_destruction(explosion_data)
+                            explosion_circle = QGraphicsEllipseItem()
+                            radius = explosion_data.death_range
+                            explosion_circle.setRect(explosion_data.rocket_coords[0] - radius, explosion_data.rocket_coords[1] - radius,  radius * 2,radius * 2)
+                            pen = QPen(Qt.red)
+                            pen.setWidth(2)
+                            explosion_circle.setPen(pen)
+                            brush = QBrush(QColor(255, 0, 0, 50))
+                            explosion_circle.setBrush(brush)
+                            self.map_view.scene.addItem(explosion_circle)
 
+                            if explosion_data.plane_id in self.planes:
+                                plane_data = self.planes[explosion_data.plane_id]
+                                plane_data['pre_explosion_state'] = {
+                                    'visible': plane_data['icon'].isVisible(),
+                                    'pos': plane_data['icon'].pos()
+                                }
+                                plane_data['explosion_step'] = self.current_step
+                                plane_data['icon'].hide()
+                                #del self.planes[explosion_data.plane_id]  # радикально ...
+                                for radar_id in self.tracked_targets:
+                                     if explosion_data.plane_id in self.tracked_targets[radar_id]:
+                                         del self.tracked_targets[radar_id][explosion_data.plane_id]
 
+                            if explosion_data.rocket_id in self.rockets:
+                                rocket_data = self.rockets[explosion_data.rocket_id]
+                                rocket_data['pre_explosion_state'] = {
+                                    'visible': rocket_data['icon'].isVisible(),
+                                    'pos': rocket_data['icon'].pos()
+                                }
+                                #rocket_data['destroyed'] = True
+                                rocket_data['explosion_step'] = self.current_step
+                                rocket_data['icon'].hide()
+                                #self.text_output.append(f'<span style="color: olive;">🚀 Ракета с ID {explosion_data.rocket_id} деактивирована🧨</span>')
 
-                    self.log_explosion( msg['data'].rocket_id, msg['data'].plane_id,msg['data'].collateral_damage  )
-                    self.handle_explosion_event(explosion_data)
-                    target_id = msg['data'].plane_id
-                    for radar_id in list(self.tracked_targets.keys()):
-                        if target_id in self.tracked_targets[radar_id]:
-                            del self.tracked_targets[radar_id][target_id]
+                                #self.map_view.scene.removeItem(rocket_data['icon'])
+                            #if explosion_data.rocket_id in self.rockets:
+                            #            rocket_data = self.rockets[explosion_data.rocket_id]
+                            #            rocket_data['icon'].hide()
 
+                            self.text_output.append(
+                                f" Взрыв ракеты {explosion_data.rocket_id}, самолета {explosion_data.plane_id}, "
+                                f"координаты взрыва ({explosion_data.rocket_coords[0]:.1f}, "
+                                f"{explosion_data.rocket_coords[1]:.1f}). Радиус поражения: {explosion_data.death_range}"
+                            )
+                            QTimer.singleShot(1000, lambda: self.map_view.scene.removeItem(explosion_circle))
                 elif msg['type'] == 'rocket_inactivate':
                     rocket_id = msg['data'].rocketId
                     self.text_output.append(f'<span style="color: olive;">🚀 Ракета с ID {rocket_id} деактивирована🧨</span>')
@@ -509,6 +620,7 @@ class MapWindow(QMainWindow):
 
            except Exception as e:
                 print(f"Ошибка при обработке сообщения: {e}")
+
 
     def visualize_explosion(self, rocket_id: int, rocket_coords: np.ndarray, plane_id: int, plane_coords: np.ndarray, collateral_damage: List[Tuple[int, np.ndarray]], collision_step: int):
            center_x = (rocket_coords[0] + plane_coords[0]) / 2
@@ -723,3 +835,11 @@ class MapWindow(QMainWindow):
         if secondary_damage:
              damaged_objects = ", ".join([f"#{obj_id}" for obj_id, _ in secondary_damage])
              self.text_output.append(f'<span style="color: orange;">⚠️ Вторичные повреждения: {damaged_objects}</span>')
+'''
+             elif msg['type'] == 'radar_untracking':
+                 #self.map_view.update()
+                 radar_id = msg['data'].radarId
+                 target_id = msg['data'].targetId
+                 self.map_view.handle_target_untracking(radar_id, target_id)
+                 self.text_output.append(f"Радар {radar_id} прекратил отслеживание цели {target_id}")
+'''

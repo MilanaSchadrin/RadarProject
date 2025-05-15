@@ -1,7 +1,7 @@
 # This Python file uses the following encoding: utf-8
 from dispatcher.enums import Modules
 from dispatcher.enums import Priorities
-from dispatcher.messages import SEKilled,SEAddRocket,SEStarting, ToGuiRocketInactivated,RadarToGUICurrentTarget,RocketUpdate
+from dispatcher.messages import SEKilled,SEAddRocket,SEStarting, SEKilledGUI,  TargetUnfollowedGUI, ToGuiRocketInactivated,RadarToGUICurrentTarget,RocketUpdate
 from dispatcher.dispatcher import Dispatcher
 
 class SimulationDataCollector:
@@ -36,7 +36,7 @@ class SimulationDataCollector:
     def _get_message_type(self, message):
         if isinstance(message, SEStarting):
             return 'plane_start'
-        elif isinstance(message, SEKilled):
+        elif isinstance(message, SEKilledGUI):
             return 'explosion'
         elif isinstance(message, SEAddRocket):
             return 'rocket_add'
@@ -46,6 +46,8 @@ class SimulationDataCollector:
             return 'rocket_inactivate'
         elif isinstance(message, RocketUpdate):
             return 'rocket_update'
+        elif isinstance(message, TargetUnfollowedGUI):
+            return 'radar_untracking'
 
     def handle_rocket_add(self, rocket_data):
                """Обработка добавления новой ракеты"""

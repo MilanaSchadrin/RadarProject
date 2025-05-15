@@ -53,7 +53,7 @@ class Launcher:
         radius = MISSILE_TYPE_CONFIG[type]["damageRadius"]
 
         missile_id = self.ctrl.generate_missile_id()
-        velocity = renormalize(dir(self.coord, target.currentCoords), speed)
+        velocity = renormalize(dir(start_coords, target.currentCoords), speed)
         time = MISSILE_TYPE_CONFIG[type]["currLifeTime"]
         M = Missile(
         missileID= missile_id, 

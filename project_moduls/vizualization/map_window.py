@@ -300,39 +300,68 @@ class MapView(QGraphicsView):
                                if 0 <= sy <= self.height():
                                    painter.drawText(ox + 5, sy - 2, f"{y}")
                            painter.restore()
+    '''
+    def update_radar_targets(self, targets):
+                               for radar_id, radar_data in self.radar.items():
+                                   radar_icon = radar_data['icon']
+                                   radar_center = radar_icon.scenePos()
 
+                                   if radar_id not in self.tracked_targets:
+                                       self.tracked_targets[radar_id] = {}
+
+                                   for target_id, (x, y) in targets.items():
+                                       if target_id not in self.planes:
+                                           continue
+
+                                       self.trails[target_id].append(QPoint(x, y))
+                                       if len(self.trails[target_id]) > 50:
+                                           self.trails[target_id] = self.trails[target_id][-50:]
+
+                                       dx = x - radar_center.x()
+                                       dy = radar_center.y() - y
+                                       azimuth = math.degrees(math.atan2(dy, dx)) % 360
+                                       distance = math.sqrt(dx*dx + dy*dy)
+
+                                       if isinstance(self.tracked_targets[radar_id][target_id], (int, float)):
+                                           self.tracked_targets[radar_id][target_id] = {
+                                               'azimuth': self.tracked_targets[radar_id][target_id],
+                                               'distance': distance
+                                           }
+                                       else:
+                                           self.tracked_targets[radar_id][target_id]['azimuth'] = azimuth
+                                           self.tracked_targets[radar_id][target_id]['distance'] = distance
+                               self.update()
+    '''
     def update_radar_targets(self, targets):
         for radar_id, radar_data in self.radar.items():
             radar_icon = radar_data['icon']
-            #radar_center = QPoint(radar_icon.x_pos + radar_icon.width() // 2,radar_icon.y_pos + radar_icon.height() // 2)
             radar_center = radar_icon.scenePos()
+
+            # Не создаем пустой словарь, если радара нет в tracked_targets
             if radar_id not in self.tracked_targets:
-                self.tracked_targets[radar_id] = {}
+                continue
+
             for target_id, (x, y) in targets.items():
-                if target_id not in self.trails:
-                    self.trails[target_id] = []
+                # Пропускаем, если цель не в planes или не отслеживается этим радаром
+                if target_id not in self.planes or target_id not in self.tracked_targets[radar_id]:
+                    continue
+
                 self.trails[target_id].append(QPoint(x, y))
-                if len(self.trails[target_id]) > 50:
-                    self.trails[target_id] = self.trails[target_id][-50:]
                 dx = x - radar_center.x()
                 dy = radar_center.y() - y
                 azimuth = math.degrees(math.atan2(dy, dx)) % 360
                 distance = math.sqrt(dx*dx + dy*dy)
-                if target_id not in self.tracked_targets[radar_id]:
+
+                if isinstance(self.tracked_targets[radar_id][target_id], (int, float)):
                     self.tracked_targets[radar_id][target_id] = {
-                        'azimuth': azimuth,
+                        'azimuth': self.tracked_targets[radar_id][target_id],
                         'distance': distance
                     }
                 else:
-                    if isinstance(self.tracked_targets[radar_id][target_id], (int, float)):
-                        self.tracked_targets[radar_id][target_id] = {
-                            'azimuth': self.tracked_targets[radar_id][target_id],
-                            'distance': distance
-                        }
-                    else:
-                        self.tracked_targets[radar_id][target_id]['azimuth'] = azimuth
-                        self.tracked_targets[radar_id][target_id]['distance'] = distance
-        self.update()
+                    self.tracked_targets[radar_id][target_id]['azimuth'] = azimuth
+                    self.tracked_targets[radar_id][target_id]['distance'] = distance
+
+        #self.update()
 
     def draw_radar_sector(self, painter):
         scan_angle = (self.current_step * 10) % 360
@@ -371,11 +400,12 @@ class MapView(QGraphicsView):
             #painter.drawPie(scan_rect, int(start_angle), int(span_angle))
             #dash_pen = QPen(QColor(255, 0, 0), 2, Qt.DashLine)
             #dash_pen.setDashPattern([4, 4])
-
+            #print("SELF>TRACKED", self.tracked_targets)
             if radar_id in self.tracked_targets:
                 for target_id in list(self.tracked_targets[radar_id].keys()):
                     target_id= int(target_id)
                     if target_id in self.trails and self.trails[target_id]:
+                        #print("TARGET", target_id)
                         target_point = self.trails[target_id][-1]
                         target_viewport_point = self.mapFromScene(target_point)
                         radar_center_scene = radar_data['icon'].scenePos()
@@ -398,47 +428,7 @@ class MapView(QGraphicsView):
                         painter.drawEllipse(QPointF(end_x, end_y), 4, 4)
         self.update()
 
-    '''
-    def draw_radar_sector(self, painter):
-        scan_angle = (self.current_step * 10) % 360
-        for radar_id, radar_data in self.radar.items():
-            radar_icon = radar_data['icon']
-            radar_center = QPoint(radar_icon.x_pos + radar_icon.width() // 2,
-                                 radar_icon.y_pos + radar_icon.height() // 2)
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.setBrush(QBrush(QColor(0, 255, 0, 30)))
-            painter.setPen(QPen(QColor(0, 180, 0), 2))
 
-            scan_rect = QRectF(radar_center.x() - radar_data['radius'],
-                              radar_center.y() - radar_data['radius'],
-                              radar_data['radius'] * 2,
-                              radar_data['radius'] * 2)
-            start_angle = -(scan_angle - radar_data['view_angle']/2) * 16
-            span_angle = -radar_data['view_angle'] * 16
-            painter.drawPie(scan_rect, int(start_angle), int(span_angle))
-            dash_pen = QPen(QColor(255, 0, 0), 2, Qt.DashLine)
-            dash_pen.setDashPattern([4, 4])
-            if radar_id in self.tracked_targets:
-                for target_id in list(self.tracked_targets[radar_id].keys()):
-                    target_id= int(target_id)
-                    if target_id in self.trails and self.trails[target_id]:
-                        target_point = self.trails[target_id][-1]
-                        dx = target_point.x() - radar_center.x()
-                        dy = radar_center.y() - target_point.y()
-                        azimuth = np.degrees(np.arctan2(dy, dx)) % 360
-                        distance = np.sqrt(dx*dx + dy*dy)
-                        self.tracked_targets[radar_id][target_id] = {'azimuth': azimuth, 'distance': distance}
-                        if distance > radar_data['radius']:
-                            continue
-                        ray_length = distance * 0.9
-                        end_x = radar_center.x() + ray_length * np.cos(np.radians(azimuth))
-                        end_y = radar_center.y() - ray_length * np.sin(np.radians(azimuth))
-                        painter.setPen(dash_pen)
-                        painter.drawLine(radar_center, QPointF(end_x, end_y))
-                        painter.setBrush(QBrush(Qt.red))
-                        painter.drawEllipse(QPointF(end_x, end_y), 4, 4)
-        self.update()
-    '''
     def visualize_rls(self, target_id, sector_size):
         self.detection_effects.append({'angle': 45, 'distance': 1500, 'target_id':target_id, 'alpha':255, 'steps_left': 30})
         if target_id not in self.tracked_targets:
@@ -465,6 +455,57 @@ class MapView(QGraphicsView):
         if target_id not in self.tracked_targets[radar_id]:
             self.tracked_targets[radar_id][target_id] = size
         self.update()
+
+    def handle_target_untracking(self, radar_id, target_id):
+        for r_id in [radar_id, str(radar_id), int(radar_id) if str(radar_id).isdigit() else None]:
+               if r_id is None:
+                   continue
+               if r_id in self.tracked_targets:
+                   # Аналогично проверяем target_id
+                   for t_id in [target_id, str(target_id), int(target_id) if str(target_id).isdigit() else None]:
+                       if t_id is None:
+                           continue
+                       if t_id in self.tracked_targets[r_id]:
+                           del self.tracked_targets[r_id][t_id]
+                           # Удаляем радар, если у него не осталось целей
+                           if not self.tracked_targets[r_id]:
+                               del self.tracked_targets[r_id]
+                           print(f"Удалена цель {target_id} из радара {radar_id}")
+                           return
+        #print(f"Цель {target_id} не найдена в радаре {radar_id}")
+        '''
+        print("HANDLE",self.tracked_targets)
+
+        print("Содержимое tracked_targets с типами:")
+        for radar_id, targets_dict in self.tracked_targets.items():
+               print(f"• Радар ID: {radar_id} (тип: {type(radar_id)})")
+               for target_id, target_data in targets_dict.items():
+                   print(f"  ∟ Цель ID: {target_id} (тип: {type(target_id)})")
+                   print(f"    Данные: {target_data} (тип данных: {type(target_data)})")
+                   if isinstance(target_data, dict):
+                       for k, v in target_data.items():
+                           print(f"      {k}: {v} (тип: {type(v)})")
+
+        if str(radar_id) or radar_id  in self.tracked_targets:
+               if target_id or str(target_id) in self.tracked_targets[radar_id]:
+                   print("IF")
+
+                   del self.tracked_targets[radar_id][target_id]
+                   if not self.tracked_targets[radar_id]:
+                       del self.tracked_targets[radar_id]
+
+               #self.update()
+         '''
+        #print("END HANDLER",self.tracked_targets)
+
+
+    def handle_target_destruction(self, explosion_data):
+            for radar_id, targets in list(self.tracked_targets.items()):
+                if explosion_data.plane_id in targets:
+                    del targets[explosion_data.plane_id]
+                    if not targets:
+                        del self.tracked_targets[radar_id]
+            self.update()
     '''
     def update_target_azimuths(self):
         for radar_id, radar_data in self.radar.items():
