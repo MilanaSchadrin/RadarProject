@@ -42,7 +42,7 @@ class MapWindow(QMainWindow):
 
         self.playback_timer = QTimer(self)
         self.playback_timer.timeout.connect(self.next_step)
-        self.playback_speed = 100
+        self.playback_speed = 50
         self.text_output.append(f"Моделирование работы ЗРС")
 
         self.rockets = {}
@@ -442,6 +442,33 @@ class MapWindow(QMainWindow):
            for msg in step_data['messages']:
                 self.process_message(msg)
 
+    def remove_radar_target(self, radar_id, plane_id):
+                    """
+                    Удаляет цель из списка отслеживаемых целей радара
+                    :param radar_id: ID радара (как строка или число)
+                    :param plane_id: ID самолета (как число)
+                    """
+                    # Преобразуем radar_id в строку, если ключи хранятся как строки
+                    radar_key = str(radar_id)
+
+                    if radar_key in self.tracked_targets:
+                        if plane_id in self.tracked_targets[radar_key]:
+                            del self.tracked_targets[radar_key][plane_id]
+                            print(f"Удалена цель {plane_id} у радара {radar_id}")
+
+                            # Если у радара больше нет целей, можно удалить и сам радар из словаря
+                            if not self.tracked_targets[radar_key]:
+                                del self.tracked_targets[radar_key]
+                                print(f"Радар {radar_id} больше не отслеживает цели и удален из списка")
+
+                            # Обновляем отрисовку
+                            self.map_view.update()
+                        else:
+                            print(f"Цель {plane_id} не найдена у радара {radar_id}")
+                    else:
+                        print(f"Радар {radar_id} не найден в tracked_targets")
+
+                    print("Обновленный tracked_targets:", self.tracked_targets)
     def process_message(self, msg):
            try:
                 if msg['type'] == 'plane_start':
@@ -498,12 +525,26 @@ class MapWindow(QMainWindow):
                     #print('self.current_step', self.current_step)
                     #print('radar_id', radar_id)
                     #print('target_id', target_id)
-                    if radar_id not in self.tracked_targets:
-                        self.tracked_targets[radar_id] = {}
+                    #if radar_id not in self.tracked_targets:
+                    #    self.tracked_targets[radar_id] = {}
                     self.map_view.handle_target_detection(int(radar_id), target_id, msg['data'].sector_size)
                     self.text_output.append(f"Радар {radar_id} отслеживает цель {target_id}")
                     if target_id not in self.tracked_targets[radar_id]:
                         self.tracked_targets[radar_id][target_id] = {'sector_size': msg['data'].sector_size,'last_detection': self.current_step}
+
+                elif msg['type'] == 'radar_untracking':
+                    #print("MAP", self.tracked_targets)
+                    radar_id = msg['data'].radarId
+                    target_id = msg['data'].targetId
+                    print("UNTRACK radar_id", radar_id)
+                    print("UNTRACK  target_id ", target_id)
+                    #self.remove_radar_target(radar_id, target_id)
+                    #self.update_radar_targets()
+                    self.map_view.handle_target_untracking(radar_id, target_id)
+
+                    #print("FROM UPTRACK", self.tracked_targets)
+                    self.text_output.append(f"Радар {radar_id} прекратил отслеживание цели {target_id}")
+                    #self.map_view.update()
 
                 elif msg['type'] == 'explosion':
                             explosion_data = msg['data']
@@ -794,3 +835,11 @@ class MapWindow(QMainWindow):
         if secondary_damage:
              damaged_objects = ", ".join([f"#{obj_id}" for obj_id, _ in secondary_damage])
              self.text_output.append(f'<span style="color: orange;">⚠️ Вторичные повреждения: {damaged_objects}</span>')
+'''
+             elif msg['type'] == 'radar_untracking':
+                 #self.map_view.update()
+                 radar_id = msg['data'].radarId
+                 target_id = msg['data'].targetId
+                 self.map_view.handle_target_untracking(radar_id, target_id)
+                 self.text_output.append(f"Радар {radar_id} прекратил отслеживание цели {target_id}")
+'''
