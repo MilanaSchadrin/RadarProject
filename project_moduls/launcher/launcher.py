@@ -12,6 +12,10 @@ def dir(A, B):
 def dist(A, B):
     return ((B[0]-A[0])**2+(B[1]-A[1])**2+(B[2]-A[2])**2)**0.5
 
+def plane_sep(vect, A, B):
+    D=dir(A, B)
+    return D[0]*vect[0]+D[1]*vect[1]+D[2]*vect[2]
+
 def renormalize(ovect, length):
     olength = dist((0, 0, 0), ovect)
     scale = length / olength
@@ -106,15 +110,20 @@ class LaunchController:
     def create(self, target):
         if not self._launchers:
             return
-        D=10**10
-        k=0
-        closest_launcher = min(
-            (l for l in self._launchers if l.available_missiles() > 0),
-            key=lambda l: dist(l.coord, target.currentCoords),
-            default=None
-        )
-        if closest_launcher:
-            closest_launcher.launch(target)
+        min_dist = float('inf')
+        selected_launcher = None
+
+        for launcher in self._launchers:
+            if launcher.available_missiles() > 0:
+                launcher_coords = tuple(x * 1000 for x in launcher.coord)
+                d = dist(launcher_coords, target.currentCoords)
+                if d < min_dist:
+                    min_dist = d
+                    selected_launcher = launcher
+
+        if selected_launcher:
+            print(f"Chosen launcher {selected_launcher.id} (distance: {int(min_dist)})")
+            selected_launcher.launch(target)
 
     def status(self):
         for L in self._launchers:

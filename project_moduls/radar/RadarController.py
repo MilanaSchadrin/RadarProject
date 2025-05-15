@@ -12,7 +12,8 @@ from dispatcher.messages import (
     SEStarting,
     SEAddRocketToRadar,
     RocketUpdate,
-    TargetUnfollowedGUI
+    TargetUnfollowedGUI,
+    RocketDied
 )
 
 class TargetEnv:
@@ -159,6 +160,8 @@ class RadarController:
                 self.addRocket(message)
             elif isinstance(message, RocketUpdate):
                 self.rocketUpdate(message)
+            elif isinstance(message, RocketDied):
+                self.rocketDied(message)
 
     def updateStatus(self, message: CCToRadarNewStatus) -> None:
         objectId, priority = message.new_target_status
@@ -192,6 +195,17 @@ class RadarController:
         missile_coords = message.rocket_coords
         if missile_id in self.allEnvMissiles:
             self.allEnvMissiles[missile_id].updateCoords(missile_coords)
+    
+    def rocketDied(self, message: RocketDied):
+        killRocketId = message.rocketId
+        targetId = message.planeId
+
+        target = self.allTargets[targetId]
+        target.gotMissile = False
+
+        if killRocketId in target.attachedMissiles:
+            self.allEnvMissiles.pop(killRocketId)
+            target.detachMissile(killRocketId)
 
     def sendCurrentTarget(self, radarId: str, targetId: str, sectorSize: float) -> None:
         message = RadarToGUICurrentTarget(Modules.GUI, Priorities.STANDARD, radarId, targetId, sectorSize)

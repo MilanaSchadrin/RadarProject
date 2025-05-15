@@ -73,9 +73,11 @@ class SkyEnv:
         pos_rocket_2d = positionRocket[:2]
         pos_plane_2d = positionPlane[:2]
         distance_2d = np.linalg.norm(pos_rocket_2d - pos_plane_2d)
-        if distance_2d <= rocket.get_radius():
-            print(rocket.get_radius())
-            plane.killed
+        if rocket.get_id() == '700':
+            print(distance_2d,rocket.get_radius(),pos_rocket_2d,pos_plane_2d)
+        if round(distance_2d) <= rocket.get_radius():
+            print(rocket.get_radius(),rocket.get_id())
+            plane.killed()
             rocket.boom()
             print(positionRocket[0],positionRocket[1],positionPlane[0],positionPlane[1],distance_2d,rocket.get_radius())
             print('I made boom')
@@ -179,7 +181,7 @@ class SkyEnv:
                     velocity=miss.velocity,
                     startTime=self.currentTime,
                     radius=miss.damageRadius,
-                    time_step=2,              
+                    time_step=1,              
                     timeSteps=self.timeSteps   )
                 #print(miss.velocity)
                 self.stuff.append(miss.currentCoords)
@@ -199,6 +201,8 @@ class SkyEnv:
                         self.rockets[missile.missileID].boom()
                         message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
                         self.dispatcher.send_message(message)
+                        message = RocketDied(Modules.RadarMain, Priorities.LOWERST, planeId=plane.get_id(),rocketId=missile.missileID)
+                        self.dispatcher.send_message(message)
                         self.to_remove.add(('rocket', missile.missileID))
                         #self.check_if_in_radius(self, self.rockets[missile.missileID].get_currentPos(),self.rockets[missile.missileID].get_radius())
                     if missile.missileID in self.rockets:
@@ -207,6 +211,9 @@ class SkyEnv:
                             self.rockets[missile.missileID].boom()
                             plane = self.pairs[self.rockets[missile.missileID].get_id()]
                             message = RocketDied(Modules.RadarMain, Priorities.LOWERST, planeId=plane.get_id(),rocketId=missile.missileID)
+                            self.dispatcher.send_message(message)
+                            message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
+                            self.dispatcher.send_message(message)
                         else:
                             message = RocketUpdate(Modules.GUI, Priorities.SUPERLOW, missile.missileID,self.rockets[missile.missileID].get_currentPosGUI())
                             self.dispatcher.send_message(message)

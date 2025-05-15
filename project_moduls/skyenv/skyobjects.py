@@ -39,14 +39,10 @@ class SkyObject:
     
     def get_trajectory(self):
         return self.trajectory
-    
-    def update(self):
-        self.currentTime+=1
-        self.currentPos=self.trajectory[self.currentTime]
         
 
 class Plane(SkyObject):
-    def __init__(self, obj_id, start, finish, speed: float = 300, time_step: float = 2, max_steps: int = None, status: bool = True):
+    def __init__(self, obj_id, start, finish, speed: float = 600, time_step: float = 1, max_steps: int = None, status: bool = True):
         self.start = np.array(start) * 1000
         self.finish = np.array(finish) * 1000
         self.speed = speed * 1000 / 3600  # m/s
@@ -99,7 +95,7 @@ class Plane(SkyObject):
                 z = self.finish[2]
 
             self.trajectory[i] = [x, y, z/1000]
-        #print(self.trajectory)
+        print(self.trajectory)
 
     def get_id(self):
         return super().get_id()
@@ -111,7 +107,7 @@ class Plane(SkyObject):
         self.status = False
 
 class Rocket(SkyObject):
-    def __init__(self, obj_id, start, velocity, startTime, radius=20, time_step=5,timeSteps: int =250, status: bool = True):
+    def __init__(self, obj_id, start, velocity, startTime, radius=20, time_step=1,timeSteps: int =250, status: bool = True):
         self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
         self.radius = radius
         self.killed = False

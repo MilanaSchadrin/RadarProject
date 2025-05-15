@@ -10,14 +10,14 @@ class MissileType(Enum):
 
 MISSILE_TYPE_CONFIG = {
      MissileType.TYPE_1: {
-         "speed": 1000, # абсолютная величина скорости
+         "speed": 1200, # абсолютная величина скорости
          "currLifeTime": 6000,
-         "damageRadius": 200
+         "damageRadius": 300
      },
      MissileType.TYPE_2: {
          "speed": 1200,
          "currLifeTime": 6000,
-         "damageRadius": 200
+         "damageRadius": 300
      }
  }
 
