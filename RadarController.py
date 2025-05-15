@@ -198,9 +198,9 @@ class RadarController:
 
     def rocketDied(self, message: RocketDied):
         killRocketId = message.rocketId
-        TargetId = message.planeId
+        targetId = message.planeId
 
-        target = self.allTargets[TargetId]
+        target = self.allTargets[targetId]
         target.gotMissile = False
 
         if killRocketId in target.attachedMissiles:
