@@ -7,6 +7,7 @@ class Priorities(Enum):
     STANDARD = 2
     LOW = 3
     SUPERLOW = 4
+    LOWERST = 4
 
 
 class Modules(Enum):

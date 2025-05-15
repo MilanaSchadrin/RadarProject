@@ -120,7 +120,9 @@ class Rocket(SkyObject):
         self.gravity = -9.8
         self.time_step = time_step
         self.currentPos = np.array(start[:3])
-        self.status = status # True - ракета обработалась в MissileController, False - надо запустить на бал. траекторию
+        self.status = status
+        self.crashed = False 
+        self.killed_by_crash = False 
 
         super().__init__(obj_id, start=start, finish=start, timeSteps=timeSteps, speed=0)
         self.lifePeriod = self.timeSteps - self.startTime
@@ -133,17 +135,24 @@ class Rocket(SkyObject):
             self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
             new_pos = self.currentPos + self.velocity*self.time_step
             #print('was here')
-        else:
+        elif self.status==False and self.currentPos[2]>1000:
             direction = self.velocity.copy()
             x, y, z = self.currentPos
 
             x += direction[0] * self.time_step
             y += direction[1] * self.time_step
-            if z < 1000:
-                z += direction[2] * self.time_step
-            else:
-                z -= direction[2] * self.time_step
-                z = max(0, z)
+            z -= 0.001 * self.time_step
+            new_pos = np.array([x, y, z])
+            if z <= 0:
+                z = 0
+                self.crashed = True
+                self.killed_by_crash = True
+        else:
+            direction = self.velocity.copy()
+            x, y, z = self.currentPos
+            x += direction[0] * self.time_step
+            y += direction[1] * self.time_step
+            z += 0.01 * self.time_step
             new_pos = np.array([x, y, z])
         self.currentPos = new_pos
         self.currentTime += 1

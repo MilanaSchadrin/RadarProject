@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Dict
 from skyenv.skyobjects import SkyObject, Plane, Rocket
-from dispatcher.messages import SEKilled,SEKilledGUI,SEAddRocket,SEAddRocketToRadar,RocketUpdate,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LaunchertoSEMissileLaunched
+from dispatcher.messages import RocketDied,SEKilled,SEKilledGUI,SEAddRocket,SEAddRocketToRadar,RocketUpdate,SEStarting,CCToSkyEnv,ToGuiRocketInactivated,LaunchertoSEMissileLaunched
 from dispatcher.dispatcher import Dispatcher
 from dispatcher.enums import *
 from queue import PriorityQueue
@@ -68,18 +68,16 @@ class SkyEnv:
         planetarjectory = get_plane_trajectory_from_rocket(self.pairs, rocket)
         positionRocket = np.array(rocket.get_currentPos())
         positionPlane = np.array(planetarjectory[self.currentTime-1])* 1000
+        positionRocket = np.round(np.array(rocket.get_currentPos())).astype(int)
+        positionPlane = np.round(np.array(planetarjectory[self.currentTime - 1]) * 1000).astype(int)
         pos_rocket_2d = positionRocket[:2]
         pos_plane_2d = positionPlane[:2]
-        #print(positionPlane, positionRocket)
-        distance = np.linalg.norm(positionPlane-positionRocket)
-        dx = positionRocket[0] - positionPlane[0]
-        dy = positionRocket[1] - positionPlane[1]
-
-        if abs(dx)  <= rocket.get_radius() or abs(dy)  <= rocket.get_radius():
+        distance_2d = np.linalg.norm(pos_rocket_2d - pos_plane_2d)
+        if distance_2d <= rocket.get_radius():
             print(rocket.get_radius())
             plane.killed
             rocket.boom()
-            print(positionRocket[0],positionRocket[1],positionPlane[0],positionPlane[1])
+            print(positionRocket[0],positionRocket[1],positionPlane[0],positionPlane[1],distance_2d,rocket.get_radius())
             print('I made boom')
             print(self.currentTime)
             collateralDamage = self.check_if_in_radius(positionRocket, rocket.get_radius())
@@ -197,8 +195,6 @@ class SkyEnv:
                             self.rockets[missile.missileID].status = False
                         else:
                             self.rockets[missile.missileID].status = True
-
-
                     if missile.currLifeTime <=0 and missile.missileID in self.rockets: 
                         self.rockets[missile.missileID].boom()
                         message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
@@ -207,11 +203,15 @@ class SkyEnv:
                         #self.check_if_in_radius(self, self.rockets[missile.missileID].get_currentPos(),self.rockets[missile.missileID].get_radius())
                     if missile.missileID in self.rockets:
                         self.rockets[missile.missileID].rocket_step(missile.velocity)
-                        message = RocketUpdate(Modules.GUI, Priorities.SUPERLOW, missile.missileID,self.rockets[missile.missileID].get_currentPosGUI())
-                        self.stuff.append(self.rockets[missile.missileID].get_currentPos())
-                        self.dispatcher.send_message(message)
-                        message = RocketUpdate(Modules.RadarMain, Priorities.LOW, missile.missileID,self.rockets[missile.missileID].get_currentPos())
-                        self.dispatcher.send_message(message)
+                        if self.rockets[missile.missileID].killed_by_crash:
+                            self.rockets[missile.missileID].boom()
+                            plane = self.pairs[self.rockets[missile.missileID].get_id()]
+                            message = RocketDied(Modules.RadarMain, Priorities.LOWERST, planeId=plane.get_id(),rocketId=missile.missileID)
+                        else:
+                            message = RocketUpdate(Modules.GUI, Priorities.SUPERLOW, missile.missileID,self.rockets[missile.missileID].get_currentPosGUI())
+                            self.dispatcher.send_message(message)
+                            message = RocketUpdate(Modules.RadarMain, Priorities.LOW, missile.missileID,self.rockets[missile.missileID].get_currentPos())
+                            self.dispatcher.send_message(message)
         for rocket_id, rocket in list(self.rockets.items()):
             self.check_collision(rocket)
         for rocket_id, rocket in list(self.rockets.items()):

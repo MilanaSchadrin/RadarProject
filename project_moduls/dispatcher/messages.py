@@ -93,3 +93,8 @@ class RocketUpdate(Message):
 class TargetUnfollowedGUI(Message): 
     radarId:str
     targetId:str
+
+@dataclass
+class RocketDied(Message): 
+     planeId: int
+     rocketId: int
