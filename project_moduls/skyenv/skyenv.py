@@ -199,7 +199,7 @@ class SkyEnv:
                             self.rockets[missile.missileID].status = True
                     if missile.currLifeTime <=0 and missile.missileID in self.rockets: 
                         self.rockets[missile.missileID].boom()
-                        message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
+                        message = ToGuiRocketInactivated(Modules.GUI, Priorities.LOWERST, missile.missileID)
                         self.dispatcher.send_message(message)
                         message = RocketDied(Modules.RadarMain, Priorities.LOWERST, planeId=plane.get_id(),rocketId=missile.missileID)
                         self.dispatcher.send_message(message)
@@ -212,7 +212,7 @@ class SkyEnv:
                             plane = self.pairs[self.rockets[missile.missileID].get_id()]
                             message = RocketDied(Modules.RadarMain, Priorities.LOWERST, planeId=plane.get_id(),rocketId=missile.missileID)
                             self.dispatcher.send_message(message)
-                            message = ToGuiRocketInactivated(Modules.GUI, Priorities.SUPERLOW, missile.missileID)
+                            message = ToGuiRocketInactivated(Modules.GUI, Priorities.LOWERST, missile.missileID)
                             self.dispatcher.send_message(message)
                         else:
                             message = RocketUpdate(Modules.GUI, Priorities.SUPERLOW, missile.missileID,self.rockets[missile.missileID].get_currentPosGUI())

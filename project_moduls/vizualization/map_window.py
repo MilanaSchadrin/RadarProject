@@ -4,7 +4,7 @@ import numpy as np
 from typing import List, Tuple
 from typing import Dict
 from PyQt5.QtWidgets import QMainWindow,QGraphicsObject, QWidget, QHBoxLayout, QTextEdit, QLabel,QGraphicsPixmapItem, QFrame, QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsLineItem
-from PyQt5.QtCore import Qt, QTimer, QPoint, QRectF, QPointF
+from PyQt5.QtCore import Qt, QTimer, QPoint, QRectF, QPointF,QLineF
 from PyQt5.QtGui import QPainter, QColor, QPixmap, QBrush, QColor, QPen, QConicalGradient
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QTransform, QFont
@@ -406,17 +406,19 @@ class MapView(QGraphicsView):
                     target_id= int(target_id)
                     if target_id in self.trails and self.trails[target_id]:
                         #print("TARGET", target_id)
-                        target_point = self.trails[target_id][-1]
-                        target_viewport_point = self.mapFromScene(target_point)
+                        target_point_scene = self.trails[target_id][-1]
                         radar_center_scene = radar_data['icon'].scenePos()
+                        scene_distance = QLineF(radar_center_scene, target_point_scene).length()
+                        if scene_distance > radar_data['radius']:
+                             continue
+                        target_viewport_point = self.mapFromScene(target_point_scene)
                         radar_center_viewport = self.mapFromScene(radar_center_scene)
+
                         dx = target_viewport_point.x() - radar_center_viewport.x()
                         dy = radar_center_viewport.y() - target_viewport_point.y()
                         azimuth = np.degrees(np.arctan2(dy, dx)) % 360
                         distance = np.sqrt(dx*dx + dy*dy)
                         self.tracked_targets[radar_id][target_id] = {'azimuth': azimuth, 'distance': distance}
-                        if distance > radar_data['radius']:
-                            continue
                         ray_length = distance * 0.9
                         end_x = radar_center_viewport.x() + ray_length * np.cos(np.radians(azimuth))
                         end_y = radar_center_viewport.y() - ray_length * np.sin(np.radians(azimuth))
@@ -458,45 +460,20 @@ class MapView(QGraphicsView):
 
     def handle_target_untracking(self, radar_id, target_id):
         for r_id in [radar_id, str(radar_id), int(radar_id) if str(radar_id).isdigit() else None]:
-               if r_id is None:
-                   continue
-               if r_id in self.tracked_targets:
-                   # Аналогично проверяем target_id
-                   for t_id in [target_id, str(target_id), int(target_id) if str(target_id).isdigit() else None]:
-                       if t_id is None:
-                           continue
-                       if t_id in self.tracked_targets[r_id]:
-                           del self.tracked_targets[r_id][t_id]
-                           # Удаляем радар, если у него не осталось целей
-                           if not self.tracked_targets[r_id]:
-                               del self.tracked_targets[r_id]
-                           print(f"Удалена цель {target_id} из радара {radar_id}")
-                           return
-        #print(f"Цель {target_id} не найдена в радаре {radar_id}")
-        '''
-        print("HANDLE",self.tracked_targets)
+                if r_id is None:
+                    continue
+                if r_id in self.tracked_targets:
 
-        print("Содержимое tracked_targets с типами:")
-        for radar_id, targets_dict in self.tracked_targets.items():
-               print(f"• Радар ID: {radar_id} (тип: {type(radar_id)})")
-               for target_id, target_data in targets_dict.items():
-                   print(f"  ∟ Цель ID: {target_id} (тип: {type(target_id)})")
-                   print(f"    Данные: {target_data} (тип данных: {type(target_data)})")
-                   if isinstance(target_data, dict):
-                       for k, v in target_data.items():
-                           print(f"      {k}: {v} (тип: {type(v)})")
+                    for t_id in [target_id, str(target_id), int(target_id) if str(target_id).isdigit() else None]:
+                        if t_id is None:
+                            continue
+                        if t_id in self.tracked_targets[r_id]:
+                            del self.tracked_targets[r_id][t_id]
+                            if not self.tracked_targets[r_id]:
+                                del self.tracked_targets[r_id]
+                            #print(f"Удалена цель {target_id} из радара {radar_id}")
+                            return
 
-        if str(radar_id) or radar_id  in self.tracked_targets:
-               if target_id or str(target_id) in self.tracked_targets[radar_id]:
-                   print("IF")
-
-                   del self.tracked_targets[radar_id][target_id]
-                   if not self.tracked_targets[radar_id]:
-                       del self.tracked_targets[radar_id]
-
-               #self.update()
-         '''
-        #print("END HANDLER",self.tracked_targets)
 
 
     def handle_target_destruction(self, explosion_data):

@@ -2,12 +2,12 @@ from enum import Enum
 
 
 class Priorities(Enum):
-    SUPERHIGH = 0
-    HIGH = 1
-    STANDARD = 2
-    LOW = 3
-    SUPERLOW = 4
-    LOWERST = 4
+    SUPERHIGH = 5
+    HIGH = 4
+    STANDARD = 3
+    LOW = 2
+    SUPERLOW = 1
+    LOWERST = 0
 
 
 class Modules(Enum):
