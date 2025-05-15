@@ -82,7 +82,6 @@ class RadarController:
     def update(self, step: int) -> None:
         """Обновляет состояние всех радаров, текущие координаты всех целей и ракет."""
 
-        # 1. удаляем все объекты destroyed что были на предыдущей итерации
         destroyed_targets = [
         target_id 
         for target_id, target in self.allTargets.items()
@@ -106,9 +105,8 @@ class RadarController:
         self.processMessage() 
 
         temp_targets = list(self.allEnvTargets.keys())
-        allDetectedMissiles = {}
 
-        # 3. Обработка всех отслеживаемых целей(сюда попадают только цели со статусом FOLLOWED )
+        # 3. Обработка всех отслеживаемых целей(сюда попадают только цели, которые отслеживаются)
 
         followedTargetsNow = []
 
@@ -121,63 +119,56 @@ class RadarController:
                     target = self.allTargets[target_id]
 
                     if self.allEnvTargets[target_id].isFollowed == False:
-                        self.sendCurrentTarget(radar.radarId, target_id, radar.maxRange//1000)
+                        self.sendCurrentTarget(radar.radarId, target_id, radar.maxRange)
                         self.allEnvTargets[target_id].isFollowed = True
                     target.currentCoords = self.getAbsoluteCoords(radar, followedTargets[target_id][0])
-                    #print(target.currentCoords)
                     target.currentSpeedVector = followedTargets[target_id][1]
  
                     temp_targets.remove(target_id)
 
                     followedTargetsNow += list(radar.followedTargets.keys())
 
-                    allDetectedMissiles.update(detectedMissile)
-
-            for targetId in temp_targets:
-                if self.allEnvTargets[targetId].isFollowed == True:
-                    self.allEnvTargets[targetId].isFollowed = False
-                    #print('I was in here, so no ray')
-                    self.sendUnfollowedGUI(radar.radarId, targetId)
-
-            # 4. Обработка всех замеченных целей (здесьь не должнл быть DESTROYED)
+        for targetId in temp_targets:
+            if self.allEnvTargets[targetId].isFollowed == True:
+                self.allEnvTargets[targetId].isFollowed = False
+                self.sendUnfollowedGUI(radar.radarId, target_id)
+                
+        # 4. Обработка всех замеченных целей (здесь не должнл быть DESTROYED)
   
-            for radar in self.radars.values():
-                _, detectedTargets, _ = radar.scan(step, _)
+        for radar in self.radars.values():
+            _, detectedTargets, _ = radar.scan(step, _)
 
-                for target_id in detectedTargets:
+            for target_id in detectedTargets:
 
-                    if target_id in temp_targets:
+                if target_id in temp_targets:
 
-                        self.allEnvTargets[target_id].isFollowed = False
+                    self.allEnvTargets[target_id].isFollowed = False
 
-                        target = self.allTargets[target_id]
-                        target.status = TargetStatus.DETECTED
-                        
-                        target.currentCoords = self.getAbsoluteCoords(radar, detectedTargets[target_id][0])
-                        target.currentSpeedVector = detectedTargets[target_id][1]
-                        temp_targets.remove(target_id)
+                    target = self.allTargets[target_id]
+                    target.status = TargetStatus.DETECTED
+                    
+                    target.currentCoords = self.getAbsoluteCoords(radar, detectedTargets[target_id][0])
+                    target.currentSpeedVector = detectedTargets[target_id][1]
+                    temp_targets.remove(target_id)
 
-            # 5. Обработка всех ракет(сначала делаем все ракеты isDetected = False, а потом меняем на True для всех замеченных ракет)
-            for target in list(self.allTargets.values()):
-                if len(target.attachedMissiles) > 0:
-                    missile_id = next(iter(target.attachedMissiles))  # Получаем ключ
-                    missile = target.attachedMissiles[missile_id]
-                    missile.isDetected = False
-                    missile.currentCoords = (0, 0, 0)  
-            
-            for radar in self.radars.values():
-                _, _, detectedMissiles = radar.scan(step, _)           
+        # 5. Обработка всех ракет(сначала делаем все ракеты isDetected = False, а потом меняем на True для всех замеченных ракет)
+        for target in list(self.allTargets.values()):
+            if len(target.attachedMissiles) > 0:
+                missile_id = next(iter(target.attachedMissiles))  # Получаем ключ
+                missile = target.attachedMissiles[missile_id]
+                missile.isDetected = False
+                missile.currentCoords = (0, 0, 0)  
+        
+        for radar in self.radars.values():
+            _, _, detectedMissiles = radar.scan(step, _)           
 
-            for missileId in list(detectedMissiles.keys()):
-                targetId = self.allEnvMissiles[missileId].targetId
-                target = self.allTargets[targetId]
-                missile = target.attachedMissiles[missileId]
-                if missile.isDetected == False:
-                    missile.isDetected = True
-                    if str(missileId) in detectedMissile:
-                        missile.currentCoords = self.getAbsoluteCoords(radar, detectedMissile[str(missileId)])
-                    else:
-                        missile.currentCoords = (0, 0, 0)
+        for missileId in list(detectedMissiles.keys()):
+            targetId = self.allEnvMissiles[missileId].targetId
+            target = self.allTargets[targetId]
+            missile = target.attachedMissiles[missileId]
+            if missile.isDetected == False:
+                missile.isDetected = True
+                missile.currentCoords = self.getAbsoluteCoords(radar, detectedMissile[missileId])
                 
         # Обработка всех оставшихся целей, которые не попали в область видимсоти ни одного из радаров
 
