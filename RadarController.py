@@ -210,7 +210,9 @@ class RadarController:
             
             if prev_status.get('status') in [TargetStatus.FOLLOWED, TargetStatus.DETECTED]:
                 target.status = TargetStatus.UNDETECTED
-                target.currentCoords = (0, 0, 0)
+                # target.currentCoords = (0, 0, 0) - теперь координаты не зануляются
+                # ставим координаты, которые получили от SkyEnv на данном шаге
+                target.currentCoords = self.allEnvTargets[target_id].getCurrentCoords(step)
                 if env_target.isFollowed:
                     env_target.isFollowed = False
                     any_radar = next(iter(self.radars.values()))
