@@ -93,8 +93,8 @@ class Plane(SkyObject):
 
             self.trajectory[i] = [x, y, z/1000]
         self.trajectory[np.isnan(self.trajectory)] = -100000
-        print(len(self.trajectory))
-        print(self.trajectory)
+        #print(len(self.trajectory))
+        #print(self.trajectory)
 
     def get_id(self):
         return super().get_id()

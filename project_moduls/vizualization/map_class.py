@@ -608,10 +608,17 @@ class MapWindow(QMainWindow):
                         if rocket_id in self.rockets:
                                self.rockets[rocket_id]['icon'].hide()
                                self.rockets[rocket_id]['inactive'] = True
+                               pos = self.rockets[rocket_id]['pos']
+                               circle = QGraphicsEllipseItem(-10, -10, 20, 20)
+                               circle.setPos(pos.x(), pos.y())
+                               circle.setBrush(QBrush(QColor(173, 216, 230)))
+                               circle.setPen(QPen(Qt.NoPen))
+                               self.scene.addItem(circle)
+                                       #self.rockets[rocket_id]['inactive_circle'] = circle
 
 
            except Exception as e:
-                print(f"Ошибка при обработке сообщения: {e}")
+                print(0)
 
 
     def visualize_explosion(self, rocket_id: int, rocket_coords: np.ndarray, plane_id: int, plane_coords: np.ndarray, collateral_damage: List[Tuple[int, np.ndarray]], collision_step: int):

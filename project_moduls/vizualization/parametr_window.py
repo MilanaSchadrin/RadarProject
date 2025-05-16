@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QIntValidator
+import re
+from PyQt5.QtWidgets import QApplication, QWidget, QGroupBox, QLabel, QTextEdit, QLineEdit, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout,QMessageBox
+from PyQt5.QtCore import QTimer, QRegExp
+from PyQt5.QtGui import QIntValidator,QRegExpValidator
 
 class ParametersWindow(QWidget):
     def __init__(self, module_name, on_save_callback, main_wind):
@@ -74,22 +75,35 @@ class ParametersWindow(QWidget):
             group_layout.addWidget(pos_input)
             targets_label = QLabel("Макс. количество целей:")
             targets_input = QLineEdit("")
-            targets_input.setValidator(QIntValidator(1, 100))
+            targets_input.setValidator(QIntValidator(1, 20))
             group_layout.addWidget(targets_label)
             group_layout.addWidget(targets_input)
-            angle_label = QLabel("Угол обзора (°):")
-            angle_input = QLineEdit("")
-            angle_input.setValidator(QIntValidator(1, 360))
-            group_layout.addWidget(angle_label)
-            group_layout.addWidget(angle_input)
             range_label = QLabel("Дальность (км):")
             range_input = QLineEdit("")
-            range_input.setValidator(QIntValidator(1, 1000))
+            range_input.setValidator(QIntValidator(50, 800))
             group_layout.addWidget(range_label)
             group_layout.addWidget(range_input)
             group_box.setLayout(group_layout)
             self.radar_container.addWidget(group_box)
-            self.radar_fields.append({ 'position': pos_input, 'max_targets': targets_input, 'angle': angle_input,'range': range_input})
+            self.radar_fields.append({ 'position': pos_input, 'max_targets': targets_input,'range': range_input})
+    
+    def validate_radar_data(self):
+        errors = []
+        coord_regexp = re.compile(r'^-?\d+,-?\d+,-?\d+$')
+        for idx, fields in enumerate(self.radar_fields, start=1):
+            pos_text = fields['position'].text()
+            if not coord_regexp.fullmatch(pos_text):
+                    errors.append(f"Радиолокатор {idx}: Некорректные координаты - ожидается формат x,y,z")
+            for key, label, min_val, max_val in [('max_targets', "Макс. количество целей", 1, 10),
+            ('range', "Дальность", 50, 700),]:
+                  value_text = fields[key].text()
+                  if not value_text.isdigit() or not (min_val <= int(value_text) <= max_val):
+                        errors.append(f"Радиолокатор {idx}: некорректное значение для \"{label}\" (допустимо {min_val}-{max_val})")
+        if errors:
+              QMessageBox.warning(self, "Ошибка ввода параметров", "\n".join(errors))
+              return False
+        return True
+    
     def create_vo_data(self):
         for i in reversed(range(self.vo_container.count())):
             self.vo_container.itemAt(i).widget().setParent(None)
@@ -109,6 +123,22 @@ class ParametersWindow(QWidget):
             group_box.setLayout(group_layout)
             self.vo_container.addWidget(group_box)
             self.vo_fields.append({ 'start': start_input, 'end': end_input,})
+    
+    def validate_vo_data(self):
+          errors = []
+          coord_regexp = re.compile(r'^-?\d+,-?\d+,-?\d+$')
+          for idx, fields in enumerate(self.vo_fields, start=1):
+                start_text = fields['start'].text()
+                end_text = fields['end'].text()
+                if not coord_regexp.fullmatch(start_text):
+                      errors.append(f"Самолет {idx}: Некорректная стартовая позиция - ожидается формат x,y,z")
+                if not coord_regexp.fullmatch(end_text):
+                      errors.append(f"Самолет {idx}: Некорректная конечная позиция - ожидается формат x,y,z")
+          if errors:
+                QMessageBox.warning(self, "Ошибка ввода параметров ВО", "\n".join(errors))
+                return False
+          return True
+    
     def create_launcher_data(self):
                     for i in reversed(range(self.launcher_container.count())):
                         widget = self.launcher_container.itemAt(i).widget()
@@ -128,30 +158,38 @@ class ParametersWindow(QWidget):
 
                         group_layout.addWidget(QLabel("Количество ракет:"))
                         count_input = QLineEdit("")
-                        count_input.setValidator(QIntValidator(1, 100))
+                        count_input.setValidator(QIntValidator(0, 20))
                         group_layout.addWidget(count_input)
-
-                        group_layout.addWidget(QLabel("Дальность действия (км):"))
-                        range_input = QLineEdit("")
-                        range_input.setValidator(QIntValidator(1, 1000))
-                        group_layout.addWidget(range_input)
-
-                        group_layout.addWidget(QLabel("Скорость (м/с):"))
-                        velocity_input = QLineEdit("1000")
-                        velocity_input.setValidator(QIntValidator(100, 5000))
-                        group_layout.addWidget(velocity_input)
 
                         group_box.setLayout(group_layout)
                         self.launcher_container.addWidget(group_box)
                         self.launcher_fields.append({
                             'position': pos_input,
                             'missile_count': count_input,
-                            'range': range_input,
-                            'velocity': velocity_input
                         })
+
+    def validate_launcher_data(self):
+          errors = []
+          coord_regexp = re.compile(r'^-?\d+,-?\d+,-?\d+$')
+          for idx, fields in enumerate(self.launcher_fields, start=1):
+                pos_text = fields['position'].text()
+                if not coord_regexp.fullmatch(pos_text):
+                      errors.append(f"ПУ {idx}: Некорректные координаты (ожидается формат x,y,z)")
+                for key, label, min_val, max_val in [
+                      ('missile_count', "Количество ракет", 0, 50)]:
+                      value_text = fields[key].text()
+                      if not value_text.isdigit() or not (min_val <= int(value_text) <= max_val):
+                            errors.append(f"ПУ {idx}: Некорректное значение для \"{label}\" (допустимо {min_val}-{max_val})")
+          if errors:
+                QMessageBox.warning(self, "Ошибка ввода параметров для ПУ", "\n".join(errors))
+                return False
+          return True
+    
     def save_parameters(self):
         params = {}
         if self.module_name == 'ВО':
+            if not self.validate_vo_data():
+                  return
             count = int(self.module_count.text()) if self.module_count.text() else 0
             params_dict = {'count': count,'elements': []}
             for i, fields in enumerate(self.vo_fields, 1):
@@ -159,6 +197,8 @@ class ParametersWindow(QWidget):
                 params_dict['elements'].append(element)
             params = params_dict
         if self.module_name == 'Радиолокатор':
+                    if not self.validate_radar_data():
+                          return
                     count = int(self.module_count.text()) if self.module_count.text() else 1
                     params_dict = {'count': count, 'radars': []}
 
@@ -166,23 +206,21 @@ class ParametersWindow(QWidget):
                         radar_params = {
                             'position': tuple(map(float, fields['position'].text().split(','))),
                             'max_targets': int(fields['max_targets'].text()),
-                            'angle': float(fields['angle'].text()),
                             'range': float(fields['range'].text())
                         }
                         params_dict['radars'].append(radar_params)
 
                     params = params_dict
         elif self.module_name == 'ПУ':
-
+                                if not self.validate_launcher_data():
+                                      return
                                 count = int(self.module_count.text()) if self.module_count.text() else 1
                                 params_dict = {'count': count, 'launchers': []}
 
                                 for fields in self.launcher_fields:
                                     launcher_params = {
                                         'position': tuple(map(float, fields['position'].text().split(','))),
-                                        'missile_count': int(fields['missile_count'].text()),
-                                        'range': int(fields['range'].text()),
-                                        'velocity': int(fields['velocity'].text())
+                                        'missile_count': int(fields['missile_count'].text())
                                     }
                                     params_dict['launchers'].append(launcher_params)
 

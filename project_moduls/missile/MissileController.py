@@ -162,8 +162,8 @@ class MissileController:
     def _collision(self, mainObject, other_object):
         """Проверяет наличие object1 в радиусе mainObject."""
         distance = np.linalg.norm( np.array(mainObject.currentCoords) - np.array(other_object.currentCoords))
-        print("distance: ", distance)
-        print("damageRadius: ", mainObject.damageRadius)
+        #print("distance: ", distance)
+        #print("damageRadius: ", mainObject.damageRadius)
         return distance < mainObject.damageRadius
 
 
