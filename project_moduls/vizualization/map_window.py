@@ -66,6 +66,7 @@ class MapView(QGraphicsView):
         super().__init__()
         #сцена
         self.scene = QGraphicsScene()
+        self.scene.setSceneRect(-10000, -10000, 20000, 20000)
         self.setScene(self.scene)
         self.setRenderHint(QPainter.Antialiasing)
         self.setDragMode(QGraphicsView.ScrollHandDrag)
@@ -144,7 +145,9 @@ class MapView(QGraphicsView):
         radar_item.setTransformationMode(Qt.SmoothTransformation)
         radar_item.setZValue(10)
         radar_item.setToolTip(f"ID: {radar_id}\n"
-                               f"Дальность: {radius} км \n")
+                               f"Дальность: {radius} км \n"
+                               f"Позиция: {x, y,0} км \n"
+                               )
         self.scene.addItem(radar_item)
         self.radar[radar_id] = {
                         'item': radar_item,
@@ -163,6 +166,8 @@ class MapView(QGraphicsView):
                 pu_item = QGraphicsPixmapItem(pu_pixmap)
                 pu_item.setPos(x - pu_pixmap.width()/2, y - pu_pixmap.height()/2)
                 pu_item.setZValue(10)
+                pu_item.setToolTip(f"ID: {launcher_id}\n"
+                               f"Позиция: {x, y,0} км \n")
                 self.scene.addItem(pu_item)
                 self.pu_image.append(pu_item)
 
@@ -175,6 +180,8 @@ class MapView(QGraphicsView):
                 self.cc_icon = QGraphicsPixmapItem(cc_pixmap)
                 self.cc_icon.setPos(x - cc_pixmap.width()/2, y - cc_pixmap.height()/2)
                 self.cc_icon.setZValue(10)
+                self.cc_icon.setToolTip(f"ПБУ",
+                               f"Позиция: {x, y,0} км \n")
                 self.scene.addItem(self.cc_icon)
     def set_simulation_data(self, simulation_data):
         self.simulation_data = simulation_data
@@ -290,13 +297,15 @@ class MapView(QGraphicsView):
                                point = self.mapFromScene(QPointF(x, 0))
                                sx = point.x()
                                if 0 <= sx <= self.width():
-                                   painter.drawText(sx + 2, oy - 5, f"{x}")
+                                   painter.drawText(sx + 2, oy - 5, f"{x} км")
+                                   #painter.drawText(sx + 2, oy - 5, f"{x}")
 
                            for y in range(start_y, bottom, self.grid_step):
                                point = self.mapFromScene(QPointF(0, y))
                                sy = point.y()
                                if 0 <= sy <= self.height():
-                                   painter.drawText(ox + 5, sy - 2, f"{y}")
+                                   #painter.drawText(ox + 5, sy - 2, f"{y}")
+                                   painter.drawText(ox + 5, sy - 2, f"{y} км")
                            painter.restore()
     '''
     def update_radar_targets(self, targets):
