@@ -525,8 +525,8 @@ class MapWindow(QMainWindow):
                     #print('self.current_step', self.current_step)
                     #print('radar_id', radar_id)
                     #print('target_id', target_id)
-                    #if radar_id not in self.tracked_targets:
-                    #    self.tracked_targets[radar_id] = {}
+                    if radar_id not in self.tracked_targets:
+                        self.tracked_targets[radar_id] = {}
                     self.map_view.handle_target_detection(int(radar_id), target_id, msg['data'].sector_size)
                     self.text_output.append(f"Радар {radar_id} отслеживает цель {target_id}")
                     if target_id not in self.tracked_targets[radar_id]:

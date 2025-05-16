@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional
 from radar.Target import TargetStatus, Target
 from radar.Radar import Radar
 from dispatcher.dispatcher import Dispatcher
@@ -22,6 +22,8 @@ class TargetEnv:
         self.clearCoords: List[Tuple[float, float, float]] = clearCoords
         self.isFollowed = False
         self.priority: int = 1000000
+        self.lastDetectedBy: Optional[str] = None
+        self.lastKnownCoords: Tuple[float, float, float] = (0, 0, 0)
 
     def getCurrentCoords(self, step: int) -> Tuple[float, float, float]:
         return self.clearCoords[step-1]
@@ -32,7 +34,6 @@ class TargetEnv:
             self.clearCoords[step][1] - self.clearCoords[step-1][1],
             self.clearCoords[step][2] - self.clearCoords[step-1][2],
         )
-
 
 class MissileEnv:
     def __init__(self, missileId: str, targetId: str, currentCoords: Tuple[float, float, float]) -> None:
@@ -45,7 +46,6 @@ class MissileEnv:
 
     def updateCoords(self, missile_coords):
         self.currentCoords = missile_coords
-
 
 class RadarController:
     def __init__(self, dispatcher) -> None:
@@ -66,6 +66,7 @@ class RadarController:
         )
 
     def update(self, step: int) -> None:
+        # Удаление уничтоженных целей
         destroyed_targets = [
             target_id for target_id, target in self.allTargets.items()
             if target.status == TargetStatus.DESTROYED
@@ -80,67 +81,138 @@ class RadarController:
             self.allTargets.pop(target_id, None)
 
         self.processMessage()
+        
+        # Сохраняем предыдущее состояние всех целей
+        previous_status = {}
+        for target_id, target in self.allTargets.items():
+            env_target = self.allEnvTargets.get(target_id)
+            if env_target:
+                previous_status[target_id] = {
+                    'status': target.status,
+                    'radar_id': env_target.lastDetectedBy,
+                    'is_followed': env_target.isFollowed,
+                    'coords': env_target.lastKnownCoords
+                }
+
         temp_targets = list(self.allEnvTargets.keys())
-        followedTargetsNow = []
+        followed_targets_now = []
+        newly_detected = set()
 
+        radar_follow_counts = {radar.radarId: 0 for radar in self.radars.values()}
+        alreadySent = set()
+
+        # Обработка сопровождаемых целей
         for radar in self.radars.values():
-            followedTargets, _, _ = radar.scan(step, followedTargetsNow)
-            for target_id in list(followedTargets.keys()):
-                if target_id in temp_targets:
-                    target = self.allTargets[target_id]
-                    if not self.allEnvTargets[target_id].isFollowed:
+            followedTargets, _, _ = radar.scan(step, followed_targets_now)
+            
+            for target_id, (local_coords, speed_vec, priority) in followedTargets.items():
+                if target_id not in temp_targets:
+                    continue
+                if radar_follow_counts[radar.radarId] >= radar.maxFollowedCount:
+                    continue
+                target = self.allTargets[target_id]
+                env_target = self.allEnvTargets[target_id]
+                prev_status = previous_status.get(target_id, {})
+                
+                # Обновляем информацию о цели
+                abs_coords = self.getAbsoluteCoords(radar, local_coords)
+                env_target.lastKnownCoords = abs_coords
+                env_target.lastDetectedBy = radar.radarId
+                env_target.isFollowed = True
+                env_target.priority = priority
+                
+                target.currentCoords = abs_coords
+                target.currentSpeedVector = speed_vec
+                target.status = TargetStatus.FOLLOWED
+                target.priority = priority
+                
+                # Проверяем, была ли цель обнаружена другим радаром
+                if (radar.radarId, target_id) not in alreadySent:
+                    self.sendCurrentTarget(radar.radarId, target_id, radar.maxRange)
+                    alreadySent.add((radar.radarId, target_id))
+                
+                radar_follow_counts[radar.radarId] += 1
+                temp_targets.remove(target_id)
+                followed_targets_now.append(target_id)
+                newly_detected.add(target_id)
+
+        # Обработка обнаруженных (но не сопровождаемых) целей
+        for radar in self.radars.values():
+            _, detectedTargets, _ = radar.scan(step, followed_targets_now)
+            
+            for target_id, (local_coords, speed_vec) in detectedTargets.items():
+                if target_id not in temp_targets:
+                    continue
+
+                if radar_follow_counts[radar.radarId] >= radar.maxFollowedCount:
+                    continue
+                    
+                target = self.allTargets[target_id]
+                env_target = self.allEnvTargets[target_id]
+                prev_status = previous_status.get(target_id, {})
+                
+                # Обновляем информацию о цели
+                abs_coords = self.getAbsoluteCoords(radar, local_coords)
+                env_target.lastKnownCoords = abs_coords
+                env_target.lastDetectedBy = radar.radarId
+                env_target.isFollowed = False
+                
+                target.currentCoords = abs_coords
+                target.currentSpeedVector = speed_vec
+                target.status = TargetStatus.DETECTED
+                
+                # Если цель перешла от другого радара
+                if not prev_status.get('is_followed', False) and env_target.priority < 500:
+                    if (radar.radarId, target_id) not in alreadySent:
+                        print(f"[AUTO-FOLLOW] Цель {target_id} подхвачена радаром {radar.radarId}")
                         self.sendCurrentTarget(radar.radarId, target_id, radar.maxRange)
-                        self.allEnvTargets[target_id].isFollowed = True
-                    target.currentCoords = self.getAbsoluteCoords(radar, followedTargets[target_id][0])
-                    target.currentSpeedVector = followedTargets[target_id][1]
-                    temp_targets.remove(target_id)
-                    followedTargetsNow += list(radar.followedTargets.keys())
+                        alreadySent.add((radar.radarId, target_id))
+                        env_target.isFollowed = True
+                        target.status = TargetStatus.FOLLOWED
+                        radar_follow_counts[radar.radarId] += 1
+                        followed_targets_now.append(target_id)
+                
+                temp_targets.remove(target_id)
+                newly_detected.add(target_id)
 
-        for targetId in temp_targets:
-            if self.allEnvTargets[targetId].isFollowed:
-                self.allEnvTargets[targetId].isFollowed = False
-                self.sendUnfollowedGUI(radar.radarId, targetId)
-
-        for radar in self.radars.values():
-            _, detectedTargets, _ = radar.scan(step, [])
-            for target_id in detectedTargets:
-                if target_id in temp_targets:
-                    self.allEnvTargets[target_id].isFollowed = False
-                    target = self.allTargets[target_id]
-                    target.status = TargetStatus.DETECTED
-                    target.currentCoords = self.getAbsoluteCoords(radar, detectedTargets[target_id][0])
-                    target.currentSpeedVector = detectedTargets[target_id][1]
-                    temp_targets.remove(target_id)
-
-        for target in list(self.allTargets.values()):
-            for missile_id in target.attachedMissiles:
-                missile = target.attachedMissiles[missile_id]
+        # Обработка ракет
+        for target in self.allTargets.values():
+            for missile in target.attachedMissiles.values():
                 missile.isDetected = False
                 missile.currentCoords = (0, 0, 0)
 
         all_detected_missiles = {}
-
         for radar in self.radars.values():
-            _, _, detectedMissiles = radar.scan(step, [])
-            for missile_id, coords in detectedMissiles.items():
+            _, _, detected_missiles = radar.scan(step, [])
+            for missile_id, coords in detected_missiles.items():
                 all_detected_missiles[missile_id] = (radar, coords)
 
-        for missileId, (radar, coords) in all_detected_missiles.items():
-            targetId = self.allEnvMissiles[missileId].targetId
-            target = self.allTargets[targetId]
-            missile = target.attachedMissiles[missileId]
-            if not missile.isDetected:
-                missile.isDetected = True
-                missile.currentCoords = self.getAbsoluteCoords(radar, coords)
+        for missile_id, (radar, coords) in all_detected_missiles.items():
+            if missile_id in self.allEnvMissiles:
+                target_id = self.allEnvMissiles[missile_id].targetId
+                if target_id in self.allTargets:
+                    missile = self.allTargets[target_id].attachedMissiles.get(missile_id)
+                    if missile:
+                        missile.isDetected = True
+                        missile.currentCoords = self.getAbsoluteCoords(radar, coords)
 
-        for targetId in temp_targets:
-            target = self.allTargets[targetId]
-            if target.status != TargetStatus.DESTROYED:
+        # Обработка целей, которые больше не обнаруживаются
+        for target_id in temp_targets:
+            target = self.allTargets[target_id]
+            env_target = self.allEnvTargets[target_id]
+            prev_status = previous_status.get(target_id, {})
+            
+            if prev_status.get('status') in [TargetStatus.FOLLOWED, TargetStatus.DETECTED]:
                 target.status = TargetStatus.UNDETECTED
                 target.currentCoords = (0, 0, 0)
+                if env_target.isFollowed:
+                    env_target.isFollowed = False
+                    any_radar = next(iter(self.radars.values()))
+                    self.sendUnfollowedGUI(any_radar.radarId, target_id)
 
         self.sendAllObjects()
 
+    # Остальные методы остаются без изменений
     def addDetectedTarget(self, target: Target) -> None:
         self.allTargets[target.targetId] = target
 
