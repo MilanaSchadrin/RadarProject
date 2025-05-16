@@ -281,65 +281,88 @@ class ParametersWindow(QWidget):
           return True
             
     def save_parameters(self):
-        if self.module_name == 'Радиолокатор':
-            if not self.validate_radar_data():
+          if self.module_name == 'Радиолокатор':
+              if not self.validate_radar_data():
                   return
-        elif self.module_name == 'ПУ':
-            if not self.validate_launcher_data():
+              count = int(self.module_count.text()) if self.module_count.text() else 1
+              params_dict = {'count': count, 'radars': []}
+              for fields in self.radar_fields:
+                  radar_params = {
+                      'position': tuple(map(float, fields['position'].text().split(','))),
+                      'max_targets': int(fields['max_targets'].text()),
+                      'angle': float(fields['angle'].text()),
+                      'range': float(fields['range'].text())
+                  }
+                  params_dict['radars'].append(radar_params)
+              self.on_save(self.module_name, params_dict)
+
+          elif self.module_name == 'ПУ':
+              if not self.validate_launcher_data():
                   return
-        elif self.module_name == 'ВО':
-            if not self.validate_vo_data():
-                return
-        QMessageBox.information(self, "Успех", "Параметры моделирования успешно сохранены.")
-        params = {}
-        if self.module_name == 'ВО':
-            count = int(self.module_count.text()) if self.module_count.text() else 0
-            params_dict = {'count': count,'elements': []}
-            for i, fields in enumerate(self.vo_fields, 1):
-                element = {'start_pos': fields['start'].text(),'end_pos': fields['end'].text(),}
-                params_dict['elements'].append(element)
-            params = params_dict
-            self.on_save(self.module_name, params)
-        if self.module_name == 'Радиолокатор':
-                    count = int(self.module_count.text()) if self.module_count.text() else 1
-                    params_dict = {'count': count, 'radars': []}
+              count = int(self.module_count.text()) if self.module_count.text() else 1
+              params_dict = {'count': count, 'launchers': []}
+              for fields in self.launcher_fields:
+                  launcher_params = {
+                      'position': tuple(map(float, fields['position'].text().split(','))),
+                      'missile_count': int(fields['missile_count'].text()),
+                      'range1': int(fields['range1'].text()),
+                      'velocity1': int(fields['velocity1'].text()),
+                      'range2': int(fields['range2'].text()),
+                      'velocity2': int(fields['velocity2'].text()),
+                  }
+                  params_dict['launchers'].append(launcher_params)
+              self.on_save(self.module_name, params_dict)
 
-                    for fields in self.radar_fields:
-                        radar_params = {
-                            'position': tuple(map(float, fields['position'].text().split(','))),
-                            'max_targets': int(fields['max_targets'].text()),
-                            'angle': float(fields['angle'].text()),
-                            'range': float(fields['range'].text())
-                        }
-                        params_dict['radars'].append(radar_params)
-                    params = params_dict
-                    self.on_save(self.module_name, params)
+          elif self.module_name == 'ВО':
+              if not self.validate_vo_data():
+                  return
+              count = int(self.module_count.text()) if self.module_count.text() else 0
+              params_dict = {'count': count, 'elements': []}
+              for i, fields in enumerate(self.vo_fields, 1):
+                  element = {
+                      'start_pos': fields['start'].text(),
+                      'end_pos': fields['end'].text(),
+                  }
+                  params_dict['elements'].append(element)
+              self.on_save(self.module_name, params_dict)
 
-        elif self.module_name == 'ПУ':
-
-                                count = int(self.module_count.text()) if self.module_count.text() else 1
-                                params_dict = {'count': count, 'launchers': []}
-
-                                for fields in self.launcher_fields:
-                                    launcher_params = {
-                                        'position': tuple(map(float, fields['position'].text().split(','))),
-                                        'missile_count': int(fields['missile_count'].text()),
-                                        'range1': int(fields['range1'].text()),
-                                        'velocity1': int(fields['velocity1'].text()),
-                                        'range2': int(fields['range2'].text()),
-                                        'velocity2': int(fields['velocity2'].text()),
-                                    }
-                                    params_dict['launchers'].append(launcher_params)
-
-                                params = params_dict
-                                self.on_save(self.module_name, params)
-
-        elif self.module_name == 'ПБУ':
-            params = {'position': tuple(map(float, self.pos_control.text().split(',')))}
-            self.on_save(self.module_name, params)
-        #self.on_save(self.module_name, params)
-        self.close()
+          elif self.module_name == 'ПБУ':
+              # Получаем текст из поля ввода и преобразуем в кортеж
+              pos_text = self.pos_control.text()
+              try:
+                  position = tuple(map(float, pos_text.split(',')))
+                  params = {'position': position}
+                  self.on_save(self.module_name, params)
+              except ValueError as e:
+                  QMessageBox.warning(self, "Ошибка", f"Некорректные координаты: {str(e)}")
+                  return
+          QMessageBox.information(self, "Успех", "Параметры моделирования успешно сохранены.")
+          self.close()
 
 
 
+    def load_data(self, params):
+               """Загружает данные модуля для редактирования"""
+               if self.module_name == 'Радиолокатор':
+                   self.module_count.setText("1")
+                   self.create_radar_data()
+                   self.radar_fields[0]['position'].setText(",".join(map(str, params['position'])))
+                   self.radar_fields[0]['max_targets'].setText(str(params['max_targets']))
+                   self.radar_fields[0]['angle'].setText(str(params['angle']))
+                   self.radar_fields[0]['range'].setText(str(params['range']))
 
+               elif self.module_name == 'ПУ':
+                   self.module_count.setText("1")
+                   self.create_launcher_data()
+                   self.launcher_fields[0]['position'].setText(",".join(map(str, params['position'])))
+                   self.launcher_fields[0]['missile_count'].setText(str(params['missile_count']))
+                   self.launcher_fields[0]['range1'].setText(str(params['range1']))
+                   self.launcher_fields[0]['velocity1'].setText(str(params['velocity1']))
+                   self.launcher_fields[0]['range2'].setText(str(params['range2']))
+                   self.launcher_fields[0]['velocity2'].setText(str(params['velocity2']))
+
+               elif self.module_name == 'ВО':
+                   self.module_count.setText("1")
+                   self.create_vo_data()
+                   self.vo_fields[0]['start'].setText(",".join(map(str, params['start_pos'])))
+                   self.vo_fields[0]['end'].setText(",".join(map(str, params['end_pos'])))

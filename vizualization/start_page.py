@@ -61,6 +61,11 @@ class StartPage(QWidget):
         self.steps_input=QLineEdit()
         layout.addWidget(self.steps_input)
 
+        self.step_label = QLabel ('Введите шаг моделирования:')
+        layout.addWidget(self.step_label)
+        self.step_input=QLineEdit()
+        layout.addWidget(self.step_input)
+
         #Загрузка БД по названию
         self.db_name = QLabel ('Введите название базы данных для загрузки:')
         layout.addWidget(self.db_name)
@@ -91,6 +96,10 @@ class StartPage(QWidget):
         self.button_pu.clicked.connect(lambda: self.open_parameters_window('ПУ'))
         self.button_vo.clicked.connect(lambda: self.open_parameters_window('ВО'))
         self.button_start_model = QPushButton('Начать моделирование')
+
+        self.setLayout(layout)
+        self.add_individual_module_controls()
+
         layout.addWidget(self.button_start_model)
         self.button_start_model.clicked.connect(self.open_map_window)
         layout.addStretch(1)
@@ -223,16 +232,17 @@ class StartPage(QWidget):
     def open_parameters_window(self, module_name):
         self.params_window = ParametersWindow(module_name, self.store_parameters, self.simulation.db)
         self.params_window.show()
-
+    '''
     def store_parameters(self, module_name, params_dict):
        self.module_params[module_name] = params_dict
        print("STORE", self.module_params[module_name])
        self.update_params_display()
        #if  self.on_params_save_callback:
            #if self.expect_modules.issubset(self.module_params.keys()):
-       self.on_params_save_callback(self.module_params)
-       print(f'Параметры модуля {module_name} сохранены: {params_dict}')
-
+            #self.on_params_save_callback(self.module_params)
+       #print(f'Параметры модуля {module_name} сохранены: {params_dict}')
+       print("STORE PARAMR", self.module_params)
+    '''
     def set_session_params(self, db):
        for module_name, params in self.module_params.items():
             if module_name == 'Радиолокатор':
@@ -269,3 +279,308 @@ class StartPage(QWidget):
                     if len(start_pos) != 3 or len(end_pos) != 3:
                         raise ValueError("Координаты должны содержать 3 значения (x,y,z)")
                     db.add_plane( start_pos, end_pos)
+    '''
+    def set_session_params(self, db):
+        for module_name, params in self.module_params.items():
+            if module_name == 'Радиолокатор':
+                for i, radar_data in enumerate(params['radars'], 1):
+                    position = radar_data['position']
+                    if isinstance(position, str):
+                        position = tuple(map(float, position.split(',')))
+                    db.add_radar(
+                        position,
+                        int(radar_data['max_targets']),
+                        float(radar_data['angle']),
+                        float(radar_data['range'])
+                    )
+
+            elif module_name == 'ПУ':
+                for i, launcher_data in enumerate(params['launchers'], 1):
+                    position = launcher_data['position']
+                    if isinstance(position, str):
+                        position = tuple(map(float, position.split(',')))
+                    db.add_launcher(
+                        position,
+                        int(launcher_data['missile_count']),
+                        float(launcher_data['range1']),
+                        float(launcher_data['velocity1']),
+                        float(launcher_data['range2']),
+                        float(launcher_data['velocity2'])
+                    )
+
+            elif module_name == 'ПБУ':
+                db.clear_table('CC')
+                position = params['position']
+                if isinstance(position, str):
+                    position = tuple(map(float, position.split(',')))
+                db.add_cc(position)
+
+            elif module_name == 'ВО':
+                for i, element in enumerate(params['elements'], 1):
+                    start_pos = element['start_pos']
+                    end_pos = element['end_pos']
+                    if isinstance(start_pos, str):
+                        start_pos = tuple(map(float, start_pos.split(',')))
+                    if isinstance(end_pos, str):
+                        end_pos = tuple(map(float, end_pos.split(',')))
+                    if len(start_pos) != 3 or len(end_pos) != 3:
+                        raise ValueError("Координаты должны содержать 3 значения (x,y,z)")
+                    db.add_plane(start_pos, end_pos)
+
+    '''
+    def add_individual_module_controls(self):
+        group = QGroupBox("Управление отдельными модулями")
+        layout = QVBoxLayout()
+
+        self.module_type_combo = QComboBox()
+        self.module_type_combo.addItems(["Радиолокатор", "ПУ", "ВО"])
+        layout.addWidget(QLabel("Тип модуля:"))
+        layout.addWidget(self.module_type_combo)
+
+        self.module_id_input = QLineEdit()
+        self.module_id_input.setPlaceholderText("Введите ID для просмотра и изменения ")
+        layout.addWidget(QLabel("ID модуля:"))
+        layout.addWidget(self.module_id_input)
+
+        btn_layout = QHBoxLayout()
+        self.load_module_btn = QPushButton("Загрузить")
+        self.load_module_btn.clicked.connect(self.load_module)
+        btn_layout.addWidget(self.load_module_btn)
+
+        #self.save_module_btn = QPushButton("Сохранить")
+        #self.save_module_btn.clicked.connect(self.save_module)
+        #btn_layout.addWidget(self.save_module_btn)
+
+        layout.addLayout(btn_layout)
+        group.setLayout(layout)
+        self.layout().addWidget(group)
+
+    def load_module(self):
+        module_type = self.module_type_combo.currentText()
+        module_id = self.module_id_input.text()
+
+        if not module_id:
+            QMessageBox.warning(self, "Ошибка", "Введите ID модуля")
+            return
+
+        try:
+            module_id = int(module_id)
+        except ValueError:
+            QMessageBox.warning(self, "Ошибка", "ID должен быть числом")
+            return
+
+        db = self.simulation.db
+        params = {}
+
+        if module_type == "Радиолокатор":
+            radars = db.load_radars()
+            if module_id in radars:
+                radar = radars[module_id]
+                params = {
+                    "position": radar['position'],
+                    "max_targets": radar['max_targets'],
+                    "angle": radar['angle_input'],
+                    "range": radar['range_input']
+                }
+        elif module_type == "ПУ":
+            launchers = db.load_launchers()
+            if module_id in launchers:
+                launcher = launchers[module_id]
+                params = {
+                    "position": launcher['position'],
+                    "missile_count": launcher['cout_zur'],
+                    "range1": launcher['dist_zur1'],
+                    "velocity1": launcher['vel_zur1'],
+                    "range2": launcher['dist_zur2'],
+                    "velocity2": launcher['vel_zur2']
+                }
+        elif module_type == "ВО":
+            planes = db.load_planes()
+            if module_id in planes:
+                plane = planes[module_id]
+                params = {
+                    "start_pos": plane['start'],
+                    "end_pos": plane['end']
+                }
+
+        if params:
+            self.params_window = ParametersWindow(module_type, self.save_module_callback, self.simulation.db)
+            self.params_window.load_data(params)
+            self.params_window.show()
+        else:
+            QMessageBox.warning(self, "Ошибка", f"{module_type} с ID {module_id} не найден")
+
+
+    def save_module(self):
+        module_type = self.module_type_combo.currentText()
+        module_id = self.module_id_input.text()
+
+        if module_id:
+            try:
+                module_id = int(module_id)
+            except ValueError:
+                QMessageBox.warning(self, "Ошибка", "ID должен быть числом")
+                return
+        else:
+            module_id = None
+
+        #логика сохранения, аналогичная load_module #из database add_or_update_
+
+    def store_parameters(self, module_name, params_dict):
+
+                self.module_params[module_name] = params_dict
+                print(f"STORE {module_name} PARAMS:", params_dict)
+
+                # Сохраняем в базу данных
+                db = self.simulation.db  # Получаем доступ к DatabaseManager
+
+                if module_name == 'Радиолокатор':
+                    # Очищаем старые данные радаров перед добавлением новых
+                    db.clear_table('radars')
+                    for radar_data in params_dict['radars']:
+                        db.add_radar(
+                            position=radar_data['position'],
+                            max_targets=radar_data['max_targets'],
+                            angle_input=radar_data['angle'],
+                            range_input=radar_data['range']
+                        )
+
+                elif module_name == 'ПУ':
+                    db.clear_table('launchers')
+                    for launcher_data in params_dict['launchers']:
+                        db.add_launcher(
+                            position=launcher_data['position'],
+                            cout_zur=launcher_data['missile_count'],
+                            dist_zur1=launcher_data['range1'],
+                            vel_zur1=launcher_data['velocity1'],
+                            dist_zur2=launcher_data['range2'],
+                            vel_zur2=launcher_data['velocity2']
+                        )
+
+                elif module_name == 'ВО':
+                    db.clear_table('planes')
+                    for vo_data in params_dict['elements']:
+                        start_pos = tuple(map(float, vo_data['start_pos'].split(',')))
+                        end_pos = tuple(map(float, vo_data['end_pos'].split(',')))
+                        db.add_plane(start=start_pos, end=end_pos)
+                elif module_name == 'ПБУ':
+                            # Очищаем старые данные ПБУ перед добавлением новых
+                            db.clear_table('CC')
+
+                            # Проверяем формат position - может быть как строка, так и кортеж
+                            position = params_dict['position']
+                            if isinstance(position, str):
+                                # Если position пришла как строка (например, "100,200,300")
+                                position = tuple(map(float, position.split(',')))
+                            elif isinstance(position, (list, tuple)):
+                                # Если position уже кортеж или список
+                                position = tuple(map(float, position))
+                            else:
+                                raise ValueError("Некорректный формат координат ПБУ")
+
+                            db.add_cc(position=position)
+
+                self.update_params_display()
+
+                # Если есть callback и все ожидаемые модули загружены - вызываем его
+                if self.on_params_save_callback and self.expect_modules.issubset(self.module_params.keys()):
+                    self.on_params_save_callback(self.module_params)
+
+                QMessageBox.information(self, "Успех", f"Параметры модуля {module_name} успешно сохранены в БД")
+
+
+    '''
+    def save_module_callback(self, module_name, params_dict):
+        module_id = self.module_id_input.text()
+        module_id = int(module_id) if module_id else None
+        db = self.simulation.db
+
+        try:
+            if module_name == "Радиолокатор":
+                if 'radars' in params_dict:
+                    radar_data = params_dict['radars'][0]
+                    position = radar_data['position']
+                    max_targets = radar_data['max_targets']
+                    angle = radar_data['angle']
+                    range_val = radar_data['range']
+                else:
+                    position = params_dict.get('position')
+                    max_targets = params_dict.get('max_targets')
+                    angle = params_dict.get('angle')
+                    range_val = params_dict.get('range')
+
+                new_id = db.add_or_update_radar(
+                    radar_id=module_id,
+                    position=position,
+                    max_targets=max_targets,
+                    angle=angle,
+                    range_val=range_val
+                )
+
+            elif module_name == "ПУ":
+                if 'launchers' in params_dict:
+                    launcher_data = params_dict['launchers'][0]
+                    position = launcher_data['position']
+                    missile_count = launcher_data['missile_count']
+                    range1 = launcher_data['range1']
+                    velocity1 = launcher_data['velocity1']
+                    range2 = launcher_data['range2']
+                    velocity2 = launcher_data['velocity2']
+                else:
+                    position = params_dict.get('position')
+                    missile_count = params_dict.get('missile_count')
+                    range1 = params_dict.get('range1')
+                    velocity1 = params_dict.get('velocity1')
+                    range2 = params_dict.get('range2')
+                    velocity2 = params_dict.get('velocity2')
+
+                new_id = db.add_or_update_launcher(
+                    launcher_id=module_id,
+                    position=position,
+                    missile_count=missile_count,
+                    range1=range1,
+                    velocity1=velocity1,
+                    range2=range2,
+                    velocity2=velocity2
+                )
+
+            elif module_name == "ПБУ":
+                position = params_dict.get('position')
+                if position:
+                    db.clear_table('CC')
+                    new_id = db.add_cc(position)
+
+            elif module_name == "ВО":
+                if 'elements' in params_dict:
+                    vo_data = params_dict['elements'][0]
+                    start_pos = vo_data['start_pos']
+                    end_pos = vo_data['end_pos']
+                else:
+                    start_pos = params_dict.get('start_pos')
+                    end_pos = params_dict.get('end_pos')
+
+                def parse_coords(coord_str):
+                    if isinstance(coord_str, str):
+                        return tuple(map(float, coord_str.split(',')))
+                    return coord_str
+
+                start_pos = parse_coords(start_pos)
+                end_pos = parse_coords(end_pos)
+                if len(start_pos) != 3 or len(end_pos) != 3:
+                    raise ValueError("Координаты должны содержать 3 значения (x,y,z)")
+
+                new_id = db.add_or_update_plane(
+                    plane_id=module_id,
+                    start_pos=start_pos,
+                    end_pos=end_pos
+                )
+
+            if module_id is None and 'new_id' in locals():
+                self.module_id_input.setText(str(new_id))
+
+            QMessageBox.information(self, "Успех", "Модуль успешно сохранен")
+        except ValueError as e:
+            QMessageBox.warning(self, "Ошибка", f"Ошибка в данных: {str(e)}")
+        except Exception as e:
+            QMessageBox.warning(self, "Ошибка", f"Ошибка при сохранении: {str(e)}\nТип: {type(e).__name__}")
+    '''
