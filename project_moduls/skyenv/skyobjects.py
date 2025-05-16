@@ -111,7 +111,8 @@ class Rocket(SkyObject):
         self.time_step = time_step
         self.currentPos = np.array(start[:3])
         self.crashed = False 
-        self.killed_by_crash = False 
+        self.killed_by_crash = False
+        self.diactivated = False
 
         super().__init__(obj_id, start=start, finish=start, timeSteps=timeSteps, speed=0)
         self.lifePeriod = self.timeSteps - self.startTime
