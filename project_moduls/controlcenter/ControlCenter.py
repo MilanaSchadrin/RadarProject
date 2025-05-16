@@ -21,7 +21,7 @@ class ControlCenter:
     def __init__(self, dispatcher:Dispatcher, position:Tuple[float, float, float], steps):
         self._radarController: RadarController = RadarController(dispatcher)
         self._launcherController: LaunchController = LaunchController(dispatcher)
-        self._missileController: MissileController = MissileController()
+        self._missileController: MissileController = MissileController(dispatcher.time_step)
         self._dispatcher: Dispatcher = dispatcher
         self._position: Tuple[float, float, float] = position
         self._targets: List[Target] = [] # все цели на данной итерации

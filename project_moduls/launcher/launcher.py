@@ -5,6 +5,7 @@ from dispatcher.dispatcher import Dispatcher
 from missile.Missile import Missile, MissileType,MISSILE_TYPE_CONFIG
 from radar.Target import Target
 from typing import Tuple
+from missile.MissileController import *
 
 def dir(A, B):
     return (B[0]-A[0], B[1]-A[1], B[2]-A[2])
@@ -29,7 +30,7 @@ class Launcher:
         self.silo_num=silos
         self._silos=[1]*silos
 
-    def launch(self, target):
+    def launch(self, target, time_step):
         available_silo = None
         for i in range(self.silo_num):
             if self._silos[i] == 1:
@@ -58,6 +59,9 @@ class Launcher:
         velocity=velocity,
         currLifeTime = time ,
         damageRadius = radius)
+        interception_point = calculate_interception_point(target, M)
+        change_velocity(interception_point, M)
+        calc_lifetime(interception_point, M, time_step)
         self.ctrl.acknowledge(target.targetId, M)
         target.attachMissile(M)
         target.gotMissile = True
@@ -119,7 +123,7 @@ class LaunchController:
 
         if selected_launcher:
             print(f"Chosen launcher {selected_launcher.id} (distance: {int(min_dist)})")
-            selected_launcher.launch(target)
+            selected_launcher.launch(target, self._dispatcher.time_step)
 
     def status(self):
         for L in self._launchers:
