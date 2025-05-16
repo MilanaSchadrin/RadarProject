@@ -240,12 +240,11 @@ class StartPage(QWidget):
 
     def store_parameters(self, module_name, params_dict):
        self.module_params[module_name] = params_dict
-       print("STORE", self.module_params[module_name])
        self.update_params_display()
-       #if  self.on_params_save_callback:
-           #if self.expect_modules.issubset(self.module_params.keys()):
-       self.on_params_save_callback(self.module_params)
-       print(f'Параметры модуля {module_name} сохранены: {params_dict}')
+       if self.expect_modules and self.on_params_save_callback:
+           if self.expect_modules.issubset(self.module_params.keys()):
+               self.on_params_save_callback(self.module_params)
+               print(f'Параметры модуля {module_name} сохранены: {params_dict}')
 
     def set_session_params(self, db):
        for module_name, params in self.module_params.items():
@@ -254,22 +253,26 @@ class StartPage(QWidget):
                                position = radar_data['position']
                                if isinstance(position, str):
                                    position = tuple(map(float, position.split(',')))
-                               db.add_radar(position, int(radar_data['max_targets']),float(radar_data['range']))
+                               db.add_radar(i, position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
             elif module_name == 'ПУ':
                                        for i, launcher_data in enumerate(params['launchers'], 1):
                                            position = launcher_data['position']
                                            if isinstance(position, str):
                                                position = tuple(map(float, position.split(',')))
                                            db.add_launcher(
+                                               i,
                                                position,
-                                               int(launcher_data['missile_count'])
+                                               int(launcher_data['missile_count']),
+                                               float(launcher_data['range']),
+                                               float(launcher_data['velocity'])
                                            )
 
             elif module_name == 'ПБУ':
                 cc_id = len(db.load_cc()) + 1
-                db.add_cc(params['position'])
+                db.add_cc(cc_id, params['position'])
             elif module_name == 'ВО':
                 for i, element in enumerate(params['elements'], 1):
+                    plane_id = len(db.load_planes()) + 1
                     start_pos = element['start_pos']
                     end_pos = element['end_pos']
                     if isinstance(start_pos, str):
@@ -278,4 +281,4 @@ class StartPage(QWidget):
                         end_pos = tuple(map(float, end_pos.split(',')))
                     if len(start_pos) != 3 or len(end_pos) != 3:
                         raise ValueError("Координаты должны содержать 3 значения (x,y,z)")
-                    db.add_plane( start_pos, end_pos)
+                    db.add_plane(plane_id, start_pos, end_pos)

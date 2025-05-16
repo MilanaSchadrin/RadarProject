@@ -93,6 +93,9 @@ class MissileController:
         missile = next(iter(target.attachedMissiles.values()), None)
         if missile is None:
             return
+        
+        if self._target_not_in_module(target):
+            self._destroy_missile(missile)
 
         if missile.status == MissileStatus.AUTOMATIC:
             missile.currLifeTime -= 1
@@ -175,6 +178,9 @@ class MissileController:
         missile.status = MissileStatus.ACTIVE
         interception_point = calculate_interception_point(target, missile)
         change_velocity(interception_point, missile)
+
+    def _target_not_in_module(self, target):
+        return all(coord <= -15000 for coord in target.currentCoords[:3])
 
 
     # не используется в реализации
