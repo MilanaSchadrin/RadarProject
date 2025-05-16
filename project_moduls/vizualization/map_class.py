@@ -549,7 +549,7 @@ class MapWindow(QMainWindow):
                     self.map_view.handle_target_untracking(radar_id, target_id)
 
                     #print("FROM UPTRACK", self.tracked_targets)
-                    self.text_output.append(f"Радар {radar_id} прекратил отслеживание цели {target_id}")
+                    self.text_output.append(f'<span style="color: orange;">Радар {radar_id} прекратил отслеживание цели {target_id}')
                     #self.map_view.update()
 
                 elif msg['type'] == 'explosion':
@@ -595,9 +595,9 @@ class MapWindow(QMainWindow):
                             #            rocket_data['icon'].hide()
 
                             self.text_output.append(
-                                f" Взрыв ракеты {explosion_data.rocket_id}, самолета {explosion_data.plane_id}, "
-                                f"координаты взрыва ({explosion_data.rocket_coords[0]:.1f}, "
-                                f"{explosion_data.rocket_coords[1]:.1f}). Радиус поражения: {explosion_data.death_range}"
+                                f'<span style="color: red;"> Взрыв ракеты {explosion_data.rocket_id}, самолета {explosion_data.plane_id}, '
+                                f'<span style="color: red;">координаты взрыва ({explosion_data.rocket_coords[0]:.1f}, '
+                                f'<span style="color: red;">{explosion_data.rocket_coords[1]:.1f}). Радиус поражения: {explosion_data.death_range*10} м'
                             )
                             QTimer.singleShot(1000, lambda: self.map_view.scene.removeItem(explosion_circle))
 
