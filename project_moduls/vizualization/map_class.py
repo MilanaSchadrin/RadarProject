@@ -74,15 +74,15 @@ class MapWindow(QMainWindow):
 
     def setup_step_controls(self, panel_layout):
          step_controls = QHBoxLayout()
-         self.prev_step_btn = QPushButton("Предыдущий шаг")
+         #self.prev_step_btn = QPushButton("Предыдущий шаг")
          self.next_step_btn = QPushButton("Следующий шаг")
          self.play_btn = QPushButton("Старт")
          self.stop_btn = QPushButton("Стоп")
-         self.prev_step_btn.clicked.connect(self.prev_step)
+         #self.prev_step_btn.clicked.connect(self.prev_step)
          self.next_step_btn.clicked.connect(self.next_step)
          self.play_btn.clicked.connect(self.play_steps)
          self.stop_btn.clicked.connect(self.stop_playback)
-         step_controls.addWidget(self.prev_step_btn)
+         #step_controls.addWidget(self.prev_step_btn)
          step_controls.addWidget(self.next_step_btn)
          step_controls.addWidget(self.play_btn)
          step_controls.addWidget(self.stop_btn)

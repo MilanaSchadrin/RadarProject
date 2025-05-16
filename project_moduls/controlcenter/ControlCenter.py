@@ -21,7 +21,7 @@ class ControlCenter:
     def __init__(self, dispatcher:Dispatcher, position:Tuple[float, float, float], steps):
         self._radarController: RadarController = RadarController(dispatcher)
         self._launcherController: LaunchController = LaunchController(dispatcher)
-        self._missileController: MissileController = MissileController(dispatcher.time_step)
+        self._missileController: MissileController = MissileController()
         self._dispatcher: Dispatcher = dispatcher
         self._position: Tuple[float, float, float] = position
         self._targets: List[Target] = [] # все цели на данной итерации
@@ -40,7 +40,7 @@ class ControlCenter:
                 position=radar_info['position'],
                 maxRange=radar_info['range_input']*1000,
                 #coneAngleDeg=radar_info['angle_input'],
-                maxFollowedCount=radar_info['max_targets'],
+                maxFollowedCount=radar_info['max_targets']
                 #maxTargetCount=radar_info['max_targets'],
             )
             self._radarController.addRadar(radar)
@@ -52,11 +52,11 @@ class ControlCenter:
                 ctrl=self._launcherController,
                 id=launcher_id,
                 coord=launcher_info['position'],
-                silos=launcher_info['cout_zur'],
-                missile_speed1= launcher_info['vel_zur1'],
-                damage_radius1 = launcher_info['dist_zur1'],
-                missile_speed2= launcher_info['vel_zur2'],
-                damage_radius2 = launcher_info['dist_zur2']
+                silos=launcher_info['cout_zur']
+                #missile_speed1= launcher_info['vel_zur1'],
+                #damage_radius1 = launcher_info['dist_zur1'],
+                #missile_speed2= launcher_info['vel_zur2'],
+                #damage_radius2 = launcher_info['dist_zur2']
             )
             self._launcherController.add_launcher(launcher)
 

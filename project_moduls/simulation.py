@@ -28,11 +28,16 @@ class Simulation:
         self.gui.set_params_callback(self.on_params_ready, expect_modules)
         self.gui.set_session_params(self.db)
         self.gui.steps_input.editingFinished.connect(self.on_step)
+        self.gui.step_input.editingFinished.connect(self.on_step_size)
         self.gui.db_name_input.editingFinished.connect(self.on_name)
 
     def on_step(self):
         self.steps = self.gui.get_step()
-        self.dispatcher.time_step = self.gui.get_step_size()
+        print(self.steps)
+
+    def on_step_size(self):
+        self.gui.get_step_size()
+        print("STEPS", self.dispatcher.time_step)
 
     def on_name(self):
         self.name = self.gui.get_db_name()

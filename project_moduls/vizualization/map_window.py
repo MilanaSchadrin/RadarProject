@@ -134,9 +134,9 @@ class MapView(QGraphicsView):
             if self.db_manager:
                 radars_data = self.db_manager.load_radars()
                 for radar_id, radar in radars_data.items():
-                    self.add_radar(radar_id, x=radar['position'][0], y=radar['position'][1], radius=radar['range_input'],view_angle=radar['angle_input'])
+                    self.add_radar(radar_id, x=radar['position'][0], y=radar['position'][1], radius=radar['range_input'])
 
-    def add_radar(self, radar_id, x, y, radius, view_angle):
+    def add_radar(self, radar_id, x, y, radius):
         radar_pixmap = QPixmap('./vizualization/pictures/radar.png').scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         radar_item = QGraphicsPixmapItem(radar_pixmap)
         radar_item.setOffset(-radar_pixmap.width()/2, -radar_pixmap.height()/2)
@@ -150,8 +150,6 @@ class MapView(QGraphicsView):
                         'item': radar_item,
                         'icon': radar_item,
                         'radius': radius,
-                        'view_angle': view_angle,
-                        'scan_angle': 0,
                         'x': x,
                         'y': y
                     }
@@ -385,8 +383,8 @@ class MapView(QGraphicsView):
             bottom_right = self.mapFromScene(center + QPointF(scene_radius, scene_radius))
 
             scan_rect = QRectF(top_left, bottom_right)
-            start_angle = -(scan_angle - radar_data['view_angle'] / 2) * 16
-            span_angle = -radar_data['view_angle'] * 16
+            #start_angle = -(scan_angle - radar_data['view_angle'] / 2) * 16
+            #span_angle = -radar_data['view_angle'] * 16
 
             #painter.setPen(QPen(QColor(0, 255, 0, 100), 1))
             #painter.setBrush(QBrush(QColor(0, 255, 0, 20)))

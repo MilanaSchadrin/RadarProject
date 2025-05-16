@@ -9,6 +9,9 @@ class Dispatcher:
         self.logger = Logger(Path('./logs'))
         self.time_step = time_step
 
+    def get_time_step(self):
+        return self.time_step
+
     def register(self, recipient_id):
         self.messageQueues[recipient_id] = PriorityQueue()
 

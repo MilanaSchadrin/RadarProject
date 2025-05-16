@@ -28,6 +28,8 @@ class SkyEnv:
         self.currentTime = 0
         self.to_remove = set()
         self.stuff = []
+        self.time_step = dispatcher.get_time_step()
+        print(self.timeSteps,self.time_step)
 
     def make_planes(self, plane_data):
         for data in plane_data:
@@ -80,8 +82,8 @@ class SkyEnv:
             #print(rocket.get_radius(),rocket.get_id())
             plane.killed()
             rocket.boom()
-            print(positionRocket[0],positionRocket[1],positionPlane[0],positionPlane[1],distance_2d,rocket.get_radius())
-            print('I made boom')
+            #print(positionRocket[0],positionRocket[1],positionPlane[0],positionPlane[1],distance_2d,rocket.get_radius())
+            #print('I made boom')
             #print(self.currentTime)
             collateralDamage = self.check_if_in_radius(positionRocket, rocket.get_radius())
             message = SEKilledGUI(Modules.GUI, Priorities.SUPERHIGH,rocket.get_id(),positionRocket/1000,rocket.get_radius()//10,get_plane_id_from_rocket(self.pairs,rocket),positionPlane/1000, collateralDamage)
@@ -110,7 +112,7 @@ class SkyEnv:
         self.rockets[rocket.get_id()] = rocket
         message = SEAddRocket(Modules.GUI, Priorities.HIGH,rocket.get_id(),rocket.get_currentPosGUI())
         self.dispatcher.send_message(message)
-        print(rocket.get_id(),rocket.get_currentPosGUI(),self.currentTime)
+        #print(rocket.get_id(),rocket.get_currentPosGUI(),self.currentTime)
         message = SEAddRocketToRadar(Modules.RadarMain,Priorities.SUPERHIGH,target_id, missile, rocket.get_currentPos())
         self.dispatcher.send_message(message)
         self.add_pair(rocket.get_id(),target_id)
@@ -142,7 +144,12 @@ class SkyEnv:
             v=None
             if len(coords)==2:
                 if v == None:
-                    plane = Plane(current_id, plane_info['start'],plane_info['end'],self.timeSteps)
+                    plane = Plane(current_id,
+                                  plane_info['start'],
+                                  plane_info['end'],                    
+                                  time_step=self.time_step,         
+                                  max_steps=self.timeSteps        
+                                  )
                     self.planes.append(plane)
                 else:
                     plane = Plane(current_id, plane_info['start'],plane_info['end'],self.timeSteps, v)
@@ -182,8 +189,9 @@ class SkyEnv:
                     velocity=miss.velocity,
                     startTime=self.currentTime,
                     radius=miss.damageRadius,
-                    time_step=1,              
-                    timeSteps=self.timeSteps   )
+                    time_step=self.time_step,    
+                    timeSteps=self.timeSteps           
+                    )
                 #print(miss.velocity)
                 self.stuff.append(miss.currentCoords)
                 self.add_rocket(rocket,miss,targetId)

@@ -164,7 +164,6 @@ class RadarController:
                 # Если цель перешла от другого радара
                 if not prev_status.get('is_followed', False) and env_target.priority < 500:
                     if (radar.radarId, target_id) not in alreadySent:
-                        print(f"[AUTO-FOLLOW] Цель {target_id} подхвачена радаром {radar.radarId}")
                         self.sendCurrentTarget(radar.radarId, target_id, radar.maxRange)
                         alreadySent.add((radar.radarId, target_id))
                         env_target.isFollowed = True

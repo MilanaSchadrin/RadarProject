@@ -20,13 +20,7 @@ class SkyObject:
         self.speed = speed
 
     def calculate_trajectory(self):
-        directionVector = vector(self.start, self.finish)
-        distances = distance(directionVector)
-        directionVector = directionVector/distances
-        time = distances/self.speed
-        timeStep = time/(self.timeSteps-1)
-        for i in range(self.timeSteps):
-            self.trajectory[i]=np.array([self.start[0],self.start[1],self.start[2]])+i*timeStep*self.speed*directionVector
+        pass
 
     def get_id(self):
         return self.id
@@ -42,20 +36,20 @@ class SkyObject:
         
 
 class Plane(SkyObject):
-    def __init__(self, obj_id, start, finish, speed: float = 600, time_step: float = 1, max_steps: int = None, status: bool = True):
+    def __init__(self, obj_id, start, finish, speed: float = 600, max_steps: int = None, time_step: float =0.5,status: bool = True):
         self.start = np.array(start) * 1000
         self.finish = np.array(finish) * 1000
-        self.speed = speed * 1000 / 3600  # m/s
+        self.speed = 600 * 1000 / 3600  # m/s
         self.status = status
         self.time_step = time_step
 
         direction = self.finish - self.start
         total_distance = np.linalg.norm(direction[:2])
         total_time = total_distance / self.speed
-        steps_needed = int(total_time // time_step) + 1
+        steps_needed = int(total_time / time_step) + 1
 
         self.timeSteps = min(steps_needed, max_steps) if max_steps is not None else steps_needed
-        super().__init__(obj_id, start, finish, speed)
+        super().__init__(obj_id, start, finish, self.timeSteps, speed)
         self.calculate_trajectory()
 
     def calculate_trajectory(self):
@@ -95,7 +89,7 @@ class Plane(SkyObject):
                 z = self.finish[2]
 
             self.trajectory[i] = [x, y, z/1000]
-        print(self.trajectory)
+        print(len(self.trajectory))
 
     def get_id(self):
         return super().get_id()
@@ -107,7 +101,7 @@ class Plane(SkyObject):
         self.status = False
 
 class Rocket(SkyObject):
-    def __init__(self, obj_id, start, velocity, startTime, radius=20, time_step=1,timeSteps: int =250):
+    def __init__(self, obj_id, start, velocity, startTime, radius, time_step,timeSteps: int =250):
         self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
         self.radius = radius
         self.killed = False

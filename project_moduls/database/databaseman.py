@@ -43,7 +43,6 @@ class DatabaseManager:
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL,
                 max_targets INTEGER NOT NULL,
-                angle_input REAL NOT NULL,
                 range_input REAL NOT NULL
             )
         """)
@@ -54,11 +53,7 @@ class DatabaseManager:
                 pos_x REAL NOT NULL,
                 pos_y REAL NOT NULL,
                 pos_z REAL NOT NULL,
-                cout_zur INTEGER NOT NULL,
-                dist_zur1 INTEGER NOT NULL,
-                vel_zur1  INTEGER NOT NULL,
-                dist_zur2 INTEGER NOT NULL,
-                vel_zur2 INTEGER NOT NULL
+                cout_zur INTEGER NOT NULL
             )
         """)
 
@@ -86,27 +81,22 @@ class DatabaseManager:
     def add_radar(self,
                  position: Tuple[float, float, float],
                  max_targets: int,
-                 angle_input : float,
                  range_input: float) -> None:
         self.cursor.execute(
             """INSERT INTO radars 
-            (pos_x, pos_y, pos_z, max_targets, angle_input, range_input)
-            VALUES (?, ?, ?, ?, ?, ?)""",
-            (*position, max_targets, angle_input, range_input))
+            (pos_x, pos_y, pos_z, max_targets,range_input)
+            VALUES (?, ?, ?, ?,?)""",
+            (*position, max_targets, range_input))
         self.conn.commit()
 
     def add_launcher(self,
                     position: Tuple[float, float, float],
-                    cout_zur : int,
-                    dist_zur1:int,
-                    vel_zur1:int,
-                    dist_zur2:int,
-                    vel_zur2:int) -> None:
+                    cout_zur : int) -> None:
         self.cursor.execute(
             """INSERT INTO launchers 
-            (pos_x, pos_y, pos_z, cout_zur, dist_zur1, vel_zur1, dist_zur2, vel_zur2)
-            VALUES ( ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (*position, cout_zur,dist_zur1,vel_zur1,dist_zur2,vel_zur2))
+            (pos_x, pos_y, pos_z, cout_zur)
+            VALUES ( ?, ?, ?, ?)""",
+            (*position, cout_zur))
         self.conn.commit()
 
     def add_cc(self,
@@ -130,31 +120,24 @@ class DatabaseManager:
         return planes
     
     def load_radars(self) -> Dict[int, Dict[str, Union[np.ndarray, int, float]]]:
-   #{radar_id: {'position': np.array,'max_targets': int,'angle_input': float,'range_input': float}}
         self.cursor.execute("SELECT * FROM radars")
         radars = {}
         for row in self.cursor.fetchall():
-            radar_id, px, py, pz, max_t, angle, range_ = row
+            radar_id, px, py, pz, max_t, range_ = row
             radars[radar_id] = {
                 'position': (px, py, pz),
                 'max_targets': max_t,
-                'angle_input': angle,
                 'range_input': range_}
         return radars
 
     def load_launchers(self) -> Dict[int, Dict[str, Union[np.ndarray, int]]]:
-    # {launcher_id: {'position': np.array,'cout_zur': int,'dist': int,'velocity_zur': int}}
         self.cursor.execute("SELECT * FROM launchers")
         launchers = {}
         for row in self.cursor.fetchall():
-            launcher_id, px, py, pz, count, dist_zur1, vel_zur1, dist_zur2, vel_zur2  = row
+            launcher_id, px, py, pz, count  = row
             launchers[launcher_id] = {
                 'position': (px, py, pz),
-                'cout_zur': count,
-                'dist_zur1': dist_zur1,
-                'vel_zur1': vel_zur1,
-                'dist_zur2': dist_zur2,
-                'vel_zur2': vel_zur2}
+                'cout_zur': count}
         return launchers
     
     def load_cc(self) -> Dict[int, Dict[str, np.ndarray]]:

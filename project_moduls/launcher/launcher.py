@@ -5,7 +5,6 @@ from dispatcher.dispatcher import Dispatcher
 from missile.Missile import Missile, MissileType,MISSILE_TYPE_CONFIG
 from radar.Target import Target
 from typing import Tuple
-from missile.MissileController import *
 
 def dir(A, B):
     return (B[0]-A[0], B[1]-A[1], B[2]-A[2])
@@ -23,18 +22,14 @@ def renormalize(ovect, length):
     return (ovect[0] * scale, ovect[1] * scale, ovect[2] * scale)
 
 class Launcher:
-    def __init__(self, ctrl, id, coord, silos, missile_speed1, damage_radius1, missile_speed2, damage_radius2):
+    def __init__(self, ctrl, id, coord, silos):
         self.ctrl=ctrl
         self.id=id
         self.coord: Tuple[float, float, float] =coord
         self.silo_num=silos
         self._silos=[1]*silos
-        self.missile_speed_first = missile_speed1
-        self.damage_radius_first = damage_radius1
-        self.missile_speed_second = missile_speed2
-        self.damage_radius_second = damage_radius2
 
-    def launch(self, target, time_step):
+    def launch(self, target):
         available_silo = None
         for i in range(self.silo_num):
             if self._silos[i] == 1:
@@ -63,14 +58,6 @@ class Launcher:
         velocity=velocity,
         currLifeTime = time ,
         damageRadius = radius)
-
-
-        # добавил Степа
-        interception_point = calculate_interception_point(target, M)
-        change_velocity(interception_point, M)
-        calc_lifetime(interception_point, M, time_step)
-
-
         self.ctrl.acknowledge(target.targetId, M)
         target.attachMissile(M)
         target.gotMissile = True
@@ -132,7 +119,7 @@ class LaunchController:
 
         if selected_launcher:
             print(f"Chosen launcher {selected_launcher.id} (distance: {int(min_dist)})")
-            selected_launcher.launch(target, self._dispatcher.time_step)
+            selected_launcher.launch(target)
 
     def status(self):
         for L in self._launchers:

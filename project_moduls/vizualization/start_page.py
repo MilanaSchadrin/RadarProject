@@ -17,6 +17,7 @@ class StartPage(QWidget):
     def __init__(self, dispatcher, app, simulation):
         super().__init__()
         self.steps=None
+        self.step=1
         self.dispatcher=dispatcher
         self.map_window=None
         self.simulation = simulation
@@ -131,11 +132,10 @@ class StartPage(QWidget):
     
     def get_step_size(self):
         try:
-            self.step_size = float(self.steps_input.text())
-            #print("STEPS", self.steps)
+             self.dispatcher.time_step = float(self.step_input.text())
+             print("STEPS", self.dispatcher.time_step)
         except ValueError:
-            print("Некорректный шаг")
-        return self.step_size
+             print("Некорректный шаг")
 
     def get_db_name(self):
         self.name_db = (self.db_name_input.text())
@@ -254,7 +254,7 @@ class StartPage(QWidget):
                                position = radar_data['position']
                                if isinstance(position, str):
                                    position = tuple(map(float, position.split(',')))
-                               db.add_radar(position, int(radar_data['max_targets']), float(radar_data['angle']),float(radar_data['range']))
+                               db.add_radar(position, int(radar_data['max_targets']),float(radar_data['range']))
             elif module_name == 'ПУ':
                                        for i, launcher_data in enumerate(params['launchers'], 1):
                                            position = launcher_data['position']
@@ -262,11 +262,7 @@ class StartPage(QWidget):
                                                position = tuple(map(float, position.split(',')))
                                            db.add_launcher(
                                                position,
-                                               int(launcher_data['missile_count']),
-                                               float(launcher_data['range1']),
-                                               float(launcher_data['velocity1']),
-                                               float(launcher_data['range2']),
-                                               float(launcher_data['velocity2'])
+                                               int(launcher_data['missile_count'])
                                            )
 
             elif module_name == 'ПБУ':
