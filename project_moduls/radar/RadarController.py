@@ -164,6 +164,7 @@ class RadarController:
                 # Если цель перешла от другого радара
                 if not prev_status.get('is_followed', False) and env_target.priority < 500:
                     if (radar.radarId, target_id) not in alreadySent:
+                        print(f"[AUTO-FOLLOW] Цель {target_id} подхвачена радаром {radar.radarId}")
                         self.sendCurrentTarget(radar.radarId, target_id, radar.maxRange)
                         alreadySent.add((radar.radarId, target_id))
                         env_target.isFollowed = True
@@ -177,8 +178,8 @@ class RadarController:
         # Обработка ракет
         for target in self.allTargets.values():
             for missile in target.attachedMissiles.values():
-                missile.isDetected = False
-                missile.currentCoords = (0, 0, 0)
+                missile.isDetected = False # сначала у всех ракет статус "не обнаружена"
+                # missile.currentCoords = (0, 0, 0) теперь не обнуляем координаты
 
         all_detected_missiles = {}
         for radar in self.radars.values():
@@ -186,14 +187,20 @@ class RadarController:
             for missile_id, coords in detected_missiles.items():
                 all_detected_missiles[missile_id] = (radar, coords)
 
-        for missile_id, (radar, coords) in all_detected_missiles.items():
-            if missile_id in self.allEnvMissiles:
-                target_id = self.allEnvMissiles[missile_id].targetId
-                if target_id in self.allTargets:
-                    missile = self.allTargets[target_id].attachedMissiles.get(missile_id)
-                    if missile:
-                        missile.isDetected = True
+        # обрабатываем все ракеты. Если ракета если в списке замеченных, ставим isDetected = True и \
+        # missile.currentCoords = абсолютные координаты с ошибкой
+        # если ракеты нет в списке обнаруженных, ставим missile.currentCoords = последней координате, которая пришла от SkyEnv
+        for missile_id, missile_env in self.allEnvMissiles.items():
+            target_id = missile_env.targetId
+            if target_id in self.allTargets:
+                missile = self.allTargets[target_id].attachedMissiles.get(missile_id)
+                if missile:
+                    if missile_id in all_detected_missiles:
+                        (radar, coords) = all_detected_missiles[missile_id]  
                         missile.currentCoords = self.getAbsoluteCoords(radar, coords)
+                        missile.isDetected = True # если в  списке замеченных, меняем статус  на True
+                    else:
+                        missile.currentCoords = missile_env.getCurrentCoords()
 
         # Обработка целей, которые больше не обнаруживаются
         for target_id in temp_targets:
@@ -203,7 +210,10 @@ class RadarController:
             
             if prev_status.get('status') in [TargetStatus.FOLLOWED, TargetStatus.DETECTED]:
                 target.status = TargetStatus.UNDETECTED
-                target.currentCoords = (0, 0, 0)
+                # target.currentCoords = (0, 0, 0) - теперь координаты не зануляются
+                # ставим координаты, которые получили от SkyEnv на данном шаге
+                target.currentCoords = env_target.getCurrentCoords(step)
+                target.currentSpeedVector = env_target.getCurrentSpeedVec(step)
                 if env_target.isFollowed:
                     env_target.isFollowed = False
                     any_radar = next(iter(self.radars.values()))
