@@ -23,7 +23,7 @@ class DatabaseManager:
         self._create_tables()
 
     def _create_tables(self):
-    #add speed
+
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS planes (
                 plane_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -209,4 +209,159 @@ class DatabaseManager:
 
     def close(self) -> None:
         self.conn.close()
-    
+    def add_or_update_radar(self,
+                              radar_id: int = None,
+                              position: Tuple[float, float, float] = None,
+                              max_targets: int = None,
+                              angle: float = None,
+                              range_val: float = None) -> int:
+
+            if radar_id is None:
+
+                self.cursor.execute(
+                    """INSERT INTO radars
+                    (pos_x, pos_y, pos_z, max_targets, angle_input, range_input)
+                    VALUES (?, ?, ?, ?, ?, ?)""",
+                    (*position, max_targets, angle, range_val))
+                radar_id = self.cursor.lastrowid
+            else:
+
+                updates = []
+                params = []
+
+                if position is not None:
+                    updates.append("pos_x = ?, pos_y = ?, pos_z = ?")
+                    params.extend(position)
+
+                if max_targets is not None:
+                    updates.append("max_targets = ?")
+                    params.append(max_targets)
+
+                if angle is not None:
+                    updates.append("angle_input = ?")
+                    params.append(angle)
+
+                if range_val is not None:
+                    updates.append("range_input = ?")
+                    params.append(range_val)
+
+                if updates:
+                    params.append(radar_id)
+                    query = f"""
+                    UPDATE radars
+                    SET {', '.join(updates)}
+                    WHERE radar_id = ?
+                    """
+                    self.cursor.execute(query, params)
+
+            self.conn.commit()
+            return radar_id
+
+    def add_or_update_launcher(self,
+                                 launcher_id: int = None,
+                                 position: Tuple[float, float, float] = None,
+                                 missile_count: int = None,
+                                 range1: int = None,
+                                 velocity1: int = None,
+                                 range2: int = None,
+                                 velocity2: int = None) -> int:
+
+            if launcher_id is None:
+
+                self.cursor.execute(
+                    """INSERT INTO launchers
+                    (pos_x, pos_y, pos_z, cout_zur, dist_zur1, vel_zur1, dist_zur2, vel_zur2)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (*position, missile_count, range1, velocity1, range2, velocity2))
+                launcher_id = self.cursor.lastrowid
+            else:
+
+                updates = []
+                params = []
+
+                if position is not None:
+                    updates.append("pos_x = ?, pos_y = ?, pos_z = ?")
+                    params.extend(position)
+
+                if missile_count is not None:
+                    updates.append("cout_zur = ?")
+                    params.append(missile_count)
+
+                if range1 is not None:
+                    updates.append("dist_zur1 = ?")
+                    params.append(range1)
+
+                if velocity1 is not None:
+                    updates.append("vel_zur1 = ?")
+                    params.append(velocity1)
+
+                if range2 is not None:
+                    updates.append("dist_zur2 = ?")
+                    params.append(range2)
+
+                if velocity2 is not None:
+                    updates.append("vel_zur2 = ?")
+                    params.append(velocity2)
+
+                if updates:
+                    params.append(launcher_id)
+                    query = f"""
+                    UPDATE launchers
+                    SET {', '.join(updates)}
+                    WHERE launcher_id = ?
+                    """
+                    self.cursor.execute(query, params)
+
+            self.conn.commit()
+            return launcher_id
+
+    def add_or_update_plane(self,
+                              plane_id: int = None,
+                              start_pos: Tuple[float, float, float] = None,
+                              end_pos: Tuple[float, float, float] = None) -> int:
+            if plane_id is None:
+
+                self.cursor.execute(
+                    """INSERT INTO planes
+                    (start_x, start_y, start_z, end_x, end_y, end_z)
+                    VALUES (?, ?, ?, ?, ?, ?)""",
+                    (*start_pos, *end_pos))
+                plane_id = self.cursor.lastrowid
+            else:
+
+                updates = []
+                params = []
+
+                if start_pos is not None:
+                    updates.append("start_x = ?, start_y = ?, start_z = ?")
+                    params.extend(start_pos)
+
+                if end_pos is not None:
+                    updates.append("end_x = ?, end_y = ?, end_z = ?")
+                    params.extend(end_pos)
+
+                if updates:
+                    params.append(plane_id)
+                    query = f"""
+                    UPDATE planes
+                    SET {', '.join(updates)}
+                    WHERE plane_id = ?
+                    """
+                    self.cursor.execute(query, params)
+
+            self.conn.commit()
+            return plane_id
+
+    def add_or_update_cc(self,
+                           cc_id: int = None,
+                           position: Tuple[float, float, float] = None) -> int:
+
+            if position is not None:
+                    self.cursor.execute(
+                        """UPDATE CC
+                        SET pos_x = ?, pos_y = ?, pos_z = ?
+                        WHERE cc_id = ?""",
+                        (*position, cc_id))
+
+            self.conn.commit()
+            return cc_id

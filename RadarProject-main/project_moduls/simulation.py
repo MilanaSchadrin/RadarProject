@@ -26,7 +26,7 @@ class Simulation:
         self.gui = StartPage(self.dispatcher,self.app, self)
         expect_modules=['Радиолокатор', 'ПУ', 'ПБУ', 'ВО']
         self.gui.set_params_callback(self.on_params_ready, expect_modules)
-        self.gui.set_session_params(self.db)
+        #self.gui.set_session_params(self.db)
         self.gui.steps_input.editingFinished.connect(self.on_step)
         self.gui.db_name_input.editingFinished.connect(self.on_name)
 

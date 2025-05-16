@@ -342,4 +342,28 @@ class ParametersWindow(QWidget):
 
 
 
+    def load_data(self, params):
+               """Загружает данные модуля для редактирования"""
+               if self.module_name == 'Радиолокатор':
+                   self.module_count.setText("1")
+                   self.create_radar_data()
+                   self.radar_fields[0]['position'].setText(",".join(map(str, params['position'])))
+                   self.radar_fields[0]['max_targets'].setText(str(params['max_targets']))
+                   self.radar_fields[0]['angle'].setText(str(params['angle']))
+                   self.radar_fields[0]['range'].setText(str(params['range']))
 
+               elif self.module_name == 'ПУ':
+                   self.module_count.setText("1")
+                   self.create_launcher_data()
+                   self.launcher_fields[0]['position'].setText(",".join(map(str, params['position'])))
+                   self.launcher_fields[0]['missile_count'].setText(str(params['missile_count']))
+                   self.launcher_fields[0]['range1'].setText(str(params['range1']))
+                   self.launcher_fields[0]['velocity1'].setText(str(params['velocity1']))
+                   self.launcher_fields[0]['range2'].setText(str(params['range2']))
+                   self.launcher_fields[0]['velocity2'].setText(str(params['velocity2']))
+
+               elif self.module_name == 'ВО':
+                   self.module_count.setText("1")
+                   self.create_vo_data()
+                   self.vo_fields[0]['start'].setText(",".join(map(str, params['start_pos'])))
+                   self.vo_fields[0]['end'].setText(",".join(map(str, params['end_pos'])))
