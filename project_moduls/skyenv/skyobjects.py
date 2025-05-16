@@ -42,6 +42,7 @@ class Plane(SkyObject):
         self.speed = 600 * 1000 / 3600  # m/s
         self.status = status
         self.time_step = time_step
+        self.max_steps = max_steps
 
         direction = self.finish - self.start
         total_distance = np.linalg.norm(direction[:2])
@@ -57,7 +58,6 @@ class Plane(SkyObject):
         total_distance = np.linalg.norm(direction[:2])*1000
         #print(total_distance)
         total_time = total_distance / self.speed
-        #print(total_time)
 
         flightHeight = np.clip((self.start[2] + self.finish[2]) / 2, 1000, 5000)
         climb_time = max(0.2 * total_time, 1e-6)
@@ -67,8 +67,11 @@ class Plane(SkyObject):
         climb_end = climb_time
         cruise_end = climb_time + cruise_time
         descend_end = total_time
-
-        self.trajectory = np.zeros((self.timeSteps, 3))
+        trajectory_length = self.timeSteps
+        if self.max_steps is not None:
+            trajectory_length = self.max_steps
+            
+        self.trajectory = np.full((trajectory_length, 3), np.nan)
 
         for i in range(self.timeSteps):
             t = i * self.time_step
@@ -89,7 +92,9 @@ class Plane(SkyObject):
                 z = self.finish[2]
 
             self.trajectory[i] = [x, y, z/1000]
+        self.trajectory[np.isnan(self.trajectory)] = -100000
         print(len(self.trajectory))
+        print(self.trajectory)
 
     def get_id(self):
         return super().get_id()

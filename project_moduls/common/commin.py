@@ -1,4 +1,6 @@
 import numpy as np
+import math
+from typing import  Tuple
 from datetime import datetime
 """
 class Point:
@@ -21,3 +23,6 @@ TICKSPERCYCLELAUNCHER = 2
 def to_integer():
     dt = datetime.today()
     return int(dt.timestamp())
+
+def is_nan_coord(coords: Tuple[float, float, float]) -> bool:
+    return any(math.isnan(c) for c in coords)

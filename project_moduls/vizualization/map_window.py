@@ -180,8 +180,7 @@ class MapView(QGraphicsView):
                 self.cc_icon = QGraphicsPixmapItem(cc_pixmap)
                 self.cc_icon.setPos(x - cc_pixmap.width()/2, y - cc_pixmap.height()/2)
                 self.cc_icon.setZValue(10)
-                self.cc_icon.setToolTip(f"ПБУ",
-                               f"Позиция: {x, y,0} км \n")
+                self.cc_icon.setToolTip(f"Позиция: {x, y,0} км \n")
                 self.scene.addItem(self.cc_icon)
     def set_simulation_data(self, simulation_data):
         self.simulation_data = simulation_data
