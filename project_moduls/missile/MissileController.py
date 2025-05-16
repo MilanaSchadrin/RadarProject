@@ -94,6 +94,9 @@ class MissileController:
         if missile is None:
             return
 
+        if self._target_not_in_module(target):
+            self._destroy_missile(missile)
+
         if missile.status == MissileStatus.AUTOMATIC:
             missile.currLifeTime -= 1
 
@@ -159,8 +162,6 @@ class MissileController:
     def _collision(self, mainObject, other_object):
         """Проверяет наличие object1 в радиусе mainObject."""
         distance = np.linalg.norm( np.array(mainObject.currentCoords) - np.array(other_object.currentCoords))
-        print("distance: ", distance)
-        print("damageRadius: ", mainObject.damageRadius)
         return distance < mainObject.damageRadius
 
 
@@ -175,6 +176,10 @@ class MissileController:
         missile.status = MissileStatus.ACTIVE
         interception_point = calculate_interception_point(target, missile)
         change_velocity(interception_point, missile)
+
+
+    def _target_not_in_module(self, target):
+        return all(coord <= -15000 for coord in target.currentCoords[:3])
 
 
     # не используется в реализации
