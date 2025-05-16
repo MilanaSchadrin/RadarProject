@@ -32,6 +32,7 @@ class Simulation:
 
     def on_step(self):
         self.steps = self.gui.get_step()
+        self.dispatcher.time_step = self.gui.get_step_size()
 
     def on_name(self):
         self.name = self.gui.get_db_name()

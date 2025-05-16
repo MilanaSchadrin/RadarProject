@@ -136,6 +136,7 @@ class MapWindow(QMainWindow):
 
     def restore_objects_state(self):
                 for plane_id, plane_data in self.planes.items():
+
                     if 'pre_explosion_state' in plane_data:
                         if (plane_data['pre_explosion_state']['visible'] and
                                        ('explosion_step' not in plane_data or self.current_step < plane_data['explosion_step'])):
@@ -155,6 +156,9 @@ class MapWindow(QMainWindow):
                         plane_data['icon'].show()
 
                 for rocket_id, rocket_data in self.rockets.items():
+                    if rocket_data.get('inactive', False):
+                                rocket_data['icon'].hide()
+                                continue
                     if 'pre_explosion_state' in rocket_data:
                         if rocket_data['pre_explosion_state']['visible']:
                             rocket_data['icon'].show()
@@ -389,6 +393,8 @@ class MapWindow(QMainWindow):
                        if 'explosion_step' in zur_data and self.current_step >= zur_data['explosion_step']:
                            zur_data['icon'].hide()
                            continue
+                       if zur_data.get('inactive', False):
+                                   continue
                        current_coords = self.get_rocket_coords_at_step(zur_id, self.current_step)
                        if current_coords is not None:
                            target_x, target_y = current_coords[0], current_coords[1]
@@ -536,8 +542,8 @@ class MapWindow(QMainWindow):
                     #print("MAP", self.tracked_targets)
                     radar_id = msg['data'].radarId
                     target_id = msg['data'].targetId
-                    print("UNTRACK radar_id", radar_id)
-                    print("UNTRACK  target_id ", target_id)
+                    #print("UNTRACK radar_id", radar_id)
+                    #print("UNTRACK  target_id ", target_id)
                     #self.remove_radar_target(radar_id, target_id)
                     #self.update_radar_targets()
                     self.map_view.handle_target_untracking(radar_id, target_id)
@@ -594,29 +600,15 @@ class MapWindow(QMainWindow):
                                 f"{explosion_data.rocket_coords[1]:.1f}). Радиус поражения: {explosion_data.death_range}"
                             )
                             QTimer.singleShot(1000, lambda: self.map_view.scene.removeItem(explosion_circle))
+
                 elif msg['type'] == 'rocket_inactivate':
-                    rocket_id = msg['data'].rocketId
-                    self.text_output.append(f'<span style="color: olive;">🚀 Ракета с ID {rocket_id} деактивирована🧨</span>')
-                    if rocket_id in self.rockets:
-                        rocket_data = self.rockets[rocket_id]
-                        cross_label = QLabel(self)
-                        cross_pixmap = QPixmap(20, 20)
-                        cross_pixmap.fill(Qt.transparent)
-                        painter = QPainter(cross_pixmap)
-                        painter.setRenderHint(QPainter.Antialiasing)
-                        pen = QPen(Qt.red, 2)
-                        painter.setPen(pen)
-                        painter.drawLine(0, 0, 20, 20)
-                        painter.drawLine(20, 0, 0, 20)
-                        painter.end()
-                        cross_label.setPixmap(cross_pixmap)
-                        last_pos = rocket_data.get('last_pos', (0, 0))
-                        cross_label.move(last_pos[0] - 10, last_pos[1] - 10)
-                        cross_label.show()
-                        rocket_data['icon'].hide()
-                        del self.rockets[rocket_id]
-                        self.inactive_rockets[rocket_id] = cross_label
-                        QTimer.singleShot(self.cross_visible_time, lambda rid=rocket_id: self.remove_cross(rid))
+                        #print('DEACTIVATE')
+                        rocket_id = msg['data'].rocketId
+                        self.text_output.append(f'<span style="color: blue;">Ракета с ID {rocket_id} деактивирована</span>')
+                        if rocket_id in self.rockets:
+                               self.rockets[rocket_id]['icon'].hide()
+                               self.rockets[rocket_id]['inactive'] = True
+
 
            except Exception as e:
                 print(f"Ошибка при обработке сообщения: {e}")

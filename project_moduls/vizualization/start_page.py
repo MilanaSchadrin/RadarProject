@@ -60,6 +60,12 @@ class StartPage(QWidget):
         layout.addWidget(self.steps_label)
         self.steps_input=QLineEdit()
         layout.addWidget(self.steps_input)
+        
+
+        self.step_label = QLabel ('Введите шаг моделирования:')
+        layout.addWidget(self.step_label)
+        self.step_input=QLineEdit()
+        layout.addWidget(self.step_input)
 
         #Загрузка БД по названию
         self.db_name = QLabel ('Введите название базы данных для загрузки:')
@@ -122,6 +128,14 @@ class StartPage(QWidget):
         except ValueError:
             print("Некорректное количество шагов")
         return self.steps
+    
+    def get_step_size(self):
+        try:
+            self.step_size = float(self.steps_input.text())
+            #print("STEPS", self.steps)
+        except ValueError:
+            print("Некорректный шаг")
+        return self.step_size
 
     def get_db_name(self):
         self.name_db = (self.db_name_input.text())

@@ -3,10 +3,11 @@ from dispatcher.logger import Logger
 from pathlib import Path
 
 class Dispatcher:
-    def __init__(self):
+    def __init__(self,time_step = 1):
         self.currentTime = 0
         self.messageQueues = {}
         self.logger = Logger(Path('./logs'))
+        self.time_step = time_step
 
     def register(self, recipient_id):
         self.messageQueues[recipient_id] = PriorityQueue()

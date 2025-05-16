@@ -1,7 +1,7 @@
 # This Python file uses the following encoding: utf-8
 from dispatcher.enums import Modules
 from dispatcher.enums import Priorities
-from dispatcher.messages import SEKilled,SEAddRocket,SEStarting, SEKilledGUI,  TargetUnfollowedGUI, ToGuiRocketInactivated,RadarToGUICurrentTarget,RocketUpdate
+from dispatcher.messages import SEKilled,SEAddRocket,SEStarting, RocketInactivated, SEKilledGUI,  TargetUnfollowedGUI, ToGuiRocketInactivated,RadarToGUICurrentTarget,RocketUpdate
 from dispatcher.dispatcher import Dispatcher
 
 class SimulationDataCollector:
@@ -26,7 +26,8 @@ class SimulationDataCollector:
     def _add_message(self, message, priority):
         msg_type = self._get_message_type(message)
         self.steps_data[-1]['messages'].append({'type': msg_type,'data': message,'priority': priority,'step': self.current_step})
-        #print( self.steps_data)
+        #if msg_type == 'rocket_inactivate':
+        #    print( self.steps_data)
 
         if msg_type == 'rocket_add':
             self.handle_rocket_add(message)

@@ -107,7 +107,7 @@ class Plane(SkyObject):
         self.status = False
 
 class Rocket(SkyObject):
-    def __init__(self, obj_id, start, velocity, startTime, radius=20, time_step=1,timeSteps: int =250, status: bool = True):
+    def __init__(self, obj_id, start, velocity, startTime, radius=20, time_step=1,timeSteps: int =250):
         self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
         self.radius = radius
         self.killed = False
@@ -116,7 +116,6 @@ class Rocket(SkyObject):
         self.gravity = -9.8
         self.time_step = time_step
         self.currentPos = np.array(start[:3])
-        self.status = status
         self.crashed = False 
         self.killed_by_crash = False 
 
@@ -129,11 +128,10 @@ class Rocket(SkyObject):
         flight_time = self.currentTime - self.startTime
         #print(velocity)
         #print(self.status)
-        if self.status:
-            self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
-            new_pos = self.currentPos + self.velocity*self.time_step
-            #print('was here')
-        elif flight_time <= self.half_life:
+        self.velocity = np.array(velocity[:3]) if len(velocity) > 3 else np.array(velocity)
+        new_pos = self.currentPos + self.velocity*self.time_step
+
+        if flight_time <= self.half_life:
             direction = self.velocity.copy()
             new_pos = self.currentPos + direction * self.time_step
 
